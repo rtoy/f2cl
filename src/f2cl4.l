@@ -11,7 +11,7 @@
 ;	id-relational
 ;	memberq
 ;-----------------------------------------------------------------------------
-(in-package :cl-user)
+(in-package :f2cl)
 (defun memberq (x l) (member x l :test #'eq))
 
 (defun id-logical (l)
@@ -110,8 +110,11 @@
 ;;;------------------------------------------------------------------------------
 ;;; end of f2cl4.l
 ;;;
-;;; $Id: f2cl4.l,v 32516a11d8f7 2000/07/27 16:39:17 rtoy $
+;;; $Id: f2cl4.l,v bbe638bf9699 2000/07/28 17:03:40 rtoy $
 ;;; $Log$
+;;; Revision 1.4  2000/07/28 17:03:40  rtoy
+;;; o We are in the f2cl package now.
+;;;
 ;;; Revision 1.3  2000/07/27 16:39:17  rtoy
 ;;; We want to be in the CL-USER package, not the USER package.
 ;;;
