@@ -25,6 +25,8 @@
 ;;
 ;;(format t "~&The f2cl software has been loaded.~%")
 
+(in-package #:common-lisp-user)
+
 (defpackage "FORTRAN-TO-LISP"
     (:use "CL")
   (:documentation "The package holding all symbols need by the Fortran to Lisp converter")
@@ -69,8 +71,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1396c89cf448 2001/04/26 17:49:50 rtoy $
+;;; $Id: f2cl0.l,v 65bfaeca6fb3 2002/01/05 18:52:12 rtoy $
 ;;; $Log$
+;;; Revision 1.9  2002/01/05 18:52:12  rtoy
+;;; Add in-package.
+;;;
 ;;; Revision 1.8  2001/04/26 17:49:50  rtoy
 ;;; Export new functions D1MACH and R1MACH
 ;;;
