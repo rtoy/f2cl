@@ -57,9 +57,6 @@
 #+aclpc (defmacro rexpt (x y) `(realpart (expt ,x ,y)))
 #-aclpc (defmacro rexpt (x y) `(expt ,x ,y))
 
-(defvar *dummy_var* nil
-  "Used by f2cl for dummy return values")
-
 (deftype logical ()
   `(member t nil))
 
@@ -728,8 +725,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v a20985d12cc8 2000/07/13 16:55:34 rtoy $
+;;; $Id: macros.l,v 46b1ba72915b 2000/07/14 15:50:59 rtoy $
 ;;; $Log$
+;;; Revision 1.20  2000/07/14 15:50:59  rtoy
+;;; Get rid of *dummy_var*.  It's not used anymore.
+;;;
 ;;; Revision 1.19  2000/07/13 16:55:34  rtoy
 ;;; To satisfy the Copyright statement, we have placed the RCS logs in
 ;;; each source file in f2cl.  (Hope this satisfies the copyright.)
