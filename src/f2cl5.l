@@ -165,7 +165,14 @@
 			    `(string ,(second v-type))
 			    'string))
 		       (t
-			v-type)))
+			;; If type is NIL, use implicit type
+			(if (null v-type)
+			    (cond ((get-implicit-type vble))
+				  ((default-int-p vble)
+				   'integer4)
+				  (t
+				   'single-float))
+			    v-type))))
 	       ;;(format t  "type-clause = ~S~%" type-clauses)
 	       )))
 	(t
@@ -2110,8 +2117,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 44d77ed4c27e 2002/01/09 15:31:08 rtoy $
+;;; $Id: f2cl5.l,v 0d9850175851 2002/01/13 16:57:52 rtoy $
 ;;; $Log$
+;;; Revision 1.75  2002/01/13 16:57:52  rtoy
+;;; When looking up variables in the declared variables list or the
+;;; subprog arglist, we still need to handle them via Fortran's implicit
+;;; typing rules.
+;;;
 ;;; Revision 1.74  2002/01/09 15:31:08  rtoy
 ;;; o In GET-FUN-ARG-TYPE, we weren't correctly handling the case of unary
 ;;;   + and -.
