@@ -95,6 +95,8 @@
     `(array integer4 (*)))
 (deftype array-single-float ()
     `(array single-float (*)))
+(deftype array-strings ()
+  `(array string (*)))
 
 (defconstant %false% nil)
 (defconstant %true% t)
@@ -920,8 +922,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 9542e8b3a475 2000/08/03 13:45:53 rtoy $
+;;; $Id: macros.l,v 1f126b7a47c7 2000/08/07 19:00:47 rtoy $
 ;;; $Log$
+;;; Revision 1.28  2000/08/07 19:00:47  rtoy
+;;; Add type ARRAY-STRINGS to denote an array of strings.
+;;;
 ;;; Revision 1.27  2000/08/03 13:45:53  rtoy
 ;;; Make FFORMAT1 handle lists that we get from implied do loops.
 ;;;
