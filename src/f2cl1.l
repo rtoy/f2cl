@@ -237,7 +237,7 @@ INPUT-FILE               File containing Fortran code
 			      (auto-save t) (relaxed-array-decls t)
 			      (coerce-assigns :as-needed)
 			      (keep-lisp-file t)
-			      (array-type :simple-array)
+			      (array-type :array)
 			      (array-slicing t)
 			      package
 			      declaim
@@ -2244,8 +2244,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v ca466b3565cc 2002/03/19 06:03:14 rtoy $
+;;; $Id: f2cl1.l,v cc86fbc4843c 2002/03/19 23:11:12 rtoy $
 ;;; $Log$
+;;; Revision 1.105  2002/03/19 23:11:12  rtoy
+;;; Be conservative: For F2CL-COMPILE, change the default :array-type to
+;;; be :array instead of :simple-array.
+;;;
 ;;; Revision 1.104  2002/03/19 06:03:14  rtoy
 ;;; First pass at adding support for ENTRY statements (multiple entry
 ;;; points into a routine).  See NOTES for description of technique.
