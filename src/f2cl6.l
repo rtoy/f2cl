@@ -116,8 +116,10 @@
     (let ((compiled-path (compile-file-pathname file)))
       (setf outfile-name
 	    (translate-pathname compiled-path
-				(make-pathname :type (pathname-type compiled-path))
-				(make-pathname :type "p")))))
+				(make-pathname :host (pathname-host compiled-path)
+					       :type (pathname-type compiled-path))
+				(make-pathname :host (pathname-host compiled-path)
+					       :type "p")))))
   (with-open-file (inport file :direction :input)
     (with-open-file (outport outfile-name
 			     :direction :output
@@ -599,8 +601,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 685ec28f9cdf 2002/02/08 03:32:55 rtoy $
+;;; $Id: f2cl6.l,v f5a6b21ad29a 2002/03/11 17:57:32 rtoy $
 ;;; $Log$
+;;; Revision 1.34  2002/03/11 17:57:32  rtoy
+;;; Compute the output temp file name better.  (Was failing for logical
+;;; pathnames.)
+;;;
 ;;; Revision 1.33  2002/02/08 03:32:55  rtoy
 ;;; Oops.  Can't use #'char-equal because nxt-char might not be a char.
 ;;;
