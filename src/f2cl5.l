@@ -304,6 +304,11 @@
 	    ((and (listp arg)
 		  (eq 'fref (first arg)))
 	     (push (get-fun-arg-type (second arg)) res))
+	    ((and (listp arg)
+		  (listp (car arg))
+		  (eq 'multiple-value-bind (caar arg)))
+	     ;; A funcall to a function.  Look up the type of the function.
+	     (push (get-fun-arg-type (second (third (car arg)))) res))
 	    (t
 	     (let ((arg-types (mapcar #'get-fun-arg-type arg)))
 	       (push (cond ((every #'(lambda (x)
@@ -2626,8 +2631,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 465a5ba62cf2 2002/03/19 02:23:09 rtoy $
+;;; $Id: f2cl5.l,v 4d9c2e514ff4 2002/03/19 04:11:46 rtoy $
 ;;; $Log$
+;;; Revision 1.96  2002/03/19 04:11:46  rtoy
+;;; GET-UPGRADED-FUN-ARG-TYPE wasn't correctly returning the type of a
+;;; function call.  Didn't matter before, but with the recent coercion
+;;; changes, it does.
+;;;
 ;;; Revision 1.95  2002/03/19 02:23:09  rtoy
 ;;; According to the rules of Fortran, the initializers in a DATA
 ;;; statement are supposed to be converted to match the type of the
