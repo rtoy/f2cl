@@ -35,6 +35,7 @@
    "F2CL-COMPILE"
    ;; Constants
    "%FALSE%" "%TRUE%"
+   "*CHECK-ARRAY-BOUNDS*"
    ;; Types
    "INTEGER4" "INTEGER2" "INTEGER1" "REAL8" "REAL4" "COMPLEX8" "COMPLEX16"
    "ARRAY-DOUBLE-FLOAT" "ARRAY-SINGLE-FLOAT" "ARRAY-INTEGER4" "LOGICAL"
@@ -66,8 +67,12 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v f56bbda7c856 2000/09/01 13:51:20 rtoy $
+;;; $Id: f2cl0.l,v c90c11b4c199 2001/02/26 15:38:23 rtoy $
 ;;; $Log$
+;;; Revision 1.7  2001/02/26 15:38:22  rtoy
+;;; Move *check-array-bounds* from f2cl1.l to macros.l since the generated
+;;; code refers to it.  Export this variable too.
+;;;
 ;;; Revision 1.6  2000/09/01 13:51:20  rtoy
 ;;; AMAX1 and DIM were repeated.
 ;;;

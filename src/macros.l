@@ -42,6 +42,10 @@
 #+aclpc (defmacro rexpt (x y) `(realpart (expt ,x ,y)))
 #-aclpc (defmacro rexpt (x y) `(expt ,x ,y))
 
+(defvar *check-array-bounds* nil
+  "If non-NIL, generated code checks for array bounds.  If NIL, checking
+is not included")
+
 (deftype logical ()
   `(member t nil))
 
@@ -943,8 +947,12 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 574bbb3cd54f 2000/08/30 17:00:42 rtoy $
+;;; $Id: macros.l,v c90c11b4c199 2001/02/26 15:38:23 rtoy $
 ;;; $Log$
+;;; Revision 1.31  2001/02/26 15:38:23  rtoy
+;;; Move *check-array-bounds* from f2cl1.l to macros.l since the generated
+;;; code refers to it.  Export this variable too.
+;;;
 ;;; Revision 1.30  2000/08/30 17:00:42  rtoy
 ;;; o In EXECUTE-FORMAT, handle the case where the group is supposed to be
 ;;;   repeated "forever" (as indicated by a repetition factor of T).
