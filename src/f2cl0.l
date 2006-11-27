@@ -64,7 +64,7 @@
    #:lge #:lgt #:flog #:log10 #:lt #:max #:max0
    #:max1 #:min0 #:min1 #:nint #:freal
    #:sign #:sngl #:fsqrt
-   #:dcabs #:dconjg
+   #:cdabs #:dconjg
    ;; other functions
    #:d1mach #:r1mach #:i1mach
    ))
@@ -82,8 +82,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 95aa1216c8e9 2006/11/21 22:04:07 rtoy $
+;;; $Id: f2cl0.l,v 5bb2537800f1 2006/11/27 15:15:19 rtoy $
 ;;; $Log$
+;;; Revision 1.19  2006/11/27 15:15:19  rtoy
+;;; Fix typo.
+;;;
 ;;; Revision 1.18  2006/11/21 22:04:07  rtoy
 ;;; Export dcabs and dconjg.
 ;;;
