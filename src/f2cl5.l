@@ -2332,9 +2332,9 @@
 	((atom (cadr decl))		; scalar, length spec.
 	 ;;(format t "scalar, length spec~%")
 	 (if init
-	     (if (= (length (car init)) (cadr type))
+	     (if (= (length init) (cadr type))
 		 `(make-array '(,(cadr type)) :element-type 'character
-			      :initial-contents ,(car init))
+			      :initial-contents ,init)
 		 `(replace (make-array '(,(cadr type)) :element-type 'character
 				       :initial-element #\space)
 			   ,(car init)))
@@ -3490,8 +3490,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 7511697a900c 2007/09/21 20:41:16 rtoy $
+;;; $Id: f2cl5.l,v 15d859242f9b 2007/09/23 20:51:43 rtoy $
 ;;; $Log$
+;;; Revision 1.157  2007/09/23 20:51:43  rtoy
+;;; Previous checkin changed how character strings are initialized.
+;;; Modify code accordingly.  (This needs to be rethought and made less
+;;; fragile.)
+;;;
 ;;; Revision 1.156  2007/09/21 20:41:16  rtoy
 ;;; MAKE-CHAR-INIT was not correctly handling a scalar character variable
 ;;; with a known length.
