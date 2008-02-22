@@ -14,7 +14,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl4-version*
-  "$Date: 2008/02/22 22:13:18 $")
+  "$Id: f2cl4.l,v 96616d88fb7e 2008/02/22 22:19:34 rtoy $")
 
 (defun memberq (x l) (member x l :test #'eq))
 
@@ -114,8 +114,11 @@
 ;;;------------------------------------------------------------------------------
 ;;; end of f2cl4.l
 ;;;
-;;; $Id: f2cl4.l,v 265b8be95c73 2008/02/22 22:13:18 rtoy $
+;;; $Id: f2cl4.l,v 96616d88fb7e 2008/02/22 22:19:34 rtoy $
 ;;; $Log$
+;;; Revision 1.7  2008/02/22 22:19:34  rtoy
+;;; Use RCS Id as version.
+;;;
 ;;; Revision 1.6  2008/02/22 22:13:18  rtoy
 ;;; o Add function F2CL-VERSION to get version info.
 ;;; o Add version string to each of the files so F2CL-VERSION can get the
