@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 96616d88fb7e 2008/02/22 22:19:34 rtoy $")
+  "$Id: macros.l,v 58ed05f45db9 2008/02/26 04:14:31 rtoy $")
 
 ;; macros:
 ;;	rexpt
@@ -1254,7 +1254,7 @@ causing all pending operations to be flushed"
 					 (list x))
 					((stringp x)
 					 (list x))
-					((atom x)
+					((member x '(t nil))
 					 ;; Convert T and NIL to :T
 					 ;; and :F so we print out T
 					 ;; and F, respectively.
@@ -1527,8 +1527,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 96616d88fb7e 2008/02/22 22:19:34 rtoy $
+;;; $Id: macros.l,v 58ed05f45db9 2008/02/26 04:14:31 rtoy $
 ;;; $Log$
+;;; Revision 1.97  2008/02/26 04:14:31  rtoy
+;;; Explicitly check for T and NIL.
+;;;
 ;;; Revision 1.96  2008/02/22 22:19:34  rtoy
 ;;; Use RCS Id as version.
 ;;;
