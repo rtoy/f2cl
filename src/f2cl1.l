@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 54c194d2a256 2008/08/25 18:54:08 rtoy $")
+  "$Id: f2cl1.l,v 24d631b2c5d8 2008/09/11 14:59:55 rtoy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -654,6 +654,9 @@ FILENAME                 File containing Fortran code
       (setsyntax #\})
       (setsyntax #\!)
       ;; reserved characters:
+      ;;
+      ;; Note: Some Fortran compilers (Sun Studio) allow $ as a valid
+      ;; character.
       (setsyntax #\$)
       (setsyntax #\@) 
       (setsyntax #\&) 
@@ -3161,16 +3164,25 @@ loop2
       (write-char #\space stream)
        (pprint-newline :linear stream))))
 
-(set-pprint-dispatch '(cons (member f2cl-lib:fdo)) #'pprint-fdo)
-(set-pprint-dispatch '(cons (member f2cl-lib:with-array-data)) #'pprint-with-array-data)
-(set-pprint-dispatch '(cons (member f2cl-lib:with-multi-array-data))
-		     #'pprint-with-multi-array-data)
+#-gcl
+(progn
+  (set-pprint-dispatch '(cons (member f2cl-lib:fdo)) #'pprint-fdo)
+  (set-pprint-dispatch '(cons (member f2cl-lib:with-array-data))
+		       #'pprint-with-array-data)
+  (set-pprint-dispatch '(cons (member f2cl-lib:with-multi-array-data))
+		       #'pprint-with-multi-array-data))
 
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 54c194d2a256 2008/08/25 18:54:08 rtoy $
+;;; $Id: f2cl1.l,v 24d631b2c5d8 2008/09/11 14:59:55 rtoy $
 ;;; $Log$
+;;; Revision 1.209  2008/09/11 14:59:55  rtoy
+;;; o Add comment that some Fortran compilers allow $ as a valid
+;;;   character.
+;;; o For gcl, skip over set-pprint-dispatch stuff since gcl doesn't seem
+;;;   to have that.
+;;;
 ;;; Revision 1.208  2008/08/25 18:54:08  rtoy
 ;;; Was not checking for reserved lisp names in the argument list in
 ;;; PARSE-TYPED-FUN-DEFINITION and PARSE-FUN-DEFINITION.
