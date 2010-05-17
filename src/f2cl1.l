@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v ebc97da99eac 2010/02/23 03:37:24 rtoy $")
+  "$Id: f2cl1.l,v 64c75ca06ab3 2010/05/17 01:42:14 rtoy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -2224,8 +2224,9 @@ correctly"
 								  ,(second actual-type)
 								  ,(second declared-type))
 			                  into copy-from
-			     and collect `(,copy (f2cl-lib:make-compatible-seq ',declared-type
-									       ,arg))
+			     and collect `(,copy (f2cl-lib:make-compatible-seq ,declared-type
+									       ,arg
+									       ,actual-type))
 			                  into init-copy
 			  finally (return (values copy-to copy-from init-copy)))
 		   (setf init-copy (remove-duplicates init-copy :key #'car))
@@ -3044,7 +3045,7 @@ Senac syntax:... | op '| ...|)))
 	((and (listp (car x)) (eq (caar x) 'real))
 	 (append (list (maybe-promote-type 'single-float)) (cdr x)))
 	((and (listp (car x)) (eq (caar x) 'integer))
-	 (append '(fixnum) (cdr x)))
+	 (append '(integer4) (cdr x)))
 	((eq (car x) 'double) 
 	 (append '(double-float) (cdr x)))
 	((eq (car x) 'logical) 
@@ -3064,7 +3065,7 @@ Senac syntax:... | op '| ...|)))
 	  ((equalp subseq3 '(complex * 16))
 	   (append '(complex16) (subsequence x 3)))
 	  ((equalp subseq3 '(integer * 4))
-	   (append '(integer) (subsequence x 3)))
+	   (append '(integer4) (subsequence x 3)))
 	  ((equalp subseq3 '(integer * 2))
 	   (append '(integer2) (subsequence x 3)))
 	  ((equalp subseq3 '(integer * 1))
@@ -3310,8 +3311,19 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v ebc97da99eac 2010/02/23 03:37:24 rtoy $
+;;; $Id: f2cl1.l,v 64c75ca06ab3 2010/05/17 01:42:14 rtoy $
 ;;; $Log$
+;;; Revision 1.218  2010/05/17 01:42:13  rtoy
+;;; src/f2cl1.l:
+;;; o Need to know the actual type when making a compatible sequence.
+;;; o Convert plain integer type to integer4 types, which is what Fortran
+;;;   would do.  We don't want general Lisp integer type.
+;;;
+;;; src/macros.l:
+;;; o Change MAKE-COMPATIBLE-SEQ to be a macro.
+;;; o Need to know the actual array type to create the correct type of
+;;;   sequence.
+;;;
 ;;; Revision 1.217  2010/02/23 03:37:24  rtoy
 ;;; Add :PROMOTE-TO-DOUBLE option to promote all single precision
 ;;; variables and constants to double precision.

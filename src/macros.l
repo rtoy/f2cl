@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v db7ba752d7ac 2010/02/23 00:59:12 rtoy $")
+  "$Id: macros.l,v 64c75ca06ab3 2010/05/17 01:42:14 rtoy $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -1500,20 +1500,19 @@ causing all pending operations to be flushed"
 	  (t
 	   (copy-error)))))
 
-(defun make-compatible-seq (type array)
+(defmacro make-compatible-seq (type array array-type)
   (let ((element-type (second type))
-	(array-type (array-element-type array))
-	(len (length array)))
+	(array-type (second array-type)))
     (cond ((subtypep element-type 'float)
 	   (cond ((subtypep array-type 'complex)
-		  (make-array (* 2 len) :element-type element-type))
+		  `(make-array (* 2 (length ,array)) :element-type ',element-type))
 		 (t
-		  (make-array len :element-type element-type))))
+		  `(make-array (length ,array) :element-type ',element-type))))
 	  ((subtypep element-type 'complex)
 	   (cond ((subtypep array-type 'complex)
-		  (make-array len :element-type element-type))
+		  `(make-array (length ,array) :element-type ',element-type))
 		 (t
-		  (make-array (ceiling len 2) :element-type element-type))))
+		  `(make-array (ceiling (length ,array) 2) :element-type ',element-type))))
 	  (t
 	   (error "Don't know how to make an array with element-type ~A~%" element-type)))))
 
@@ -1521,8 +1520,19 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v db7ba752d7ac 2010/02/23 00:59:12 rtoy $
+;;; $Id: macros.l,v 64c75ca06ab3 2010/05/17 01:42:14 rtoy $
 ;;; $Log$
+;;; Revision 1.114  2010/05/17 01:42:14  rtoy
+;;; src/f2cl1.l:
+;;; o Need to know the actual type when making a compatible sequence.
+;;; o Convert plain integer type to integer4 types, which is what Fortran
+;;;   would do.  We don't want general Lisp integer type.
+;;;
+;;; src/macros.l:
+;;; o Change MAKE-COMPATIBLE-SEQ to be a macro.
+;;; o Need to know the actual array type to create the correct type of
+;;;   sequence.
+;;;
 ;;; Revision 1.113  2010/02/23 00:59:12  rtoy
 ;;; Support the Fortran capability of passing an array of one type
 ;;; to a routine expecting a different type.  Currently only supports REAL
