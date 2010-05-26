@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 967b0a8d5b6d 2010/05/26 02:40:27 rtoy $")
+  "$Id: f2cl1.l,v 8d4d65cd9075 2010/05/26 03:22:59 rtoy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -2043,6 +2043,16 @@ correctly"
     ;;(format t "new arglist = ~A~%" new-arglist)
     new-arglist))
 
+(defun relax-array-decl (decls)
+  (flet ((relax-1 (decl)
+	   (cond ((and *relaxed-array-decls* (subtypep decl 'array))
+		  (destructuring-bind (a n l)
+		      decl
+		    `(,a ,n ,(mapcar (constantly '*) l))))
+		 (t
+		  decl))))
+    (mapcar #'relax-1 decls)))
+
 ;; Subroutines and functions can modify the values of input
 ;; parameters.  We handle this in Lisp by returning the input
 ;; parameters to the caller as multiple values.  This function
@@ -2172,7 +2182,7 @@ correctly"
 	  (loop for count from 0
 	        for arg in arglist
 	        for actual-type in actual-arg-types
-	        for declared-type in (and finfo (f2cl-finfo-arg-types finfo))
+	        for declared-type in (and finfo (relax-array-decl (f2cl-finfo-arg-types finfo)))
 	        do (cond ((or (typep arg 'string)
 			      (typep arg 'number))
 			  (push nil copy-name))
@@ -3312,8 +3322,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 967b0a8d5b6d 2010/05/26 02:40:27 rtoy $
+;;; $Id: f2cl1.l,v 8d4d65cd9075 2010/05/26 03:22:59 rtoy $
 ;;; $Log$
+;;; Revision 1.220  2010/05/26 03:22:59  rtoy
+;;; When relax-array-decls is true, don't print out warnings about
+;;; mismatched argument types for arrays.  This was previously causing
+;;; many warnings about arrays when they weren't a problem.
+;;;
 ;;; Revision 1.219  2010/05/26 02:40:27  rtoy
 ;;; o Take care if finfo is NIL (meaning no function info) when checking
 ;;;   the types of the actual arguments and the declared types.  This was
