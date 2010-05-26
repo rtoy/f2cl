@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 8d4d65cd9075 2010/05/26 03:22:59 rtoy $")
+  "$Id: f2cl1.l,v 7e0c49f69974 2010/05/26 19:25:52 rtoy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1158,6 +1158,9 @@ correctly"
      ))
 
 ;=============================================================================
+(defparameter *f2cl-pprint-dispatch*
+  (copy-pprint-dispatch))
+
 (defun special-print (x o)
   (with-standard-io-syntax
     (let ((*package* (find-package :f2cl))
@@ -1170,7 +1173,8 @@ correctly"
 	  (*print-readably* nil)
 	  ;; Write out the code using the desired floating-point
 	  ;; format.
-	  (*read-default-float-format* *float-format*))
+	  (*read-default-float-format* *float-format*)
+	  (*print-pprint-dispatch* *f2cl-pprint-dispatch*))
       (write x :stream o))))
 ;------------------------------------------------------------------------------
 (defun princ-reset (x &optional (y ""))
@@ -3313,17 +3317,23 @@ loop2
 
 #-gcl
 (progn
-  (set-pprint-dispatch '(cons (member f2cl-lib:fdo)) #'pprint-fdo)
+  (set-pprint-dispatch '(cons (member f2cl-lib:fdo)) #'pprint-fdo 0 *f2cl-pprint-dispatch*)
   (set-pprint-dispatch '(cons (member f2cl-lib:with-array-data))
-		       #'pprint-with-array-data)
+		       #'pprint-with-array-data 0 *f2cl-pprint-dispatch*)
   (set-pprint-dispatch '(cons (member f2cl-lib:with-multi-array-data))
-		       #'pprint-with-multi-array-data))
+		       #'pprint-with-multi-array-data 0 *f2cl-pprint-dispatch*))
 
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 8d4d65cd9075 2010/05/26 03:22:59 rtoy $
+;;; $Id: f2cl1.l,v 7e0c49f69974 2010/05/26 19:25:52 rtoy $
 ;;; $Log$
+;;; Revision 1.221  2010/05/26 19:25:52  rtoy
+;;; Define our own pprint-dispatch table and initialize it with our
+;;; special pprint functions.  Use it in SPECIAL-PRINT so that the output
+;;; is printed the way we want.   This is particularly important for fdo
+;;; to keep it from pushing things way off to the right.
+;;;
 ;;; Revision 1.220  2010/05/26 03:22:59  rtoy
 ;;; When relax-array-decls is true, don't print out warnings about
 ;;; mismatched argument types for arrays.  This was previously causing
