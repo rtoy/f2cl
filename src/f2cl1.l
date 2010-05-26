@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 64c75ca06ab3 2010/05/17 01:42:14 rtoy $")
+  "$Id: f2cl1.l,v 967b0a8d5b6d 2010/05/26 02:40:27 rtoy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -2172,7 +2172,7 @@ correctly"
 	  (loop for count from 0
 	        for arg in arglist
 	        for actual-type in actual-arg-types
-	        for declared-type in (f2cl-finfo-arg-types finfo)
+	        for declared-type in (and finfo (f2cl-finfo-arg-types finfo))
 	        do (cond ((or (typep arg 'string)
 			      (typep arg 'number))
 			  (push nil copy-name))
@@ -2199,15 +2199,16 @@ correctly"
                                              Argument type: ~A~%"
 					count (car routine-name) declared-type actual-type))))))
 	  (setf copy-name (nreverse copy-name))
-	  (when (and *use-function-info* finfo)
-	    (let ((new-args (massage-arglist arglist finfo copy-name)))
-	      (setf body (if setters
-			     `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
-				   (,@routine-name ,@new-args)
-				 (declare (ignore ,@ignored-vars))
-				 ,@setters
-				 ,@(if return (list 'ret-val))))
-			     `((,@routine-name ,@new-args))))))
+	  (let ((new-args (if (and *use-function-info* finfo)
+			      (massage-arglist arglist finfo copy-name)
+			      arglist)))
+	    (setf body (if setters
+			   `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
+				 (,@routine-name ,@new-args)
+			       (declare (ignore ,@ignored-vars))
+			       ,@setters
+			       ,@(if return (list 'ret-val))))
+			   `((,@routine-name ,@new-args)))))
 	  (cond ((some #'identity copy-name)
 		 ;; Some args don't match and we want to copy the item
 		 (multiple-value-bind (copy-to copy-from init-copy)
@@ -3311,8 +3312,16 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 64c75ca06ab3 2010/05/17 01:42:14 rtoy $
+;;; $Id: f2cl1.l,v 967b0a8d5b6d 2010/05/26 02:40:27 rtoy $
 ;;; $Log$
+;;; Revision 1.219  2010/05/26 02:40:27  rtoy
+;;; o Take care if finfo is NIL (meaning no function info) when checking
+;;;   the types of the actual arguments and the declared types.  This was
+;;;   causing a compile error.
+;;; o Fix bug when massaging the arglist.  We were doing only if finfo was
+;;;   known, but if not, then we ended up deleting the function call.
+;;;   Don't delete the function call to the unknown function!
+;;;
 ;;; Revision 1.218  2010/05/17 01:42:13  rtoy
 ;;; src/f2cl1.l:
 ;;; o Need to know the actual type when making a compatible sequence.
