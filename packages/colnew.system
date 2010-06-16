@@ -212,4 +212,51 @@
 	     (:file "sbblok"
 		    :depends-on ("subfor" "subbak"))
 	     (:file "subfor")
-	     (:file "subbak")))))
+	     (:file "subbak")))
+   (:module problem-1
+	    :source-extension "f"
+	    :source-pathname "colnew/problem-1"
+	    :language :f2cl-lisp
+	    :compiler-options (:common-as-array t :package :colnew)
+	    :compile-only t
+	    :depends-on (colnew)
+	    :components
+	    ((:file "prob1"
+		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "exact"))
+	     (:file "fsub")
+	     (:file "gsub")
+	     (:file "dfsub")
+	     (:file "dgsub")
+	     (:file "exact")))
+   (:module problem-2
+	    :source-extension "f"
+	    :source-pathname "colnew/problem-2"
+	    :language :f2cl-lisp
+	    :compiler-options (:common-as-array t :package :colnew)
+	    :compile-only t
+	    :depends-on (colnew)
+	    :components
+	    ((:file "prob2"
+		    :compiler-options (:declare-common t :package :colnew)
+		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "solutn"))
+	     (:file "fsub")
+	     (:file "gsub")
+	     (:file "dfsub")
+	     (:file "dgsub")
+	     (:file "solutn")))
+   (:module problem-3
+	    :source-extension "f"
+	    :source-pathname "colnew/problem-3"
+	    :language :f2cl-lisp
+	    :compiler-options (:common-as-array t :package :colnew)
+	    :compile-only t
+	    :depends-on (colnew)
+	    :components
+	    ((:file "prob3"
+		    :compiler-options (:declare-common t :package :colnew)
+		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "solutn"))
+	     (:file "fsub")
+	     (:file "gsub")
+	     (:file "dfsub")
+	     (:file "dgsub")
+	     (:file "solutn")))))
