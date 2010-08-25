@@ -6,9 +6,16 @@
 
 (in-package #:f2cl-asd)
 
+(defclass f2cl-cl-source-file (asdf:cl-source-file)
+  ())
+
+(defmethod source-file-type ((f f2cl-cl-source-file) (m module))
+  "l")
+
 (defsystem f2cl
   :components
   ((:module src
+	    :default-component-class f2cl-cl-source-file
 	    :components
 	    ((:file "f2cl0")
 	     (:file "f2cl1")
@@ -21,6 +28,3 @@
 	     #+cmu(:file "f2cl8")
 	     (:file "macros")))))
 
-(defmethod asdf:source-file-type
-    ((f cl-source-file) (s (eql
-			    (asdf:find-system 'f2cl)))) "l")
