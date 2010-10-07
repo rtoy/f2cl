@@ -1,6 +1,11 @@
 -*- Mode: text -*-
 
 Changes:
+Oct 2010
+--------
+o Added MAKE-DEPENDENCIES to create a list of dependencies that could
+  be used with mk-defsys.  See the docstring for caveats.
+
 Feb 2010
 --------
 o Add :PROMOTE-TO-DOUBLE option which promotes all single precision
