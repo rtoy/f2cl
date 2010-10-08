@@ -5,6 +5,7 @@ Oct 2010
 --------
 o Added MAKE-DEPENDENCIES to create a list of dependencies that could
   be used with mk-defsys.  See the docstring for caveats.
+o Handle IMPLICIT DOUBLE PRECISION
 
 Feb 2010
 --------

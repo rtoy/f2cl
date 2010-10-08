@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 7e0c49f69974 2010/05/26 19:25:52 rtoy $")
+  "$Id: f2cl1.l,v f0f149e72999 2010/10/08 03:05:30 rtoy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1768,13 +1768,19 @@ correctly"
 	 )
 	(t
 	 (let ((decls 
-		(if (eq (third x) '*)
-		    ;; Handle IMPLICIT <type> * <length> by rewriting x with
-		    ;; the appropriate type.
-		    `(,(first x) 
-		      (,(second x) ,(third x) ,(fourth x))
-		      ,@(cddddr x))
-		    x)))
+		(cond ((eq (third x) '*)
+		       ;; Handle IMPLICIT <type> * <length> by rewriting x with
+		       ;; the appropriate type.
+		       `(,(first x) 
+			  (,(second x) ,(third x) ,(fourth x))
+			  ,@(cddddr x)))
+		      ((eq (third x) 'precision)
+		       ;; Handle IMPLICIT DOUBLE PRECISION
+		       `(,(first x)
+			  (real * 8)
+			  ,@(cdddr x)))
+		      (t
+		       x))))
 	   (mapc #'(lambda (y)
 		     (push `(,(car (convert-data-type (car y)))
 			     ,@(list-split '|,|
@@ -3326,8 +3332,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 7e0c49f69974 2010/05/26 19:25:52 rtoy $
+;;; $Id: f2cl1.l,v f0f149e72999 2010/10/08 03:05:30 rtoy $
 ;;; $Log$
+;;; Revision 1.222  2010/10/08 03:05:30  rtoy
+;;; src/f2cl1.l:
+;;; o Correctly parse IMPLICIT DOUBLE PRECISION
+;;;
+;;; src/NOTES:
+;;; o Update.
+;;;
 ;;; Revision 1.221  2010/05/26 19:25:52  rtoy
 ;;; Define our own pprint-dispatch table and initialize it with our
 ;;; special pprint functions.  Use it in SPECIAL-PRINT so that the output
