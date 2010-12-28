@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 64c75ca06ab3 2010/05/17 01:42:14 rtoy $")
+  "$Id: macros.l,v 3db4f94a55fd 2010/12/28 00:06:52 rtoy $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -775,9 +775,9 @@ is not included")
 (defun fsqrt (x)
   (typecase x
     (single-float
-     (sqrt (the (single-float 0f0) x)))
+     (sqrt (the (or (single-float (0f0)) (member 0f0)) x)))
     (double-float
-     (sqrt (the (double-float 0d0) x)))
+     (sqrt (the (or (double-float (0d0)) (member 0d0)) x)))
     (t
      (sqrt x))))
 
@@ -1520,8 +1520,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 64c75ca06ab3 2010/05/17 01:42:14 rtoy $
+;;; $Id: macros.l,v 3db4f94a55fd 2010/12/28 00:06:52 rtoy $
 ;;; $Log$
+;;; Revision 1.115  2010/12/28 00:06:52  rtoy
+;;; Assert the type of the arg to fsqrt to be non-negative, excluding
+;;; negative zero.
+;;;
 ;;; Revision 1.114  2010/05/17 01:42:14  rtoy
 ;;; src/f2cl1.l:
 ;;; o Need to know the actual type when making a compatible sequence.
