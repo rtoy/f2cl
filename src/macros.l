@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 3db4f94a55fd 2010/12/28 00:06:52 rtoy $")
+  "$Id: macros.l,v 4b9de3b7ef23 2011/02/20 20:51:04 rtoy $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -1459,7 +1459,7 @@ causing all pending operations to be flushed"
 (defun stop (&optional arg)
   (when arg
     (format cl::*error-output* "~A~%" arg))
-  (unless *stop-signals-error-p*
+  (when *stop-signals-error-p*
     (cerror "Continue anyway" "STOP reached")))
 
 (defmacro f2cl-copy-seq (dst src dst-type src-type)
@@ -1520,8 +1520,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 3db4f94a55fd 2010/12/28 00:06:52 rtoy $
+;;; $Id: macros.l,v 4b9de3b7ef23 2011/02/20 20:51:04 rtoy $
 ;;; $Log$
+;;; Revision 1.116  2011/02/20 20:51:04  rtoy
+;;; Oops.  STOP should signal an error if *STOP-SIGNALS-ERROR-P* is
+;;; non-NIL.
+;;;
 ;;; Revision 1.115  2010/12/28 00:06:52  rtoy
 ;;; Assert the type of the arg to fsqrt to be non-negative, excluding
 ;;; negative zero.
