@@ -1,3 +1,4 @@
+*.sse2f
 dgtsl.lisp
 dqag.lisp
 dqage.lisp
