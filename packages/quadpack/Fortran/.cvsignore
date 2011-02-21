@@ -34,4 +34,12 @@ dqpsrt.lisp
 dqwgtc.lisp
 dqwgtf.lisp
 dqwgts.lisp
+fdump.lisp
+j4save.lisp
+xerabt.lisp
+xerctl.lisp
+xerprt.lisp
 xerror.lisp
+xerrwv.lisp
+xersav.lisp
+xgetua.lisp
