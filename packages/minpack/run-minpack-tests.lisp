@@ -8,6 +8,7 @@
       ((run-test (input-file f)
 	 (with-open-file (input input-file :direction :input)
 	   (with-open-file (output (make-pathname :host "minpack"
+						  :directory '(:absolute)
 						  :name (string-downcase (string f))
 						  :type "txt")
 				   :direction :output
@@ -30,6 +31,7 @@
       ((run-test (input-file f)
 	 (with-open-file (input input-file :direction :input)
 	   (with-open-file (output (make-pathname :host "minpack"
+						  :directory '(:absolute)
 						  :name (string-downcase (string f))
 						  :type "txt")
 				   :direction :output
