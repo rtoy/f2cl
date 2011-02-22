@@ -26,5 +26,6 @@
 	     (:file "f2cl6")
 	     (:file "f2cl7")
 	     #+cmu(:file "f2cl8")
-	     (:file "macros")))))
+	     (:file "macros"
+		    :depends-on ("f2cl0"))))))
 
