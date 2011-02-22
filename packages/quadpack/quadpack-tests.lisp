@@ -3,6 +3,9 @@
 ;;;
 ;;; $Id$
 ;;; $Log$
+;;; Revision 1.7  2011/02/22 02:46:25  rtoy
+;;; File should be in the quadpack package.
+;;;
 ;;; Revision 1.6  2008/02/25 19:27:38  rtoy
 ;;; Fix typo in description of integral for tst1.
 ;;;
@@ -26,6 +29,8 @@
 ;;;
 
 ;;(declaim (optimize (speed 3)))
+
+(in-package #:quadpack)
 
 (declaim (inline square))
 
