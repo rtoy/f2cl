@@ -1,0 +1,2 @@
+(defpackage colnew
+  (:use #:cl))
