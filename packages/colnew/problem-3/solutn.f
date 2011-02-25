@@ -1,7 +1,7 @@
 C................................................................       SOL   10
       SUBROUTINE SOLUTN(X, Z, DMVAL)                                    SOL   20
       implicit real*8 (a-h, o-z)
-      COMMON EN, S, EL, CONS
+      COMMON /p3/ EN, S, EL, CONS
       REAL*8 Z(5), DMVAL(2)
       EX = EXP(-EL*X)
       Z(1) = 1. - EX

@@ -1,7 +1,7 @@
 C................................................................       SOL   10
       SUBROUTINE SOLUTN(X, Z, DMVAL)                                    SOL   20
       implicit real*8 (a-h, o-z)
-      COMMON EPS, DMU, EPS4MU, GAMMA, XT
+      COMMON /p2/ EPS, DMU, EPS4MU, GAMMA, XT
       DIMENSION Z(4), DMVAL(2)
       CONS = GAMMA*X*(1.-.5*X*X)
       DCONS = GAMMA*(1.-1.5*X*X)

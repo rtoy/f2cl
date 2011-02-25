@@ -9,7 +9,7 @@ C                                                                       MAN   50
       INTEGER M(2), ISPACE(2500), LTOL(2), IPAR(11)                     MAN   70
       REAL*8 Z(5)                                                         MAN   80
       real*8 a(28)
-      COMMON EN, S, EL, CONS                                            MAN   90
+      COMMON /p3/ EN, S, EL, CONS                                            MAN   90
       EXTERNAL FSUB, DFSUB, GSUB, DGSUB, SOLUTN                         MAN  100
       DATA SVAL /.2d0,.1d0,.05d0/, ELVAL /60d0,120d0,200d0/                      MAN  110
 C                                                                       MAN  120

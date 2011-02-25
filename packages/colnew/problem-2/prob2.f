@@ -7,7 +7,7 @@ C                                                                       MAN   50
       implicit real*8 (a-h, o-z)
       REAL*8 ZETA(4), FSPACE(40000), TOL(4), Z(4)                         MAN   60
       INTEGER M(2), IPAR(11), ISPACE(2500), LTOL(4)                     MAN   70
-      COMMON EPS, DMU, EPS4MU, GAMMA, XT                                MAN   80
+      COMMON /p2/ EPS, DMU, EPS4MU, GAMMA, XT                                MAN   80
       EXTERNAL SOLUTN, FSUB, DFSUB, GSUB, DGSUB                         MAN   90
 C     DEFINE CONSTANTS, PRINT A HEADING.                                MAN  100
       GAMMA = 1.1d0                                                       MAN  110
