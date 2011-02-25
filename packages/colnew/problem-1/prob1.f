@@ -3,6 +3,7 @@ C----------------------------------------------------------------       MAN   20
 C                                                                       MAN   30
 C  PROBLEM 1 - SEE COMPANION PAPER                                      MAN   40
 C                                                                       MAN   50
+      program prob1
       implicit real*8 (a-h, o-z)
       REAL*8 FSPACE(2000), ZETA(4), TOL(2), Z(4), U(4), ERR(4)            MAN   60
       INTEGER ISPACE(200), M(1), IPAR(11), LTOL(2)                      MAN   70
