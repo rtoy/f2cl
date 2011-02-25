@@ -101,9 +101,6 @@
 (defmethod perform ((op test-op) (c (eql (find-system "colnew"))))
   (oos 'test-op "colnew-test-1")
   (oos 'test-op "colnew-test-2")
-  ;; Cannot run both test 2 and test 3 because they both define a
-  ;; blank common block that are incompatible.
-  #-(and)
   (oos 'test-op "colnew-test-3"))
 
 
@@ -173,4 +170,3 @@
 
 (defmethod perform ((op test-op) (c (eql (find-system "colnew-test-3"))))
   (funcall (intern "PROB3" (find-package '#:colnew))))
-
