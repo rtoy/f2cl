@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 4b9de3b7ef23 2011/02/20 20:51:04 rtoy $")
+  "$Id: macros.l,v dc1fb0a246a7 2011/02/28 22:21:07 rtoy $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -993,7 +993,7 @@ causing all pending operations to be flushed"
 	   (open file :direction :io :if-exists :supersede
 		 :if-does-not-exist :create))
 	  ((string-equal s "old")
-	   (open file :direction :io :if-does-not-exist nil))
+	   (open file :direction :io :if-does-not-exist nil :if-exists :overwrite))
 	  ((string-equal s "new")
 	   (open file :direction :io :if-exists nil))
 	  (t
@@ -1520,8 +1520,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 4b9de3b7ef23 2011/02/20 20:51:04 rtoy $
+;;; $Id: macros.l,v dc1fb0a246a7 2011/02/28 22:21:07 rtoy $
 ;;; $Log$
+;;; Revision 1.117  2011/02/28 22:21:07  rtoy
+;;; When opening an old file, we should set :if-exists to :overwrite to
+;;; overwrite the file if written too.
+;;;
 ;;; Revision 1.116  2011/02/20 20:51:04  rtoy
 ;;; Oops.  STOP should signal an error if *STOP-SIGNALS-ERROR-P* is
 ;;; non-NIL.
