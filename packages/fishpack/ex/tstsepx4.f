@@ -42,8 +42,10 @@ c     the exact work space length required is 1005 words.  this
 c     was determined by a previous call to sepx4 and print out of      
 c     w(1).                                                            
 c                                                                      
+      program tsepx4
       dimension       usol(33,33),grhs(33,33),bda(33)    ,bdb(33)    , 
      1                w(1024)                                          
+      dimension       dum(1)
       external cofx4                                                   
 c                                                                      
 c     define arithmetic functions giving exact solution                
