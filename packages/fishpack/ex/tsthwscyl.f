@@ -51,6 +51,7 @@ c
 c          the r-interval will be divided into 50 panels and the
 c     z-interval will be divided into 100 panels.
 c
+      program thwscyl
       dimension       f(75,105)  ,bda(101)   ,bdb(101)   ,bdc(51)    ,
      1                bdd(51)    ,w(1373)    ,r(51)      ,z(101)
 c

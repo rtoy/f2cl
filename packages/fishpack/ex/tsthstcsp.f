@@ -46,6 +46,7 @@ c     and the solution unspecified on the remaining boundaries.
 c     we will use 45 unknowns in the theta-interval and 15 unknowns
 c     in the r-interval.
 c
+      program thstcsp
       dimension       f(47,16)   ,bdd(45)    ,w(615)     ,theta(45)  ,
      1                r(15)      ,cost(45)
       dimension bda(1), bdb(1), bdc(1)

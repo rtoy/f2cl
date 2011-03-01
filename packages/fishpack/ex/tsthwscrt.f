@@ -46,6 +46,7 @@ c     and with u periodic in y.
 c          the x-interval will be divided into 40 panels and the
 c     y-interval will be divided into 80 panels.
 c
+      program thwscrt
       dimension       f(45,82)   ,bdb(81)    ,w(1103)    ,x(41)      ,
      1                y(81)
       dimension bda(1), bdc(1), bdd(1)

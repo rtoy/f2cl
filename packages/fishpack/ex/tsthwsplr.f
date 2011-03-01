@@ -46,6 +46,7 @@ c     (note that the solution u is unspecified at r = 0.)
 c          the r-interval will be divided into 50 panels and the
 c     theta-interval will be divided into 48 panels.
 c
+      program thwsplr
       dimension       f(100,50)  ,bdc(51)    ,bdd(51)    ,w(1114)    ,
      1                r(51)      ,theta(49)
       dimension bda(1), bdb(1)

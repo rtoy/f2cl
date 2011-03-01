@@ -31,6 +31,7 @@ c
 c
 c     program to illustrate the use of hwsssp
 c
+      program thwsssp
       dimension       f(19,73)   ,bdtf(73)   ,sint(19)   ,sinp(73)   ,
      1                w(600)
       dimension bdts(1), bdps(1), bdpf(1)

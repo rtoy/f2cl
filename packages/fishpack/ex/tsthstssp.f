@@ -43,6 +43,7 @@ c           u(theta,phi) = (sin(theta)*sin(phi))**2 + constant
 c
 c     is a solution.
 c
+      program thstssp
       dimension       f(18,72)   ,bdb(72)    ,sint(18)   ,sinp(72)   ,
      1                w(630)
       dimension bda(1), bdc(1), bdd(1)

@@ -49,6 +49,7 @@ c
 c     we will use 50 unknowns in the r-interval and 48 unknowns in
 c     the theta-interval.
 c
+      program thstplr
       dimension       f(51,50)   ,bdb(48)    ,bdc(50)    ,bdd(50)    ,
      1                w(1092)    ,r(50)      ,theta(48)
       dimension bda(1)
