@@ -51,7 +51,7 @@
 		    :depends-on ("trix" "tri3" "pimach"))
 	     (:file "hwscyl")
 	     (:file "hwsplr")
-	     (:file "hwsssp")
+	     (:file "hwsssp" :depends-on ("hwsss1"))
 	     (:file "hwsss1")
 	     (:file "hwscsp" :depends-on ("hwscs1"))
 	     (:file "hwscs1" :depends-on ("epmach" "blktri" "store"))
@@ -71,32 +71,38 @@
 	     (:file "tris4")
 	     (:file "ortho4")
 	     (:file "minso4")
-	     (:file "defe4" :depends-on ("dx4" "dy4")
+	     (:file "defe4" :depends-on ("dx4" "dy4"))
+	     (:file "dx4"
 		    :perform (compile-op :around (op c)
 					 (fortran-compile op c :declare-common t)))
-	     (:file "dx4")
-	     (:file "dy4")
+	     (:file "dy4"
+		    ;; Want common block defined before compiling dy4.
+		    :depends-on ("dx4"))
 	     (:file "epmach"
-		    :depends-on ("store")
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t)))
+		    :depends-on ("store"))
 	     (:file "blktri"
-		    :depends-on ("compb" "blktr1" "prodp" "cprodp")
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t)))
+		    :depends-on ("compb" "blktr1" "prodp" "cprodp"))
 	     ;; WARNING: compb passes an array of single-floats to
 	     ;; PPADD, but PPADD is expecting an array of COMPLEX
 	     ;; numbers.  None of the test programs trigger this, so
 	     ;; it might not be a problem, but it is something to
 	     ;; watch out for.  F2cl does not handle this case.
 	     (:file "compb"
-		    :depends-on ("indxb" "tevls" "ppadd"))
+		    :depends-on ("indxb" "tevls" "ppadd" "epmach"))
 	     (:file "blktr1"
 		    :depends-on ("indxa" "indxb" "indxc"))
-	     (:file "store")
-	     (:file "indxa")
-	     (:file "indxb")
-	     (:file "indxc")
+	     (:file "store"
+		    :perform (compile-op :around (op c)
+					 (fortran-compile op c :declare-common t)))
+	     (:file "indxa"
+		    :perform (compile-op :around (op c)
+					 (fortran-compile op c :declare-common t)))
+	     (:file "indxb"
+		    ;; Want the common block defined before compiling indxb.
+		    :depends-on ("indxa"))
+	     (:file "indxc"
+		    ;; Want the common block defined before compiling indxb.
+		    :depends-on ("indxa"))
 	     (:file "tevls")
 	     (:file "ppadd"
 		    :depends-on ("psgf" "bsrh" "ppsgf"))
@@ -117,7 +123,20 @@
 	     (:file "prodp")))))
 
 (defmethod perform ((op test-op) (c (eql (find-system "fishpack"))))
-  (oos 'test-op "fishpack-test-hwscrt"))
+  (dolist (test '("fishpack-test-hwscrt"
+		  "fishpack-test-hwscrt"
+		  "fishpack-test-hwscyl"
+		  "fishpack-test-hwsplr"
+		  "fishpack-test-hwsssp"
+		  "fishpack-test-hwscsp"
+		  "fishpack-test-hstcrt"
+		  "fishpack-test-hstplr"
+		  "fishpack-test-hstcyl"
+		  "fishpack-test-hstssp"
+		  "fishpack-test-hstcsp"
+		  "fishpack-test-sepx4"
+		  ))
+  (oos 'test-op test)))
 
 ;; Some tests of Fishpack.
 ;;
