@@ -16,6 +16,7 @@
   :components
   ((:module src
 	    :default-component-class f2cl-cl-source-file
+	    :serial t
 	    :components
 	    ((:file "f2cl0")
 	     (:file "f2cl1")
