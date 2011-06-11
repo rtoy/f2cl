@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 67f34f4d7fed 2010/02/23 05:21:30 rtoy $")
+  "$Id: f2cl5.l,v 11bea7dae5a0 2011/06/11 17:53:39 toy $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2009,6 +2009,14 @@
 			   `(,fref-name ,(array-data-name var)
 			                ,@stuff ,(array-offset-name var))
 			   p)))
+		    ((eq (first p) 'array-slice)
+		     (destructuring-bind (array-slice-name var &rest stuff)
+			 p
+		       (if (member var array-args)
+			   `(,array-slice-name ,(array-data-name var)
+					       ,@stuff
+					       ,(array-offset-name var))
+			   p)))
 		    (t
 		     `(,(first p) ,@(mapcar #'grovel-frefs (rest p))))))
 	    (generate-with-array (arrays body)
@@ -3850,7 +3858,7 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 67f34f4d7fed 2010/02/23 05:21:30 rtoy $
+;;; $Id: f2cl5.l,v 11bea7dae5a0 2011/06/11 17:53:39 toy $
 ;;; $Log$
 ;;; Revision 1.204  2010/02/23 05:21:30  rtoy
 ;;; Fix declaration for default integer type.  Previously the type was

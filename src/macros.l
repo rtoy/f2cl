@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v dc1fb0a246a7 2011/02/28 22:21:07 rtoy $")
+  "$Id: macros.l,v 11bea7dae5a0 2011/06/11 17:53:39 toy $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -64,6 +64,7 @@ is not included")
 
 (defconstant %false% nil)
 (defconstant %true% t)
+
 ;;------------------------------------------------------------------------------
 
 ;;-----------------------------------------------------------------------------
@@ -175,7 +176,7 @@ is not included")
 ;;
 ;; This is done by making a displaced array to VNAME with the
 ;; appropriate offset.
-(defmacro array-slice (vname type indices bounds)
+(defmacro array-slice (vname type indices bounds &optional offset)
   ;; To figure the size of the sliced array, use ARRAY-TOTAL-SIZE
   ;; instead of the f2cl derived/declared BOUNDS, just in case we
   ;; screwed up or in case we changed the size of the array in some
@@ -197,10 +198,16 @@ is not included")
   ;;
   ;; This seems somewhat reasonable, so let's do that for array
   ;; slices.
-  `(make-array (max 0 (- (array-total-size ,vname) ,(col-major-index indices bounds)))
+  `(make-array (max 0 (- (array-total-size ,vname)
+			 (the fixnum
+			   (+ ,(col-major-index indices bounds)
+			      (or ,offset 0)))))
     :element-type ',type
     :displaced-to ,vname
-    :displaced-index-offset (min (array-total-size ,vname) ,(col-major-index indices bounds))))
+    :displaced-index-offset (min (array-total-size ,vname)
+				 (the fixnum
+				   (+ ,(col-major-index indices bounds)
+				      (or ,offset 0))))))
 
 ;; Compute an initializer for make-array given the data in the list
 ;; DATA.  The array has en element type of TYPE and has dimensions of
@@ -1520,7 +1527,7 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v dc1fb0a246a7 2011/02/28 22:21:07 rtoy $
+;;; $Id: macros.l,v 11bea7dae5a0 2011/06/11 17:53:39 toy $
 ;;; $Log$
 ;;; Revision 1.117  2011/02/28 22:21:07  rtoy
 ;;; When opening an old file, we should set :if-exists to :overwrite to
