@@ -1,0 +1,2 @@
+(defpackage #:minpack
+  (:use #:cl))
