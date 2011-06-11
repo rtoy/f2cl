@@ -40,8 +40,6 @@
 	    :components
 	    (
 	     (:file "cpoly"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t))
 		    :depends-on ("mcon" "cmod" "scale" "cdivid" "cauchy" "noshft" "fxshft"))
 	     (:file "noshft"
 		    :depends-on ("cmod" "cdivid"))
@@ -51,7 +49,9 @@
 		    :depends-on ("polyev" "cmod" "errev" "calct" "nexth"))
 	     (:file "calct"
 		    :depends-on ("polyev" "cmod" "cdivid"))
-	     (:file "nexth")
+	     (:file "nexth"
+		    :perform (compile-op :around (op c)
+					 (fortran-compile op c :declare-common t)))
 	     (:file "polyev")
 	     (:file "errev"
 		    :depends-on ("cmod"))
