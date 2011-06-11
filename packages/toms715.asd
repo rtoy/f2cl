@@ -123,28 +123,28 @@
 
 
 (defmethod perform ((op test-op) (c (eql (find-system "toms715-tests"))))
-  (dolist (test '(toms715::algtst
-		  toms715::anrtst
-		  toms715::dawtst
-		  toms715::eitest
-		  toms715::erftst
-		  toms715::gamtst
-		  toms715::i0test
-		  toms715::i1test
-		  toms715::j0test
-		  toms715::j1test
-		  toms715::k0test
-		  toms715::k1test
-		  toms715::psitst
-		  toms715::ritest
-		  toms715::rjtest
-		  toms715::rktest
-		  toms715::rytest
-		  toms715::y0test
-		  toms715::y1test))
+  (dolist (test '(algtst
+		  anrtst
+		  dawtst
+		  eitest
+		  erftst
+		  gamtst
+		  i0test
+		  i1test
+		  j0test
+		  j1test
+		  k0test
+		  k1test
+		  psitst
+		  ritest
+		  rjtest
+		  rktest
+		  rytest
+		  y0test
+		  y1test))
     (let ((f2cl-lib::*stop-signals-error-p* nil))
       ;; What do we really want here?  Some tests are expected to
       ;; signal errors and we do.  But we don't want asdf to stop the
       ;; tests.  So we just ignore all errors and expect the user to
       ;; look through the results to see if they make sense.
-      (ignore-errors (funcall test)))))
+      (ignore-errors (funcall (find-symbol test "TOMS715"))))))
