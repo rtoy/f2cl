@@ -1,0 +1,2 @@
+(defpackage #:fishpack
+  (:use #:cl))
