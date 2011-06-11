@@ -1,5 +1,9 @@
 ;;; -*- Mode: lisp; Package: CL-USER -*-
 
+;; Need f2cl to be loaded before we can even read this file.
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (asdf:load-system :f2cl))
+
 (defpackage colnew-system
   (:use #:cl #:asdf))
 
