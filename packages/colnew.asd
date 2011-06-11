@@ -81,7 +81,7 @@
 		    :depends-on ("compat" "dgesl"))
 	     (:file "appsln")
 	     (:file "approx"
-		    :depends-on ("compat"))
+		    :depends-on ("compat" "rkbas"))
 	     (:file "rkbas"
 		    :depends-on ("compat"))
 	     (:file "vmonde"
