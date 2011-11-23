@@ -54,6 +54,7 @@
    #:dqag
    #:dqags
    #:dqagi
+   #:dqagp
    #:dqawf
    #:dqawo
    #:dqaws
@@ -74,7 +75,7 @@
 
 (defun fortran-compile (op c &key (array-slicing t) (array-type :array) package)
   (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
+    (f2cl:f2cl file
 		       :output-file (first (output-files op c))
 		       :array-slicing array-slicing
 		       :array-type array-type
@@ -155,6 +156,8 @@
 		    :depends-on ("dqelg"
 				 "dqk15i"
 				 "dqpsrt"))
+	     (:file "dqagp"
+		    :depends-on ("dqagpe"))
 	     (:file "dqagpe"
 		    :depends-on ("dqelg"
 				 "dqpsrt"

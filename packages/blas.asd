@@ -32,14 +32,15 @@
 
 (defsystem blas-package
   :components
-  ((:file "blas-package")))
+  ((:module "blas"
+    :components
+    ((:file "blas-package")))))
 
 (defsystem blas-hompack
-  :pathname "blas/"
   :depends-on ("blas-package")
   :components
   ((:module "blas-hompack"
-    :pathname ""
+    :pathname "blas/"
     :default-component-class blas-fortran-file
     :components
     (
@@ -52,11 +53,9 @@
      (:file "idamax")))))
 
 (defsystem blas-real
-  :pathname "blas/"
   :depends-on ("blas-hompack")
   :components
-  ((:module "blas-real"
-    :pathname ""
+  ((:module "blas"
     :default-component-class blas-fortran-file
     :components
     ( ;; Here are the rest of the BLAS routines
@@ -120,11 +119,10 @@
      (:file "xerbla")))))
    
 (defsystem blas-complex
-  :pathname "blas/"
   :depends-on ("blas-real")
   :components
-  ((:module "blas-complex"
-    :pathname ""
+  ((:module "blas"
+    :pathname "blas/"
     :default-component-class blas-fortran-file
     :components
     ((:file "zaxpy")
@@ -165,3 +163,4 @@
 (defsystem blas
   :pathname "blas/"
   :depends-on ("blas-package" "blas-real" "blas-complex"))
+

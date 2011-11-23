@@ -139,6 +139,11 @@
 		      :depends-on ("dqelg"
 				   "dqk15i"
 				   "dqpsrt"))
+	       (:file "dqagp"
+		      :depends-on ("dqagpe")
+		      :compiler-options (:array-slicing nil :array-type :array
+					 :float-format double-float
+					 :package :slatec))
 	       (:file "dqagpe"
 		      :depends-on ("dqelg"
 				   "dqpsrt"
@@ -274,6 +279,11 @@
 		      :depends-on ("dqelg"
 				   "dqk15i"
 				   "dqpsrt"))
+	       (:file "dqagp"
+		      :depends-on ("dqagpe")
+		      :compiler-options (:array-slicing t :array-type :array
+					 :float-format double-float
+					 :package :slatec))
 	       (:file "dqagpe"
 		      :depends-on ("dqelg"
 				   "dqpsrt"
