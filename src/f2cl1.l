@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v f0f149e72999 2010/10/08 03:05:30 rtoy $")
+  "$Id: f2cl1.l,v 5ee73ed2713b 2011/11/23 21:02:33 toy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -1389,6 +1389,13 @@ correctly"
 
      (when (eq (car x) 'close)
        (return (parse-close x)))
+
+     ;; Fortran 90 extensions:
+     (when (eq (car x) 'exit)
+       (return (parse-exit x)))
+
+     (when (eq (car x) 'cycle)
+       (return (parse-cycle x)))
      
      ;;fall out the bottom:
      (warn "F2CL did not translate: ~S" (write-to-string (check_new_vbles x)))
@@ -2933,6 +2940,12 @@ correctly"
     ;;(format t "~A~%" *equivalenced-vars*)
     nil))
 
+(defun parse-exit (x)
+  '((go f2cl-lib::exit)))
+
+(defun parse-cycle (x)
+  '((go loop)))
+
 ;=============================================================================
 ;parsing utilities 
 
@@ -3332,7 +3345,7 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v f0f149e72999 2010/10/08 03:05:30 rtoy $
+;;; $Id: f2cl1.l,v 5ee73ed2713b 2011/11/23 21:02:33 toy $
 ;;; $Log$
 ;;; Revision 1.222  2010/10/08 03:05:30  rtoy
 ;;; src/f2cl1.l:

@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 11bea7dae5a0 2011/06/11 17:53:39 toy $")
+  "$Id: macros.l,v 5ee73ed2713b 2011/11/23 21:02:33 toy $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -266,7 +266,8 @@ is not included")
 		  (append body
 			  `((setq ,loop-var (the integer4 ,(third do_vble_clause))
 			     ,iteration_count (the integer4 (1- ,iteration_count)))))
-		  '((go loop)))))))))
+		  '((go loop))))))
+      exit)))
 
 ;;----------------------------------------------------------------------------
 ;; macro for division 
@@ -1527,7 +1528,7 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 11bea7dae5a0 2011/06/11 17:53:39 toy $
+;;; $Id: macros.l,v 5ee73ed2713b 2011/11/23 21:02:33 toy $
 ;;; $Log$
 ;;; Revision 1.117  2011/02/28 22:21:07  rtoy
 ;;; When opening an old file, we should set :if-exists to :overwrite to
