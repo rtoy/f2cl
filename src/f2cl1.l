@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 5ee73ed2713b 2011/11/23 21:02:33 toy $")
+  "$Id: f2cl1.l,v c4abe8cf9af0 2011/11/24 07:12:32 toy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -2944,7 +2944,7 @@ correctly"
   '((go f2cl-lib::exit)))
 
 (defun parse-cycle (x)
-  '((go loop)))
+  '((go f2cl-lib::continue)))
 
 ;=============================================================================
 ;parsing utilities 
@@ -3345,7 +3345,7 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 5ee73ed2713b 2011/11/23 21:02:33 toy $
+;;; $Id: f2cl1.l,v c4abe8cf9af0 2011/11/24 07:12:32 toy $
 ;;; $Log$
 ;;; Revision 1.222  2010/10/08 03:05:30  rtoy
 ;;; src/f2cl1.l:
