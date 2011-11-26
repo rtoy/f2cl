@@ -250,7 +250,9 @@
 	    :depends-on ("zladiv"))
      (:file "zungqr"
 	    :depends-on ("zung2r" "zlarft" "zlarfb"))
-     (:file "disnan")
+     (:file "disnan"
+            :depends-on ("dlaisnan"))
+     (:file "dlaisnan")
      (:file "zlassq")
      (:file "zladiv")
      (:file "zung2r"
@@ -279,15 +281,20 @@
 	    :depends-on ("dlapy3"))
      (:file "zlahqr"
 	    :depends-on ("zlarfg"))
-     (:file "zgehrd")
+     (:file "zgehrd"
+	    :depends-on ("zlahr2" "zgehd2"))
      (:file "zunmhr"
 	    :depends-on ("zunmqr"))
      (:file "ztrexc"
-	    :depends-on ("zlartg" "zrot"))
+	    :depends-on ("zlartg" "zrot" "zunm2r"))
      (:file "dlapy3")
      (:file "zlartg")
      (:file "zrot")
      (:file "zunmqr")
+     (:file "zlahr2")
+     (:file "zgehd2"
+	    :depends-on ("zlarfg" "zlarf"))
+     (:file "zunm2r")
      ))))
 
 (defsystem "lapack-package"

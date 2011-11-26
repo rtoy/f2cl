@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v c4abe8cf9af0 2011/11/24 07:12:32 toy $")
+  "$Id: macros.l,v fceac530ef0c 2011/11/26 04:02:26 toy $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -384,7 +384,17 @@ is not included")
     (double-float
      (truncate (the (double-float #.(float most-negative-fixnum 1d0)
 				  #.(float most-positive-fixnum 1d0))
-		 x)))))
+		    x)))
+    ((complex single-float)
+     (the integer4
+       (truncate (the (single-float #.(float (- (ash 1 31)))
+				    #.(float (1- (ash 1 31))))
+		      (realpart x)))))
+    ((complex double-float)
+     (the integer4
+       (truncate (the (double-float #.(float (- (ash 1 31)) 1d0)
+				    #.(float (1- (ash 1 31)) 1d0))
+		      (realpart x)))))))
 
 #+(or cmu scl)
 (defun int (x)
@@ -404,7 +414,17 @@ is not included")
      (the integer4
        (truncate (the (double-float #.(float (- (ash 1 31)) 1d0)
 				    #.(float (1- (ash 1 31)) 1d0))
-		   x))))))
+		      x))))
+    ((complex single-float)
+     (the integer4
+       (truncate (the (single-float #.(float (- (ash 1 31)))
+				    #.(float (1- (ash 1 31))))
+		      (realpart x)))))
+    ((complex double-float)
+     (the integer4
+       (truncate (the (double-float #.(float (- (ash 1 31)) 1d0)
+				    #.(float (1- (ash 1 31)) 1d0))
+		      (realpart x)))))))
 
 
 (defun ifix (x)
@@ -1530,7 +1550,7 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v c4abe8cf9af0 2011/11/24 07:12:32 toy $
+;;; $Id: macros.l,v fceac530ef0c 2011/11/26 04:02:26 toy $
 ;;; $Log$
 ;;; Revision 1.117  2011/02/28 22:21:07  rtoy
 ;;; When opening an old file, we should set :if-exists to :overwrite to

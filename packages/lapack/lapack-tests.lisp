@@ -503,6 +503,70 @@
       (format t "Optimum workspace required = ~D~%" (truncate (aref work 0)))
       (format t "Workspace provided = ~D~%" lwork))))
 
+(defun make-complex-eigvec (n vr)
+  (make-array (list n n)
+	      :displaced-to vr
+	      :element-type (array-element-type vr)))
+
+(defun print-zgeev-results (e-val e-vec)
+  (format t "~2%ZGEEV Example Program Results~%")
+  (let ((n (length e-val)))
+    (dotimes (k n)
+      (format t "Eigenvalue(~D) = ~A~%" k (aref e-val k))
+      (format t "~%Eigenvector(~D)~%" k)
+      (dotimes (row n)
+	(format t "~A~%" (aref e-vec row k)))
+      (terpri))))
+
+(defun test-zgeev ()
+  ;; The matrix is
+  ;;
+  ;; #c(-3.97, -5.04)  #c(-4.11,  3.70)  #c(-0.34,  1.01)  #c( 1.29, -0.86)
+  ;; #c( 0.34, -1.50)  #c( 1.52, -0.43)  #c( 1.88, -5.38)  #c( 3.36,  0.65)
+  ;; #c( 3.31, -3.85)  #c( 2.50,  3.45)  #c( 0.88, -1.08)  #c( 0.64, -1.48)
+  ;; #c(-1.10,  0.82)  #c( 1.81, -1.59)  #c( 3.25,  1.33)  #c( 1.57, -3.44)  
+  ;;
+  ;; Recall that Fortran arrays are column-major order!
+  (let* ((n 4)
+	 (a-mat (make-array (* n n)
+			    :element-type '(complex double-float)
+			    :initial-contents '(#c(-3.97d0 -5.04d0)
+						#c( 0.34d0 -1.50d0)
+						#c( 3.31d0 -3.85d0)
+						#c(-1.10d0  0.82d0)
+						#c(-4.11d0  3.70d0)
+						#c( 1.52d0 -0.43d0)
+						#c( 2.50d0  3.45d0)
+						#c( 1.81d0 -1.59d0)
+						#c(-0.34d0  1.01d0)
+						#c( 1.88d0 -5.38d0)
+						#c( 0.88d0 -1.08d0)
+						#c( 3.25d0  1.33d0)
+						#c( 1.29d0 -0.86d0)
+						#c( 3.36d0  0.65d0)
+						#c( 0.64d0 -1.48d0)
+						#c( 1.57d0 -3.44d0))))
+	 (lwork 660)
+	 (w (make-array n :element-type '(complex double-float)))
+	 (rw (make-array lwork :element-type 'double-float))
+	 (vl (make-array 0 :element-type '(complex double-float)))
+	 (vr (make-array (* n n) :element-type '(complex double-float)))
+	 (work (make-array lwork :element-type '(complex double-float))))
+    (multiple-value-bind (z-jobvl z-jobvr z-n z-a z-lda z-w z-vl z-ldvl z-vr
+					z-ldvr z-work z-lwork z-rwork info)
+	(zgeev "N" "V" n a-mat n w vl n vr n work lwork rw 0)
+      (declare (ignore z-jobvl z-jobvr z-n z-a z-lda z-w z-vl z-ldvl z-vr
+		       z-ldvr z-work z-lwork z-rwork))
+      ;; Display solution
+      (cond ((zerop info)
+	     (print-zgeev-results w
+				  (make-complex-eigvec n vr)))
+	    (t
+	     (format t "Failure in DGEEV.  INFO = ~D~%" info)))
+      ;; Display workspace info
+      (format t "Optimum workspace required = ~D~%" (truncate (realpart (aref work 0))))
+      (format t "Workspace provided = ~D~%" lwork))))
+  
 (defun do-all-lapack-tests ()
   (test-dgeev)
   (test-dgeevx)
