@@ -329,7 +329,7 @@
 (rt:deftest qag2.key3.1.0
     (multiple-value-bind (result est-abserr neval ier soln abserr)
 	(test-02 :key 3 :alpha 1.0d0)
-      (if (and (= ier 0) (< abserr double-float-epsilon))
+      (if (and (= ier 0) (< abserr (* 4 double-float-epsilon)))
 	  t (values result est-abserr neval ier soln abserr)))
   t)
 
@@ -476,7 +476,7 @@
 (rt:deftest qag2.key5.0.6
     (multiple-value-bind (result est-abserr neval ier soln abserr)
 	(test-02 :key 5 :alpha 0.6d0)
-      (if (and (= ier 0) (< abserr double-float-epsilon))
+      (if (and (= ier 0) (< abserr (* 2 double-float-epsilon)))
 	  t (values result est-abserr neval ier soln abserr)))
   t)
 

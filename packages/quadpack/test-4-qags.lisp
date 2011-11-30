@@ -66,7 +66,7 @@
 (rt:deftest test4-qags.-0.5
     (multiple-value-bind (result est-abserr neval ier soln abserr)
 	(tst4-qags :alpha -0.5d0)
-      (if (and (= ier 0) (< abserr 1.688d-14))
+      (if (and (= ier 0) (< abserr 7.1055d-14))
 	  t
 	  (values result est-abserr neval ier soln abserr)))
   t)
