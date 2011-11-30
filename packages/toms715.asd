@@ -26,6 +26,7 @@
 (defun fortran-compile (op c &key (array-slicing t) (array-type :array) package)
   (let ((file (component-pathname c)))
     (f2cl:f2cl-compile file
+		       :keep-lisp-file t
 		       :output-file (first (output-files op c))
 		       :array-slicing array-slicing
 		       :array-type array-type
@@ -151,4 +152,4 @@
       ;; signal errors and we do.  But we don't want asdf to stop the
       ;; tests.  So we just ignore all errors and expect the user to
       ;; look through the results to see if they make sense.
-      (ignore-errors (funcall (find-symbol test "TOMS715"))))))
+      (ignore-errors (funcall (find-symbol (symbol-name test) "TOMS715"))))))

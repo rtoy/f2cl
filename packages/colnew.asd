@@ -18,6 +18,7 @@
 			declare-common (common-as-array t))
   (let ((file (component-pathname c)))
     (f2cl:f2cl-compile file
+		       :keep-lisp-file t
 		       :output-file (first (output-files op c))
 		       :array-slicing array-slicing
 		       :array-type array-type

@@ -18,6 +18,7 @@
 (defun fortran-compile (op c &key (array-slicing t) (array-type :array) package declare-common)
   (let ((file (component-pathname c)))
     (f2cl:f2cl-compile file
+		       :keep-lisp-file t
 		       :output-file (first (output-files op c))
 		       :array-slicing array-slicing
 		       :array-type array-type
@@ -115,9 +116,9 @@
 	     ))))
 
 (defmethod perform ((op test-op) (c (eql (find-system "hompack"))))
-  (oos 'test-op "hompack-tests-mainf")
-  (oos 'test-op "hompack-tests-mainp")
-  (oos 'test-op "hompack-tests-mains"))
+  (oos 'test-op "hompack-test-mainf")
+  (oos 'test-op "hompack-test-mainp")
+  (oos 'test-op "hompack-test-mains"))
 
 ;; Run (hompack::mainf).  Compare with hompack/ref-main.txt.
 ;;
