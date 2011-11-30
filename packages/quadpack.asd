@@ -75,7 +75,8 @@
 
 (defun fortran-compile (op c &key (array-slicing t) (array-type :array) package)
   (let ((file (component-pathname c)))
-    (f2cl:f2cl file
+    (f2cl:f2cl-compile file
+		       :keep-lisp-file t
 		       :output-file (first (output-files op c))
 		       :array-slicing array-slicing
 		       :array-type array-type
