@@ -39,6 +39,7 @@
 
 
 (defsystem minpack
+  :description "F2CL conversion of MINPACK: Solutions to non-linear equations and least-squares problems"
   :components
   ((:module "package"
 	    :pathname "minpack"

@@ -37,6 +37,7 @@
 				     base)))))
 
 (defsystem odepack
+  :description "F2CL conversion of ODEPACK: Initial value solver for ODEs"
   :pathname "odepack/"
   :components
   ((:module "package"

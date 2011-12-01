@@ -35,6 +35,7 @@
 
 
 (defsystem toms717
+  :description "F2CL conversion of TOMS 717: Max- and quasi-likelihood estimation in non-linear regression"
   :pathname "toms/"
   :components
   ((:module "package"

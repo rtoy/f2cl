@@ -36,6 +36,7 @@
 
 
 (defsystem fishpack
+  :description "F2CL conversion of FISHPACK: Solution of separable elliptic PDEs"
   :components
   ((:module package
 	    :pathname "fishpack"

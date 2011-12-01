@@ -31,12 +31,14 @@
   (load (first (input-files op c))))
 
 (defsystem blas-package
+  :description "Package definition for BLAS"
   :components
   ((:module "blas"
     :components
     ((:file "blas-package")))))
 
 (defsystem blas-hompack
+  :description "BLAS routines needed by HOMPACK"
   :depends-on ("blas-package")
   :components
   ((:module "blas-hompack"
@@ -53,6 +55,7 @@
      (:file "idamax")))))
 
 (defsystem blas-real
+  :description "BLAS routines for real double-float matrices"
   :depends-on ("blas-hompack")
   :components
   ((:module "blas"
@@ -119,6 +122,7 @@
      (:file "xerbla")))))
    
 (defsystem blas-complex
+  :description "BLAS routines for complex double-float  matrices"
   :depends-on ("blas-real")
   :components
   ((:module "blas"
@@ -161,6 +165,7 @@
      (:file "ztrsv")))))
 
 (defsystem blas
+  :description "BLAS (Basic Linear Algebra Subprograms) for double-float matrices."
   :pathname "blas/"
   :depends-on ("blas-package" "blas-real" "blas-complex"))
 

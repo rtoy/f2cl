@@ -13,6 +13,7 @@
   "l")
 
 (defsystem f2cl
+  :description "F2CL:  Fortran to Lisp converter"
   :components
   ((:module src
 	    :default-component-class f2cl-cl-source-file

@@ -32,6 +32,7 @@
   (load (first (input-files op c))))
 
 (defsystem lapack-real
+  :description "LAPACK routines for real double-float matrices"
   :depends-on ("blas-real" "lapack-package")
   :components
   ((:module lapack
@@ -224,6 +225,7 @@
      ))))
 
 (defsystem lapack-complex
+  :description "LAPACK routines for complex double-float matrices"
   :depends-on ("blas-complex" "lapack-real")
   :components
   ((:module complex
@@ -298,11 +300,13 @@
      ))))
 
 (defsystem "lapack-package"
+  :description "Package definition for LAPACK"
   :pathname "lapack/"
   :depends-on ("blas-package")
   :components
   ((:file "lapack-package")))
 
 (defsystem lapack
+  :description "LAPACK - Linear Algebra PACKage for double-float matrices"
   :pathname "lapack/"
   :depends-on ("lapack-package" "lapack-real" "lapack-complex"))

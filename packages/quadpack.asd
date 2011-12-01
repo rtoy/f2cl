@@ -92,6 +92,7 @@
 ;; Defsystem for quadpack.  This converts the Fortran code to Lisp and
 ;; then compiles the result.
 (defsystem quadpack
+  :description "F2CL conversion of QUADPACK: Adaptive numerical integration"
   :depends-on ("mach-par")
   :pathname "quadpack/"
   :components

@@ -34,6 +34,7 @@
   (load (first (input-files op c))))
 
 (defsystem hompack
+  :description "F2CL conversion of HOMPACK: Solution of non-linear systems of equations by homotopy methods."
   :depends-on ("blas-hompack")
   :components
   ((:module "package"

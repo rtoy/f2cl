@@ -37,6 +37,7 @@
 
 ;; Defsystem for colnew.
 (defsystem colnew
+  :description "F2CL conversion of COLNEW: Solution of boundary-value problems for ODEs"
   :components
   ((:module package
 	    :pathname "colnew"

@@ -34,6 +34,7 @@
   (load (first (input-files op c))))
 
 (defsystem toms419
+  :description "F2CL conversion of TOMS 419: Zeroes of a complex polynomial"
   :pathname "toms/"
   :components
   ((:module "package"

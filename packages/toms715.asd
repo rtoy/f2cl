@@ -39,10 +39,12 @@
   (load (first (input-files op c))))
 
 (defsystem machar
+  :description "F2CL conversion of MACHAR:  Determine machine floating-point characteristics"
   :components
   ((:file "machar")))
 
 (defsystem toms715
+  :description "F2CL conversion of TOMS 715:  Numerical Evaluation of Special Functions"
   :depends-on ("machar")
   :pathname "toms/"
   :components
