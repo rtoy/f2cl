@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v c4abe8cf9af0 2011/11/24 07:12:32 toy $")
+  "$Id: f2cl1.l,v 2bc8b118fd29 2011/12/03 06:01:32 toy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -196,9 +196,24 @@ incorrect, so use caution.")
 ;; For some reason Allegro needs this eval-when because it complains
 ;; about undefined slot accessors without this.
 (eval-when (compile load eval)
-(defstruct f2cl-finfo
+(defstruct (f2cl-finfo (:constructor %make-f2cl-finfo))
   arg-types return-values calls)
 )
+
+(defun relax-array-decl (decls)
+  (flet ((relax-1 (decl)
+	   (cond ((and *relaxed-array-decls* (subtypep decl 'array))
+		  (destructuring-bind (a n l)
+		      decl
+		    `(,a ,n ,(mapcar (constantly '*) l))))
+		 (t
+		  decl))))
+    (mapcar #'relax-1 decls)))
+
+(defun make-f2cl-finfo (&key arg-types return-values calls)
+  (%make-f2cl-finfo :arg-types (relax-array-decl arg-types)
+		    :return-values return-values
+		    :calls calls))
 
 ;; Hash table of all known converted functions.  
 (defvar *f2cl-function-info*
@@ -2060,16 +2075,6 @@ correctly"
     ;;(format t "new arglist = ~A~%" new-arglist)
     new-arglist))
 
-(defun relax-array-decl (decls)
-  (flet ((relax-1 (decl)
-	   (cond ((and *relaxed-array-decls* (subtypep decl 'array))
-		  (destructuring-bind (a n l)
-		      decl
-		    `(,a ,n ,(mapcar (constantly '*) l))))
-		 (t
-		  decl))))
-    (mapcar #'relax-1 decls)))
-
 ;; Subroutines and functions can modify the values of input
 ;; parameters.  We handle this in Lisp by returning the input
 ;; parameters to the caller as multiple values.  This function
@@ -3345,7 +3350,7 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v c4abe8cf9af0 2011/11/24 07:12:32 toy $
+;;; $Id: f2cl1.l,v 2bc8b118fd29 2011/12/03 06:01:32 toy $
 ;;; $Log$
 ;;; Revision 1.222  2010/10/08 03:05:30  rtoy
 ;;; src/f2cl1.l:

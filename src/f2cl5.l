@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 11bea7dae5a0 2011/06/11 17:53:39 toy $")
+  "$Id: f2cl5.l,v 2bc8b118fd29 2011/12/03 06:01:32 toy $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -1412,7 +1412,7 @@
        ;; (format t "declare ~S: ~S~%" (second defun-bit) var-type-list)
        (let ((entry (gethash (second defun-bit) *f2cl-function-info*)))
 	 (if entry
-	     (setf (f2cl-finfo-arg-types entry) var-type-list)
+	     (setf (f2cl-finfo-arg-types entry) (relax-array-decl var-type-list))
 	     (setf (gethash (second defun-bit) *f2cl-function-info*)
 		   (make-f2cl-finfo :arg-types var-type-list))))
        (setq formal-arg-decls
@@ -3858,7 +3858,7 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 11bea7dae5a0 2011/06/11 17:53:39 toy $
+;;; $Id: f2cl5.l,v 2bc8b118fd29 2011/12/03 06:01:32 toy $
 ;;; $Log$
 ;;; Revision 1.204  2010/02/23 05:21:30  rtoy
 ;;; Fix declaration for default integer type.  Previously the type was
