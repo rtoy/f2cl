@@ -1,5 +1,7 @@
 ;;; -*- Mode: lisp -*-
 
+(require :f2cl)
+
 (defpackage lapack-system
   (:use #:cl #:asdf))
 

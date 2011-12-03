@@ -30,6 +30,7 @@
 (defmethod perform ((op load-op) (c blas-fortran-file))
   (load (first (input-files op c))))
 
+#+nil
 (defsystem blas-package
   :description "Package definition for BLAS"
   :components
@@ -37,6 +38,7 @@
     :components
     ((:file "blas-package")))))
 
+#+nil
 (defsystem blas-hompack
   :description "BLAS routines needed by HOMPACK"
   :depends-on ("blas-package")
@@ -54,6 +56,7 @@
      (:file "dscal")
      (:file "idamax")))))
 
+#+nil
 (defsystem blas-real
   :description "BLAS routines for real double-float matrices"
   :depends-on ("blas-hompack")
@@ -121,6 +124,7 @@
      (:file "lsame")
      (:file "xerbla")))))
    
+#+nil
 (defsystem blas-complex
   :description "BLAS routines for complex double-float  matrices"
   :depends-on ("blas-real")

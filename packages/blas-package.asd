@@ -2,8 +2,8 @@
 ;;;
 
 (asdf:defsystem blas-package
+  :description "Package definition for BLAS"
   :components
-  ((:module package
-	    :pathname "blas"
-	    :components
-	    ((:file "blas-package")))))
+  ((:module "blas"
+    :components
+    ((:file "blas-package")))))
