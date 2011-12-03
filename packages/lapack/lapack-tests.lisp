@@ -88,6 +88,23 @@
 	(format t "~A~%" (aref e-vec row k)))
       (terpri))))
 
+(defun check-eigen-val-vec (n e-val e-vec true-val true-vec &key (tol 1d-14))
+  (flet ((relerr-ok (est true)
+	   (let* ((re (/ (abs (- est true))
+			 (abs true)))
+		  (ok (<= re tol)))
+	     ;; Return NIL if it's ok.  Otherwise return a list to
+	     ;; indicate what failed.
+	     (unless ok
+	       (format t "est  = ~S~%true = ~S~%  rel  = ~S~%"
+		       est true re)
+	       (list est true re)))))
+    (or (relerr-ok (aref e-val n) true-val)
+	(dotimes (k n t)
+	  (let ((res (relerr-ok (aref e-vec k n) (aref true-vec k))))
+	    (when res
+	      (return res)))))))
+	   
 ;; DGEEV example based on the example from
 ;; http://www.nag.co.uk/lapack-ex/node87.html
 (defun test-dgeev ()
@@ -101,10 +118,10 @@
   ;; Recall that Fortran arrays are column-major order!
   (let* ((n 4)
 	 (a-mat (make-array (* n n) :element-type 'double-float
-			    :initial-contents '(0.35d0 0.09d0 -0.44d0 0.25d0
-						0.45d0 0.07d0 -0.33d0 -0.32d0
-						-0.14d0 -0.54d0 -0.03d0 -0.13d0
-						-0.17d0 0.35d0 0.17d0 0.11d0)))
+				    :initial-contents '(0.35d0 0.09d0 -0.44d0 0.25d0
+							0.45d0 0.07d0 -0.33d0 -0.32d0
+							-0.14d0 -0.54d0 -0.03d0 -0.13d0
+							-0.17d0 0.35d0 0.17d0 0.11d0)))
 	 (wr (make-array n :element-type 'double-float))
 	 (wi (make-array n :element-type 'double-float))
 	 (vl (make-array 0 :element-type 'double-float))
@@ -112,19 +129,53 @@
 	 (lwork 660)
 	 (work (make-array lwork :element-type 'double-float)))
     (multiple-value-bind (z-jobvl z-jobvr z-n z-a z-lda z-wr z-wi z-vl z-ldvl z-vr
-					z-ldvr z-work z-lwork info)
+			  z-ldvr z-work z-lwork info)
 	(dgeev "N" "V" n a-mat n wr wi vl n vr n work lwork 0)
       (declare (ignore z-jobvl z-jobvr z-n z-a z-lda z-wr z-wi z-vl z-ldvl z-vr
 		       z-ldvr z-work z-lwork))
-      ;; Display solution
-      (cond ((zerop info)
-	     (print-dgeev-results (make-eigval wr wi)
-				  (make-eigvec n vr wi)))
-	    (t
-	     (format t "Failure in DGEEV.  INFO = ~D~%" info)))
-      ;; Display workspace info
-      (format t "Optimum workspace required = ~D~%" (truncate (aref work 0)))
-      (format t "Workspace provided = ~D~%" lwork))))
+      (let ((e-val (make-eigval wr wi))
+	    (e-vec (make-eigvec n vr wi)))
+	;; Display solution
+	(cond ((zerop info)
+	       (print-dgeev-results e-val
+				    e-vec))
+	      (t
+	       (format t "Failure in DGEEV.  INFO = ~D~%" info)))
+	;; Display workspace info
+	(format t "Optimum workspace required = ~D~%" (truncate (aref work 0)))
+	(format t "Workspace provided = ~D~%" lwork)
+
+	(values e-val e-vec)))))
+
+(rt:deftest dgeev.1
+    (multiple-value-bind (e-val e-vec)
+	(test-dgeev)
+      (list (check-eigen-val-vec 0 e-val e-vec
+				 0.799482122586210d0
+				 #(-0.6550887675124076d0
+				   -0.5236294609021240d0
+				   0.5362184613722345d0
+				   -0.0956067782012298d0))
+	    (check-eigen-val-vec 1 e-val e-vec
+				 #c(-0.0994124532950747d0 0.4007924719897546d0)
+				 #(#c(-0.193301548264222d0 0.254631571927584d0)
+				   #c(0.251856531726740d0 -0.522404734711629d0)
+				   #c(0.097182458443282d0 -0.308383755897228d0)
+				   #c(0.675954054254748 0d0)))
+	    (check-eigen-val-vec 2 e-val e-vec
+				 #c(-0.0994124532950747d0 -0.4007924719897546d0)
+				 #(#c(-0.193301548264222d0 -0.254631571927584d0)
+				   #c(0.251856531726740d0 0.522404734711629d0)
+				   #c(0.097182458443282d0 0.308383755897228d0)
+				   #c(0.675954054254748 0d0)))
+	    (check-eigen-val-vec 3 e-val e-vec
+				 -0.100657215996059d0
+				 #(0.125332697230903d0
+				   0.332022215571751d0
+				   0.593837759557331d0
+				   0.722087029862455d0
+				   -0.6550887675124076d0))))
+  (t t t t))
 
 ;; Expected results http://www.nag.co.uk/lapack-ex/examples/results/dgeevx-ex.r
 ;;
@@ -572,7 +623,8 @@
   (test-dgeevx)
   (test-dgesv)
   (test-dgesdd)
-  (test-dgesvd))
+  (test-dgesvd)
+  (test-zgeev))
 
 ;;; $Log$
 ;;; Revision 1.11  2006/12/01 04:29:29  rtoy

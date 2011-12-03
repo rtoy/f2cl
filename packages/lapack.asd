@@ -310,3 +310,23 @@
   :description "LAPACK - Linear Algebra PACKage for double-float matrices"
   :pathname "lapack/"
   :depends-on ("lapack-package" "lapack-real" "lapack-complex"))
+
+(defmethod perform ((op test-op) (c (eql (find-system "lapack"))))
+    (oos 'test-op "lapack-tests"))
+
+(defpackage lapack-tests
+  (:use #:cl))
+
+(defsystem lapack-tests
+  :depends-on ("lapack" "rt")
+  :in-order-to ((compile-op (load-op :lapack :rt))
+		(test-op (load-op :lapack :rt)))
+  :components
+  ((:module lapack
+    :components
+    ((:file "lapack-tests")))))
+
+(defmethod perform ((op test-op) (c (eql (find-system "lapack-tests"))))
+  (or (funcall (intern "DO-TESTS" (find-package '#:rt)))
+      (error "TEST-OP filed for quadpack-tests")))
+  
