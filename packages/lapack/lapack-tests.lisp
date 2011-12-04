@@ -559,6 +559,16 @@
 	      :displaced-to vr
 	      :element-type (array-element-type vr)))
 
+(defun transpose (mat)
+  (let* ((nrows (array-dimension mat 0))
+	 (ncols (array-dimension mat 1))
+	 (trans (make-array (list ncols nrows)
+			   :element-type (array-element-type mat))))
+    (dotimes (r nrows)
+      (dotimes (c ncols)
+	(setf (aref trans c r) (aref mat r c))))
+    trans))
+
 (defun print-zgeev-results (e-val e-vec)
   (format t "~2%ZGEEV Example Program Results~%")
   (let ((n (length e-val)))
@@ -611,12 +621,42 @@
       ;; Display solution
       (cond ((zerop info)
 	     (print-zgeev-results w
-				  (make-complex-eigvec n vr)))
+				  (transpose (make-complex-eigvec n vr))))
 	    (t
 	     (format t "Failure in DGEEV.  INFO = ~D~%" info)))
       ;; Display workspace info
       (format t "Optimum workspace required = ~D~%" (truncate (realpart (aref work 0))))
-      (format t "Workspace provided = ~D~%" lwork))))
+      (format t "Workspace provided = ~D~%" lwork)
+      (values w (transpose (make-complex-eigvec n vr))))))
+
+(rt:deftest zgeev.1
+    (multiple-value-bind (val vec)
+	(test-zgeev)
+      (list (check-eigen-val-vec 0 val vec
+				 #c(-6.00042534294924d0 -6.99984337157039d0)
+				 #(#c(0.845722126909561d0 +0.000000000000000d0)
+				   #c(-0.017722752537655d0 +0.303607402208809d0)
+				   #c(0.087521244669520d0 +0.311452829815249d0)
+				   #c(-0.056147220899372d0 -0.290597986123314d0)))
+	    (check-eigen-val-vec 1 val vec
+				 #c(-5.00003345759697d0 +2.00602716231652d0)
+				 #(#c(  -0.386549111838405d0 +0.173234631742952d0)
+				   #c(-0.353928813160122d0 +0.452880967035810d0)
+				   #c(0.612370054896136d0 +0.000000000000000d0)
+				   #c(-0.085928358258907d0 -0.328362611341537d0)))
+	    (check-eigen-val-vec 2 val vec
+				 #c(7.998194516208244d0 -0.996365091392899d0)
+				 #(#c(-0.172974121492221d0 +0.266896080554183d0)
+				   #c(0.692423212284643d0 +0.000000000000000d0)
+				   #c(0.332402268453410d0 +0.495979987128303d0)
+				   #c(0.250388389801717d0 -0.014655003103538d0)))
+	    (check-eigen-val-vec 3 val vec
+				 #c(3.00226428433797d0 -3.99981869935322d0)
+				 #(#c(-0.035613578794424d0 -0.178218041420316d0)
+				   #c(0.126374262079091d0 +0.266632374107522d0)
+				   #c(0.012932561333282d0 -0.296568203073541d0)
+				   #c(0.889824013759239d0 +0.000000000000000d0)))))
+  (t t t t))
   
 (defun do-all-lapack-tests ()
   (test-dgeev)
