@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 2bc8b118fd29 2011/12/03 06:01:32 toy $")
+  "$Id: f2cl5.l,v 46c1f6a93b0d 2012/05/03 04:40:28 toy $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -1439,13 +1439,16 @@
 			  (cond ((and (listp decl)
 				      (eq 'type (first decl))
 				      (subtypep (second decl) 'array))
-				 (destructuring-bind (a n l)
+				 (destructuring-bind (a &optional n l)
 				     (second decl)
-				   `(type (,a ,n ,(mapcar #'(lambda (x)
-							      (declare (ignore x))
-							      '*)
-							  l))
-				     ,@(rest (rest decl)))))
+				   (if (subtypep a 'string)
+				       `(type (,a *)
+					      ,@(rest (rest decl)))
+				       `(type (,a ,n ,(mapcar #'(lambda (x)
+								  (declare (ignore x))
+								  '*)
+							      l))
+					      ,@(rest (rest decl))))))
 				(t
 				 decl)))
 		      (first formal-arg-decls)))))
@@ -2553,8 +2556,8 @@
 	   ;; scalar, no length spec.
 	   ;;(format t "scalar, no length spec = ~A~%" decl)
 	   (if (equal (cadr type) '(*))
-	       `(declare (type (simple-array character (*)) ,(car decl)))    
-	       `(declare (type (simple-array character (,(cadr type))) ,(car decl)))))
+	       `(declare (type (simple-string) ,(car decl)))    
+	       `(declare (type (simple-string ,(cadr type)) ,(car decl)))))
 	  ((atom (cadr decl))
 	   ;; scalar, length spec.
 	   ;;(format t "scalar, length spec = ~A~%" decl)
@@ -2564,16 +2567,16 @@
 	  ((equal (cadr decl) '(*))
 	   ;; unspecified length spec
 	   ;;(format t "unspecified length spec = ~A~%" decl)
-           `(declare (type (simple-array character (*)) ,(car decl))))
+           `(declare (type (simple-string) ,(car decl))))
 	  (t
 	   ;; array, no length spec.
 	   ;;(format t "array, no length spec = ~A~%" decl)
 	   ;;(format t "type = ~S~%" type)
 	   ;;(format t "decl-bounds = ~S~%" (decl-bounds (rest decl)))
            `(declare (type (,*array-type*
-			    (simple-array character ,(if (second type)
-							 `(,(second type))
-							 '(*)))
+			    (string ,(if (second type)
+							 (second type)
+							 '*))
 			    ,(decl-bounds (rest decl))) ,(car decl)))))))
 
 (defun make-char-init (decl type &optional init)
@@ -3858,7 +3861,7 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 2bc8b118fd29 2011/12/03 06:01:32 toy $
+;;; $Id: f2cl5.l,v 46c1f6a93b0d 2012/05/03 04:40:28 toy $
 ;;; $Log$
 ;;; Revision 1.204  2010/02/23 05:21:30  rtoy
 ;;; Fix declaration for default integer type.  Previously the type was

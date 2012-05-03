@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 2bc8b118fd29 2011/12/03 06:01:32 toy $")
+  "$Id: f2cl1.l,v 46c1f6a93b0d 2012/05/03 04:40:28 toy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -203,9 +203,11 @@ incorrect, so use caution.")
 (defun relax-array-decl (decls)
   (flet ((relax-1 (decl)
 	   (cond ((and *relaxed-array-decls* (subtypep decl 'array))
-		  (destructuring-bind (a n l)
+		  (destructuring-bind (a &optional n l)
 		      decl
-		    `(,a ,n ,(mapcar (constantly '*) l))))
+		    (if (subtypep a 'string)
+			`(a ,(mapcar (constantly '*) l))
+			`(,a ,n ,(mapcar (constantly '*) l)))))
 		 (t
 		  decl))))
     (mapcar #'relax-1 decls)))
@@ -1075,7 +1077,6 @@ correctly"
     (if *common-block-file*
 	(do-file)
 	(do-output outport))))
-    
 
 (defun translate-and-write-subprog (prog-list outport output-path
 				    declaim package options)
@@ -1151,7 +1152,7 @@ correctly"
        ;; functions, in case the Fortran code has declared them as
        ;; external.
        (setf fun (fixup-f2cl-lib fun (cons (cadr fort-fun) *external-function-names*)))
-       
+
        (special-print fun outport)
        (format outport "~2&(in-package #-gcl #:cl-user #+gcl \"CL-USER\")~%#+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))~%")
        (let* ((*package* (find-package '#:cl-user))
@@ -3350,7 +3351,7 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 2bc8b118fd29 2011/12/03 06:01:32 toy $
+;;; $Id: f2cl1.l,v 46c1f6a93b0d 2012/05/03 04:40:28 toy $
 ;;; $Log$
 ;;; Revision 1.222  2010/10/08 03:05:30  rtoy
 ;;; src/f2cl1.l:
