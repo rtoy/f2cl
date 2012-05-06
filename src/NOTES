@@ -1,6 +1,17 @@
 -*- Mode: text -*-
 
 Changes:
+May 2012
+--------
+o Ecl has a interesting feature in its compiler where the type of a
+  literal string is a simple-array with the smallest character type
+  that will hold every character in the string.  This behavior clashed
+  with f2cl's desire to declare everything as (simple-array
+  character).  F2cl has been updated so that strings are declared as
+  strings instead of simple-arrayy of characters.
+
+  This showed up in compiling maxima.
+
 Oct 2010
 --------
 o Added MAKE-DEPENDENCIES to create a list of dependencies that could
