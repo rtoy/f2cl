@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 46c1f6a93b0d 2012/05/03 04:40:28 toy $")
+  "$Id: f2cl5.l,v 3fe93de3be82 2012/05/06 02:17:14 toy $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2027,8 +2027,12 @@
 		(flet ((find-type (a)
 			 (dolist (x (rest (first formal-arg-decls)))
 			   (when (member a (cddr x))
-			     (return-from find-type (second (second x))))
-			   t)))
+			     (cond
+			       ((subtypep (first (second x)) 'string)
+				(return-from find-type 'character))
+			       (t
+				(return-from find-type (second (second x)))))
+			   t))))
 		  (dolist (a arrays)
 		    (let ((d-name (array-data-name a))
 			  (o-name (array-offset-name a))
@@ -3861,7 +3865,7 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 46c1f6a93b0d 2012/05/03 04:40:28 toy $
+;;; $Id: f2cl5.l,v 3fe93de3be82 2012/05/06 02:17:14 toy $
 ;;; $Log$
 ;;; Revision 1.204  2010/02/23 05:21:30  rtoy
 ;;; Fix declaration for default integer type.  Previously the type was

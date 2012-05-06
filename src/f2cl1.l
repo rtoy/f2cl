@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 46c1f6a93b0d 2012/05/03 04:40:28 toy $")
+  "$Id: f2cl1.l,v 3fe93de3be82 2012/05/06 02:17:14 toy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -206,7 +206,7 @@ incorrect, so use caution.")
 		  (destructuring-bind (a &optional n l)
 		      decl
 		    (if (subtypep a 'string)
-			`(a ,(mapcar (constantly '*) l))
+			`(,a ,@(mapcar (constantly '*) l))
 			`(,a ,n ,(mapcar (constantly '*) l)))))
 		 (t
 		  decl))))
@@ -3351,7 +3351,7 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 46c1f6a93b0d 2012/05/03 04:40:28 toy $
+;;; $Id: f2cl1.l,v 3fe93de3be82 2012/05/06 02:17:14 toy $
 ;;; $Log$
 ;;; Revision 1.222  2010/10/08 03:05:30  rtoy
 ;;; src/f2cl1.l:
