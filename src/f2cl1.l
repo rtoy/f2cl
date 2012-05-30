@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 3fe93de3be82 2012/05/06 02:17:14 toy $")
+  "$Id: f2cl1.l,v 2edcbd958861 2012/05/30 03:34:52 toy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -68,11 +68,12 @@
 ;; If you change this, you may need to change some of the macros
 ;; below, such as INT and AINT!
 
-#+(or cmu scl)
-(deftype integer4 ()
-  `(signed-byte 32))
-#-(or cmu scl)
-(deftype integer4 ()
+#+(or cmu scl sbcl)
+(deftype integer4 (&optional (low #x-80000000) (high #x7fffffff))
+  `(integer ,low ,high))
+#-(or cmu scl sbcl)
+(deftype integer4 (&optional low high)
+  (declare (ignore low high))
   'fixnum)
 
 (deftype integer2 ()
@@ -3351,7 +3352,7 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 3fe93de3be82 2012/05/06 02:17:14 toy $
+;;; $Id: f2cl1.l,v 2edcbd958861 2012/05/30 03:34:52 toy $
 ;;; $Log$
 ;;; Revision 1.222  2010/10/08 03:05:30  rtoy
 ;;; src/f2cl1.l:
