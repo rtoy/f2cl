@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 3fe93de3be82 2012/05/06 02:17:14 toy $")
+  "$Id: f2cl5.l,v f6a99aceabfe 2013/03/17 18:35:36 toy $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2559,9 +2559,13 @@
     (cond ((null (cdr decl))
 	   ;; scalar, no length spec.
 	   ;;(format t "scalar, no length spec = ~A~%" decl)
-	   (if (equal (cadr type) '(*))
-	       `(declare (type (simple-string) ,(car decl)))    
-	       `(declare (type (simple-string ,(cadr type)) ,(car decl)))))
+	   (let ((array-type (if (eq :simple-array *array-type*)
+				 'simple-string
+				 'string)))
+				 
+	     (if (equal (cadr type) '(*))
+		 `(declare (type (,array-type) ,(car decl)))    
+		 `(declare (type (,array-type ,(cadr type)) ,(car decl))))))
 	  ((atom (cadr decl))
 	   ;; scalar, length spec.
 	   ;;(format t "scalar, length spec = ~A~%" decl)
@@ -2571,7 +2575,10 @@
 	  ((equal (cadr decl) '(*))
 	   ;; unspecified length spec
 	   ;;(format t "unspecified length spec = ~A~%" decl)
-           `(declare (type (simple-string) ,(car decl))))
+	   (let ((array-type (if (eq :simple-array *array-type*)
+				 'simple-string
+				 'string)))
+	     `(declare (type (,array-type) ,(car decl)))))
 	  (t
 	   ;; array, no length spec.
 	   ;;(format t "array, no length spec = ~A~%" decl)
@@ -2581,7 +2588,8 @@
 			    (string ,(if (second type)
 							 (second type)
 							 '*))
-			    ,(decl-bounds (rest decl))) ,(car decl)))))))
+			    ,(decl-bounds (rest decl))) ,(car decl)))))
+	  ))
 
 (defun make-char-init (decl type &optional init)
   (cond ((equal (cadr type) '(*))	; unspecified length spec
@@ -3865,7 +3873,7 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 3fe93de3be82 2012/05/06 02:17:14 toy $
+;;; $Id: f2cl5.l,v f6a99aceabfe 2013/03/17 18:35:36 toy $
 ;;; $Log$
 ;;; Revision 1.204  2010/02/23 05:21:30  rtoy
 ;;; Fix declaration for default integer type.  Previously the type was
