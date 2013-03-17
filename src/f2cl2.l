@@ -21,7 +21,7 @@
 	      *functions-used*)))
 
 (defparameter *f2cl2-version*
-  "$Id: f2cl2.l,v 96616d88fb7e 2008/02/22 22:19:34 rtoy $")
+  "$Id: f2cl2.l,v d3ff69a91f35 2013/03/17 18:00:06 toy $")
 
 ;-----------------------------------------------------------------------------
 ; subst-splice substitutes the list b for the atom a in the list c via splicing
@@ -352,11 +352,17 @@ Tag being parsed:| (cadr x))))
     ((and (symbolp (car l))
 	  (listp (cadr l))
 	  (subtypep (lookup-vble-type (car l)) 'string))
+     ;; Substring references look like c(a:b) or c(:b).  For the
+     ;; latter, the initial index is an implied 1.
      (let* ((vname (check-reserved-lisp-names (car l)))
 	    (indices (mapcar #'id-expression
-			     (list-split '|:| (cadr l)))))
-
-     `(fref-string ,vname ,indices)))
+			     (mapcar #'(lambda (index)
+					 ;; If initial index is
+					 ;; missing, supply a default
+					 ;; of 1.
+					 (or index '(1)))
+				     (list-split '|:| (cadr l))))))
+       `(fref-string ,vname ,indices)))
     
     ;; function call:
     ((and (symbolp (car l))
@@ -470,7 +476,7 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 96616d88fb7e 2008/02/22 22:19:34 rtoy $
+;;; $Id: f2cl2.l,v d3ff69a91f35 2013/03/17 18:00:06 toy $
 ;;; $Log$
 ;;; Revision 1.37  2008/02/22 22:19:33  rtoy
 ;;; Use RCS Id as version.
