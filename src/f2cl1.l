@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 2edcbd958861 2012/05/30 03:34:52 toy $")
+  "$Id: f2cl1.l,v 1409c1352feb 2013/03/24 20:44:50 toy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -51,6 +51,7 @@
     zsqrt
     cdabs dconjg
     dfloat
+    len_trim
     )
   "A list of all the intrinsic functions in Fortran 77")
 
@@ -101,7 +102,8 @@
 
 (eval-when (compile load eval)
   (proclaim '(special *sentable*))
-  (proclaim '(special *external-function-names*
+  (proclaim '(special
+	      *external-function-names*
 	      *undeclared_vbles* *declared_vbles* *implicit_vble_decls*
 	      *subprog-arglist* *data-init*
 	      *explicit_vble_decls* *function-flag* *key_params*
@@ -127,6 +129,7 @@
 	      *parsing-lhs*
 	      ;; List of statement labels in a subprogram
 	      *statement-labels*
+	      *declared-intrinsic-names*
 	      )))
 
 (defvar *common-blocks* (make-hash-table)
@@ -1093,6 +1096,7 @@ correctly"
 	*parsing-lhs*
 	*equivalenced-vars*
 	*common_array_dims*
+	*declared-intrinsic-names*
 	)
 
     (print-header outport declaim package options)
@@ -1336,7 +1340,7 @@ correctly"
        (return (parse-save x)))
      ;;intrinsic
      (when (eq (car x) 'intrinsic)
-       (return nil))
+       (return (parse-intrinsic x)))
      ;;external
      (when (eq (car x) 'external)
        (return (parse-external x)))
@@ -2604,6 +2608,7 @@ correctly"
 ;; character a*10, b*20, c*30
 ;; character*10 x(10), y(20), z(3,4)
 ;; character x(10)*10, y(20)*7, z(3,4)*8
+;; character x*(*)
 ;;
 ;; By the time we get these, the line looks something like the
 ;; following, respectively:
@@ -2612,6 +2617,7 @@ correctly"
 ;; character a * 10 |,| b * 20 |,| c * 30
 ;; character * 10 x(10) |,| y(20) |,| z(3 |,| 4)
 ;; character x(10) * 10 |,| y(20) * 7 |,| z(3 |,| 4) * 8
+;; character x * (*)
 
 (defun parse-char-decl (x)
   ;; x is the line.
@@ -2635,15 +2641,24 @@ correctly"
 	 ;; The length may have been given as part of the variable.
 	 ;; Put the length with the variable type.
 	 (mapc #'(lambda (decl)
-		   (destructuring-bind (name &optional dim-or-len &rest len)
-		       (remove '* decl)
-		     (push
-		      (if (and dim-or-len (listp dim-or-len))
-			  ;; An array
-			  `((character ,@len) (,name ,@(parse_dimension_specs dim-or-len)))
-			  ;; A simple character string
-			  `((character ,(or dim-or-len 1)) (,name)))
-		      *explicit_vble_decls*)))
+		   (cond
+		     ((eq (second decl) '*)
+		      ;; Decl is something like name*(*) so we had
+		      ;; something like
+		      ;;   character name*(*)
+		      ;; This is a character string of unknown length
+		      (push `((character ,(or (third decl) 1)) (,(first decl)))
+			    *explicit_vble_decls*))
+		     (t
+		      (destructuring-bind (name &optional dim-or-len &rest len)
+			  (remove '* decl)
+			(push
+			 (if (and dim-or-len (listp dim-or-len))
+			     ;; An array
+			     `((character ,@len) (,name ,@(parse_dimension_specs dim-or-len)))
+			     ;; A simple character string
+			     `((character ,(or dim-or-len 1)) (,name)))
+			 *explicit_vble_decls*)))))
 	       (list-split '|,| (cdr x)))))
      
   ;;(format t "explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
@@ -2919,6 +2934,13 @@ correctly"
    (setq *external-function-names*
          (append *external-function-names* (remove '|,| (cdr x))))
    nil)
+
+;; parse INTRINSIC f1, f2
+;; by adding the function names to *declared-intrinsic-names*
+(defun parse-intrinsic (x)
+  (setf *declared-intrinsic-names*
+	(append *declared-intrinsic-names* (remove '|,| (cdr x))))
+  nil)
 
 ;; parse EQUIVALENCE (x1,y1), (x2, y2), ...
 #+nil
@@ -3352,7 +3374,7 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 2edcbd958861 2012/05/30 03:34:52 toy $
+;;; $Id: f2cl1.l,v 1409c1352feb 2013/03/24 20:44:50 toy $
 ;;; $Log$
 ;;; Revision 1.222  2010/10/08 03:05:30  rtoy
 ;;; src/f2cl1.l:

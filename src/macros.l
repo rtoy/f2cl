@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 3fe93de3be82 2012/05/06 02:17:14 toy $")
+  "$Id: macros.l,v 1409c1352feb 2013/03/24 20:44:50 toy $")
 
 (eval-when
     #+gcl (compile load eval)
@@ -751,6 +751,18 @@ is not included")
 
 (defun len (s)
   (length s))
+
+;; Fortran 95
+;; Length of a character entity without trailing blank characters
+(defun len_trim (s)
+  ;; Find the position of the last blank.  If there is one, then the
+  ;; length is one more than that.  Otherwise, the length is 0.
+  (let ((p (position-if #'(lambda (c)
+			    (char/= c #\space))
+			s)))
+    (if p
+	(1+ p)
+	0)))
 
 ;; From http://www.fortran.com/fortran/F77_std/rjcnf0001-sh-15.html#sh-15.10:
 ;;
@@ -1553,7 +1565,7 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 3fe93de3be82 2012/05/06 02:17:14 toy $
+;;; $Id: macros.l,v 1409c1352feb 2013/03/24 20:44:50 toy $
 ;;; $Log$
 ;;; Revision 1.117  2011/02/28 22:21:07  rtoy
 ;;; When opening an old file, we should set :if-exists to :overwrite to

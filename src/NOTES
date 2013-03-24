@@ -1,6 +1,23 @@
 -*- Mode: text -*-
 
 Changes:
+Mar 2013
+--------
+Some updates needed to when trying to update to LaPACK 3.4.2 in
+maxima.
+
+o Did not handle the declaration correctly:
+
+     character name*(*)
+
+  This was declaring name to be an array of strings, but it's really
+  just a string of unknown length.
+o Added new (Fortran 95) intrinsic LEN_TRIM.  This was needed by the
+  new version of lapack.
+o Try to be more careful about declaring things that were declared as
+  instrinsics.  We no longer create a dummy variable named foo$ when
+  we foo is declared as a intrinsic.
+
 May 2012
 --------
 o Ecl has a interesting feature in its compiler where the type of a
