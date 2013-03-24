@@ -11,7 +11,8 @@ c      program prog
       character*(*) zz
       character c1
       character*1 p01rec(1)
-
+      character name*(*)
+      
       x(8) = 8.0
       y(1, 3) = 7.0
       c1 = 'a'
