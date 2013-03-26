@@ -15,8 +15,11 @@ o Did not handle the declaration correctly:
 o Added new (Fortran 95) intrinsic LEN_TRIM.  This was needed by the
   new version of lapack.
 o Try to be more careful about declaring things that were declared as
-  instrinsics.  We no longer create a dummy variable named foo$ when
-  we foo is declared as a intrinsic.
+  instrinsics.  
+  - We no longer create a dummy variable named foo$ when foo is
+    declared as a intrinsic.
+  - We also try not to get confused when a variable is declared with
+    the same name as an intrinsic.  The variable takes precedence. 
 
 May 2012
 --------

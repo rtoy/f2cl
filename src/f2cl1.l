@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1409c1352feb 2013/03/24 20:44:50 toy $")
+  "$Id: f2cl1.l,v 505dc31bee3e 2013/03/26 03:32:16 toy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -40,7 +40,7 @@
 		f2cl-lib::*f2cl-macros-version*)))
 
  
-(defvar *intrinsic-function-names*
+(defparameter *default-intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
     anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
     idim dim ddim dprod max max0 max1 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
@@ -53,7 +53,13 @@
     dfloat
     len_trim
     )
-  "A list of all the intrinsic functions in Fortran 77")
+  "A list of all the intrinsic functions in Fortran 77 (or 95)")
+
+(defvar *intrinsic-function-names*
+  nil 
+  "A list of all the recognized intrinsic functions in the current
+  subprogram.  This list will change if the subprogram declares a
+  variable with the same name as an intrinsic.")
 
 ;;------------------------------------------------------------------------------
 ;; Define the Fortran types that we need.  This MUST match the types
@@ -1086,7 +1092,12 @@ correctly"
 				    declaim package options)
   (clrhash *common-blocks*)
   (clrhash *f2cl-statement-finfo*)
-  (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is the do integers
+  (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is
+							   ; the list
+							   ; of do
+							   ; integers
+	;; Setup default list of intrinsic functions
+	(*intrinsic-function-names* (copy-list *default-intrinsic-function-names*))
 	fort-fun *external-function-names*
 	*undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
 	*save_vbles* *key_params* *subprog_common_vars* 
@@ -1096,8 +1107,7 @@ correctly"
 	*parsing-lhs*
 	*equivalenced-vars*
 	*common_array_dims*
-	*declared-intrinsic-names*
-	)
+	*declared-intrinsic-names*)
 
     (print-header outport declaim package options)
      (setq fort-fun
@@ -1738,6 +1748,11 @@ correctly"
 			    (when (member (first v) *intrinsic-function-names*)
 			      (warn "~A is being declared but is also the name of an intrinsic function"
 				    (first v)))
+			    ;; To handle this, check for reserved
+			    ;; names, and then remove this name from
+			    ;; the list of intrinsic function names.
+			    (setf *intrinsic-function-names*
+				  (remove (first v) *intrinsic-function-names*))
 			    (check-reserved-lisp-names (car v)))
 			(list-split '|,|
 			 (if (eq (cadr x) '*)
@@ -1894,8 +1909,10 @@ correctly"
   ;; to a multiple-value-bind form.
   (let ((lhs (parse-expression (tail-chop '= x) t))
 	(rhs (parse-expression (head-chop '= x) nil)))
-    ;;(format t "lhs = ~A~%" lhs)
-    ;;(format t "rhs = ~A~%" rhs)
+    #+nil
+    (progn
+      (format t "lhs = ~A~%" lhs)
+      (format t "rhs = ~A~%" rhs))
     (cond ((listp lhs)
 	   ;; Look for undeclared variables in the rhs
 	   (check_new_vbles rhs)
@@ -1939,9 +1956,11 @@ correctly"
 	 ;;array_ref 
 	 (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
 		(rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
-	   ;;(format t "~&")
-	   ;;(format t "lhs = ~A, type ~A~%" lhs lhs-type)
-	   ;;(format t "rhs = ~A, type ~A~%" rhs rhs-type)
+	   #+nil
+	   (progn
+	     (format t "~&")
+	     (format t "lhs = ~A, type ~A~%" lhs lhs-type)
+	     (format t "rhs = ~A, type ~A~%" rhs rhs-type))
 	   (cond ((subtypep lhs-type 'string)
 		  ;; Strings need to be handled specially
 		  `((f2cl-set-string ,lhs ,rhs ,lhs-type)))
@@ -1965,14 +1984,17 @@ correctly"
 			      rhs
 			      `(coerce ,rhs ',lhs-type))))
 	   ;; Look up type of statement function and coerce the RHS to the desired type.
-	   ;;(format t "statement func:  ~A~%" `((,(car lhs) ,(cdr lhs) ,rhs)))
-	   ;;(format t "type = ~A, ~A~%" lhs-type rhs-type)
+	   #+nil
+	   (progn
+	     (format t "statement func:  ~A~%" `((,(car lhs) ,(cdr lhs) ,rhs)))
+	     (format t "type = ~A, ~A~%" lhs-type rhs-type))
 	   
 	   ;; Add this function to the function database
 	   (let ((arg-types (mapcar #'(lambda (a)
 					(first (get-upgraded-fun-arg-type (list (list a)))))
 				    (cdr lhs))))
-	     ;;(format t "arg-types = ~A~%" arg-types)
+	     #+nil
+	     (format t "arg-types = ~A~%" arg-types)
 	     (setf (gethash (car lhs) *f2cl-statement-finfo*)
 		   (make-f2cl-finfo :arg-types arg-types :return-values (make-list (length arg-types)))))
 	   
@@ -3374,7 +3396,7 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1409c1352feb 2013/03/24 20:44:50 toy $
+;;; $Id: f2cl1.l,v 505dc31bee3e 2013/03/26 03:32:16 toy $
 ;;; $Log$
 ;;; Revision 1.222  2010/10/08 03:05:30  rtoy
 ;;; src/f2cl1.l:

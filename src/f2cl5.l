@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1409c1352feb 2013/03/24 20:44:50 toy $")
+  "$Id: f2cl5.l,v 505dc31bee3e 2013/03/26 03:32:16 toy $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2759,7 +2759,7 @@
 		    (fboundp found-it))
 	       (member x +reserved-lisp-names+)
 	       (and (eq :external (nth-value 1 (find-symbol (symbol-name x) :f2cl-lib)))
-		    (member x *intrinsic-function-names*)
+		    (member x *default-intrinsic-function-names*)
 		    (not (member x *declared-intrinsic-names*))))
 	   ;; We want to append "$" for certain cases to prevent
 	   ;; collisions.  (Any character can be used.  But we can't
@@ -3876,7 +3876,7 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1409c1352feb 2013/03/24 20:44:50 toy $
+;;; $Id: f2cl5.l,v 505dc31bee3e 2013/03/26 03:32:16 toy $
 ;;; $Log$
 ;;; Revision 1.204  2010/02/23 05:21:30  rtoy
 ;;; Fix declaration for default integer type.  Previously the type was
