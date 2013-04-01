@@ -40,8 +40,17 @@
 
 (defsystem machar
   :description "F2CL conversion of MACHAR:  Determine machine floating-point characteristics"
+  :pathname "toms/715/"
   :components
-  ((:file "machar")))
+  ((:module package
+	    :pathname ""
+	    :components
+	    ((:file "package")))
+   (:module machar
+	    :pathname ""
+            :default-component-class toms715-fortran-file
+	    :components
+	    ((:file "machar")))))
 
 (defsystem toms715
   :description "F2CL conversion of TOMS 715:  Numerical Evaluation of Special Functions"
