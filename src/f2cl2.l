@@ -21,7 +21,7 @@
 	      *functions-used*)))
 
 (defparameter *f2cl2-version*
-  "$Id: f2cl2.l,v d3ff69a91f35 2013/03/17 18:00:06 toy $")
+  "$Id: f2cl2.l,v 95098eb54f13 2013/04/01 00:45:16 toy $")
 
 ;-----------------------------------------------------------------------------
 ; subst-splice substitutes the list b for the atom a in the list c via splicing
@@ -302,6 +302,7 @@ Tag being parsed:| (cadr x))))
 					; intrinsic function call:
     ((and (symbolp (car l)) 
 	  (listp (cadr l))
+	  (not (member (car l) *non-intrinsic-function-names*))
 	  (member (car l) *intrinsic-function-names*))
      (cond ((not (null (cddr l)))
 	    (princ-reset
@@ -476,7 +477,7 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v d3ff69a91f35 2013/03/17 18:00:06 toy $
+;;; $Id: f2cl2.l,v 95098eb54f13 2013/04/01 00:45:16 toy $
 ;;; $Log$
 ;;; Revision 1.37  2008/02/22 22:19:33  rtoy
 ;;; Use RCS Id as version.

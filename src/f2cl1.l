@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 505dc31bee3e 2013/03/26 03:32:16 toy $")
+  "$Id: f2cl1.l,v 95098eb54f13 2013/04/01 00:45:16 toy $")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -40,7 +40,7 @@
 		f2cl-lib::*f2cl-macros-version*)))
 
  
-(defparameter *default-intrinsic-function-names*
+(defparameter *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
     anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
     idim dim ddim dprod max max0 max1 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
@@ -55,11 +55,12 @@
     )
   "A list of all the intrinsic functions in Fortran 77 (or 95)")
 
-(defvar *intrinsic-function-names*
-  nil 
-  "A list of all the recognized intrinsic functions in the current
-  subprogram.  This list will change if the subprogram declares a
-  variable with the same name as an intrinsic.")
+(defvar *non-intrinsic-function-names*
+  nil
+  "A list of all names that should not be recognized as an intrinsic
+  function.  This consists of formal parameters to subprograms that
+  would other wise be recognized as an intrinsic and anything declared
+  as external.")
 
 ;;------------------------------------------------------------------------------
 ;; Define the Fortran types that we need.  This MUST match the types
@@ -135,7 +136,6 @@
 	      *parsing-lhs*
 	      ;; List of statement labels in a subprogram
 	      *statement-labels*
-	      *declared-intrinsic-names*
 	      )))
 
 (defvar *common-blocks* (make-hash-table)
@@ -992,9 +992,10 @@ correctly"
   ;; i1mach.  So if the Fortran code declares these as external, we
   ;; remove them.  This assumes that d1mach and friends really is the
   ;; standard SLATEC d1mach.
-  (let ((external-names (remove-if #'(lambda (s)
-				       (member s '(d1mach r1mach i1mach)))
-				   external-names)))
+  (let ((external-names (append (remove-if #'(lambda (s)
+					       (member s '(d1mach r1mach i1mach)))
+					   external-names)
+				*non-intrinsic-function-names*)))
     (do-external-symbols (lib-sym :f2cl-lib)
       (unless (member lib-sym external-names :test #'(lambda (a b)
 						       (string-equal (symbol-name a)
@@ -1096,8 +1097,6 @@ correctly"
 							   ; the list
 							   ; of do
 							   ; integers
-	;; Setup default list of intrinsic functions
-	(*intrinsic-function-names* (copy-list *default-intrinsic-function-names*))
 	fort-fun *external-function-names*
 	*undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
 	*save_vbles* *key_params* *subprog_common_vars* 
@@ -1107,7 +1106,7 @@ correctly"
 	*parsing-lhs*
 	*equivalenced-vars*
 	*common_array_dims*
-	*declared-intrinsic-names*)
+	*non-intrinsic-function-names*)
 
     (print-header outport declaim package options)
      (setq fort-fun
@@ -1595,11 +1594,17 @@ correctly"
          nil
          ))
 
+;; Like check-reserved-lisp-names, but if the name would match an intrinsic, add it to the list of non-intrinsic names
+(defun check-subprogram-arg-names (x)
+  (when (member x *intrinsic-function-names*)
+    (push x *non-intrinsic-function-names*))
+  (check-reserved-lisp-names x))
+   
 ; subroutine definition
 (defun parse-subr-definition (bindings) 
   (prog (arg-list)
    (setq *subprog_name* (check-reserved-lisp-names (variable-value '%name bindings)))
-   (setq arg-list (mapcar #'check-reserved-lisp-names
+   (setq arg-list (mapcar #'check-subprogram-arg-names
 			  (remove '|,| (variable-value '%arg-list bindings))))
    (setq *subprog-arglist* arg-list)
    (return (list 'defun *subprog_name* 
@@ -1615,7 +1620,7 @@ correctly"
               (list (list (convert-data-type (variable-value '%type bindings))
                           (list fun-name))))
    (setq *subprog-arglist*
-	 (mapcar #'check-reserved-lisp-names
+	 (mapcar #'check-subprogram-arg-names
 		 (remove '|,| (variable-value '%arg-list bindings))))
    (setf *subprog_name* fun-name)
    (return
@@ -1627,7 +1632,7 @@ correctly"
 (defun parse-fun-definition (bindings)
    (setq *function-flag* t)
    (setq *subprog-arglist*
-	 (mapcar #'check-reserved-lisp-names
+	 (mapcar #'check-subprogram-arg-names
 		 (remove '|,| (variable-value '%arg-list bindings))))
    (list 'defun 
          (setf *subprog_name*
@@ -1745,14 +1750,10 @@ correctly"
 (defun parse-declaration (x)		; x is the line
   (setq *declared_vbles*
 	(append (mapcar #'(lambda (v)
+			    #+nil
 			    (when (member (first v) *intrinsic-function-names*)
 			      (warn "~A is being declared but is also the name of an intrinsic function"
 				    (first v)))
-			    ;; To handle this, check for reserved
-			    ;; names, and then remove this name from
-			    ;; the list of intrinsic function names.
-			    (setf *intrinsic-function-names*
-				  (remove (first v) *intrinsic-function-names*))
 			    (check-reserved-lisp-names (car v)))
 			(list-split '|,|
 			 (if (eq (cadr x) '*)
@@ -2958,10 +2959,7 @@ correctly"
    nil)
 
 ;; parse INTRINSIC f1, f2
-;; by adding the function names to *declared-intrinsic-names*
 (defun parse-intrinsic (x)
-  (setf *declared-intrinsic-names*
-	(append *declared-intrinsic-names* (remove '|,| (cdr x))))
   nil)
 
 ;; parse EQUIVALENCE (x1,y1), (x2, y2), ...
@@ -3396,7 +3394,7 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 505dc31bee3e 2013/03/26 03:32:16 toy $
+;;; $Id: f2cl1.l,v 95098eb54f13 2013/04/01 00:45:16 toy $
 ;;; $Log$
 ;;; Revision 1.222  2010/10/08 03:05:30  rtoy
 ;;; src/f2cl1.l:

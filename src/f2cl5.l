@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 505dc31bee3e 2013/03/26 03:32:16 toy $")
+  "$Id: f2cl5.l,v 95098eb54f13 2013/04/01 00:45:16 toy $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -2757,20 +2757,11 @@
 	  ((or (and found-it
 		    (not (eq access :internal))
 		    (fboundp found-it))
-	       (member x +reserved-lisp-names+)
-	       (and (eq :external (nth-value 1 (find-symbol (symbol-name x) :f2cl-lib)))
-		    (member x *default-intrinsic-function-names*)
-		    (not (member x *declared-intrinsic-names*))))
+	       (member x +reserved-lisp-names+))
 	   ;; We want to append "$" for certain cases to prevent
 	   ;; collisions.  (Any character can be used.  But we can't
 	   ;; prepend because f2cl wants to look at the first
 	   ;; character to determine the default variable type.)
-	   ;;
-	   ;; 1. External functions in the common-lisp package.
-	   ;;
-	   ;; 2. External symbols in the f2cl-lib package.  But if
-	   ;;    they're intrinsics and declared as intrinsics, we
-	   ;;    don't need to.
 	   (intern (concatenate 'string (string x) "$")))
 	  (t
 	   x))))
@@ -3876,7 +3867,7 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 505dc31bee3e 2013/03/26 03:32:16 toy $
+;;; $Id: f2cl5.l,v 95098eb54f13 2013/04/01 00:45:16 toy $
 ;;; $Log$
 ;;; Revision 1.204  2010/02/23 05:21:30  rtoy
 ;;; Fix declaration for default integer type.  Previously the type was
