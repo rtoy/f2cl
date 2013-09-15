@@ -1,3 +1,5 @@
 syntax: regexp
 packages/.*\.lisp
 packages/.*\.o
+^packages/quadpack/Fortran/lib/.*\.sse2f$
+^packages/toms/715/.*\.sse2f$
