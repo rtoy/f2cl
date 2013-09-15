@@ -96,10 +96,12 @@
                                            (eq (car x) 'proclaim))) 
                         x nil)) 
       fun)))
+
+(provide 'f2cl)
 ;;;-----------------------------------------------------------------------
 ;;; end of f2cl7.l
 ;;;
-;;; $Id: f2cl7.l,v 1272beed5319 2002/09/13 17:50:19 rtoy $
+;;; $Id: f2cl7.l,v 1554a27dce05 2013/09/15 23:00:19 toy $
 ;;; $Log$
 ;;; Revision 1.6  2002/09/13 17:50:19  rtoy
 ;;; From Douglas Crosher:

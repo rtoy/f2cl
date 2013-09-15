@@ -299,6 +299,25 @@
      (:file "zgehd2"
 	    :depends-on ("zlarfg" "zlarf"))
      (:file "zunm2r")
+     (:file "zheev"
+	    :depends-on ("dsterf" "zhetrd" "zlanhe" "zsteqr" "zungtr"))
+     (:file "dsterf"
+	    :depends-on ("dlae2"))
+     (:file "zhetrd"
+	    :depends-on ("zlatrd" "zhetd2"))
+     (:file "zsteqr"
+	    :depends-on ("dlaev2" "zlasr" "dlae2"))
+     (:file "zlanhe")
+     (:file "zungtr"
+	    :depends-on ("zungql"))
+     (:file "dlae2")
+     (:file "dlaev2")
+     (:file "zhetd2")
+     (:file "zlasr")
+     (:file "zlatrd")
+     (:file "zungql"
+            :depends-on ("zung2l"))
+     (:file "zung2l")
      ))))
 
 (defsystem "lapack-package"
