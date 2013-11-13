@@ -25,6 +25,7 @@
 		       :package package
 		       :declare-common declare-common
 		       :common-as-array common-as-array
+		       :relaxed-array-decls t
 		       )))
 
 (defmethod perform ((op compile-op) (c lapack-fortran-file))

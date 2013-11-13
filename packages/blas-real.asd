@@ -18,7 +18,7 @@
 		       :array-slicing array-slicing
 		       :array-type array-type
 		       :package package
-		       :relaxed-array-decls nil
+		       :relaxed-array-decls t
 		       :declare-common declare-common
 		       )))
 
