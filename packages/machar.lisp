@@ -49,6 +49,8 @@
                 too small by 1 or 2 units in the last digit of
                 the significand.
 "
+  (declare (ignore ibeta it irnd ngrd machep negep iexp minexp 
+		   maxexp eps epsneg xmin xmax))
   (let ((ibeta (float-radix 1d0))
 	(it (float-digits 1d0))
 	;; IEEE style rounding assumed, with partial underflow
@@ -87,7 +89,3 @@
 	  (setf irnd 2))))
     (values ibeta it irnd ngrd machep negep iexp minexp 
                         maxexp eps epsneg xmin xmax)))
-	
-	  
-
-  

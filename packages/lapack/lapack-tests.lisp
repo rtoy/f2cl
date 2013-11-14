@@ -657,14 +657,108 @@
 				   #c(0.012932561333282d0 -0.296568203073541d0)
 				   #c(0.889824013759239d0 +0.000000000000000d0)))))
   (t t t t))
-  
+
+(defun print-zheev-results (e-val e-vec)
+  (format t "~2%ZHEEV Example Program Results~2%")
+  (let ((n (length e-val)))
+    (format t "Eigenvalues~%")
+    (dotimes (k n)
+      (format t " ~A" (aref e-val k)))
+    (format t "~2%Eigenvectors~%")
+    (dotimes (k n)
+      (format t "~%Eigenvector(~D)~%" k)
+      (dotimes (row n)
+	(format t "~A~%" (aref e-vec row k)))
+      (terpri))))
+
+(defun test-zheev ()
+  ;; The matrix is
+  ;; 1       #c(2 -1) #c(3 -1) #c(4 -1)
+  ;; #c(2 1)     2    #c(3 -2) #c(4 -2)
+  ;; #c(3 1) #c(3 2)     3     #c(4 -3)
+  ;; #c(4 1) #c(4 2)  #c(4 3)     4
+  ;; Recall that Fortran arrays are column-major order!
+  (let* ((n 4)
+	 (a-mat (make-array (* n n)
+			    :element-type '(complex double-float)
+			    :initial-contents '(#c(1d0 0)
+						#c(2d0 1d0)
+						#c(3d0 1d0)
+						#c(4d0 1d0)
+						
+						#c(2d0 -1d0)
+						#c(2d0 0)
+						#c(3d0 2d0)
+						#c(4d0 2d0)
+
+						#c(3d0 -1d0)
+						#c(3d0 -2d0)
+						#c(3d0 0)
+						#c(4d0 3d0)
+
+						#c(4d0 -1d0)
+						#c(4d0 -2d0)
+						#c(4d0 -3d0)
+						#c(4d0 0))))
+	 (lwork 132)
+	 (w (make-array n :element-type 'double-float))
+	 (work (make-array lwork :element-type '(complex double-float)))
+	 (rwork (make-array (- (* 3 n) 2) :element-type 'double-float)))
+    (multiple-value-bind (z-jobz z-uplo z-n z-a z-lda z-w z-work z-lwork
+			  z-rwork info)
+	(zheev "V" "U" n a-mat n w work lwork rwork 0)
+      (declare (ignore z-jobz z-uplo z-n z-a z-lda z-w z-work z-lwork
+		       z-rwork))
+      (cond ((zerop info)
+	     (print-zheev-results w
+				  (transpose (make-complex-eigvec n a-mat))))
+	    (t
+	     (format t "Failure in ZHEEV.  INFO = ~D~%" info)))
+      (format t "Optimum workspace required = ~D~%" (truncate (realpart (aref work 0))))
+      (format t "Workspace provided = ~D~%" lwork)
+      (values w (transpose (make-complex-eigvec n a-mat))))))
+
+(rt:deftest zheev.1
+  (multiple-value-bind (val vec)
+      (test-zheev)
+    (let ((cval (make-array 4 :element-type '(complex double-float))))
+      (map-into cval #'(lambda (x)
+			 (complex x 0d0))
+		val)
+      (list (check-eigen-val-vec 0 cval vec
+				 #c(-4.244305402383179d0 0)
+				 #(#C(0.38390086708134163d0 0.29405658581351474d0)
+				   #C(0.4512081881756226d0 -0.11018120938621835d0)
+				   #C(-0.026341826788003057d0 -0.48569831719444095d0)
+				   #C(-0.5602011901552105d0 -0.0d0)))
+	    (check-eigen-val-vec 1 cval vec
+				 #c(-0.6885811461174348d0 0d0)
+				 #(#C(-0.3975174811710425d0 0.5105011667992776d0)
+				   #C(0.39532449113598805d0 -0.323828267501095d0)
+				   #C(-0.43094682808194457d0 0.0382543464880426d0)
+				   #C(0.36475148673610636d0 0.0d0)))
+	    (check-eigen-val-vec 2 cval vec
+				 #c(1.1412485214653287d0 0d0)
+				 #(#C(0.37459176938191946d0 0.24136603676776178d0)
+				   #C(-0.28951694726673083d0 0.4917390332315046d0)
+				   #C(-0.37679299781495784d0 -0.3993997903501625d0)
+				   #C(0.4174960446688179d0 0.0d0)))
+	    (check-eigen-val-vec 3 cval vec
+				 #c(13.791638027035287d0 0d0)
+				 #(#C(0.3309009213351469d0 -0.19861339914465895d0)
+				   #C(0.3727831818692677d0 -0.24193063397200412d0)
+				   #C(0.4869962523459657d0 -0.19381997741123178d0)
+				   #C(0.6154900747846208d0 0.0d0))))))
+  (t t t t))
+	    
 (defun do-all-lapack-tests ()
   (test-dgeev)
   (test-dgeevx)
   (test-dgesv)
   (test-dgesdd)
   (test-dgesvd)
-  (test-zgeev))
+  (test-zgeev)
+  (test-zheev))
 
 ;;; $Log$
 ;;; Revision 1.11  2006/12/01 04:29:29  rtoy
