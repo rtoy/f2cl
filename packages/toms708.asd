@@ -93,3 +93,21 @@
 
 
 
+(defmethod perform ((op test-op) (c (eql (find-system "toms708"))))
+  (oos 'test-op "toms708-tests"))
+
+(defsystem toms708-tests
+  :pathname "toms/"
+  :depends-on ("toms708")
+  :components
+  ((:module "tests"
+    :pathname "708/"
+    :default-component-class toms708-fortran-file
+    :components
+    ((:file "test")))))
+
+(defmethod perform ((op test-op) (c (eql (find-system "toms708-tests"))))
+  (funcall (find-symbol "BTST" (find-package "TOMS708"))))
+
+    
+
