@@ -1,4 +1,5 @@
-      REAL FUNCTION GSUMLN (A, B)
+      REAL*8 FUNCTION GSUMLN (A, B)
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C          EVALUATION OF THE FUNCTION LN(GAMMA(A + B))
 C          FOR 1 .LE. A .LE. 2  AND  1 .LE. B .LE. 2
@@ -10,6 +11,6 @@ C-----------------------------------------------------------------------
    10 IF (X .GT. 1.25) GO TO 20
          GSUMLN = GAMLN1(X) + ALNREL(X) 
          RETURN
-   20 GSUMLN = GAMLN1(X - 1.0) + ALOG(X*(1.0 + X))
+   20 GSUMLN = GAMLN1(X - 1.0) + LOG(X*(1.0 + X))
       RETURN
       END 

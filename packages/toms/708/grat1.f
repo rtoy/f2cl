@@ -1,5 +1,6 @@
       SUBROUTINE GRAT1 (A,X,R,P,Q,EPS)
-      REAL J, L
+      implicit double precision (A-H,O-Z)
+      REAL*8 J, L
 C-----------------------------------------------------------------------
 C        EVALUATION OF THE INCOMPLETE GAMMA RATIO FUNCTIONS 
 C                      P(A,X) AND Q(A,X)
@@ -25,7 +26,7 @@ C
          IF (ABS(T) .GT. TOL) GO TO 11
       J = A*X*((SUM/6.0 - 0.5/(A + 2.0))*X + 1.0/(A + 1.0)) 
 C
-      Z = A*ALOG(X) 
+      Z = A*LOG(X) 
       H = GAM1(A)
       G = 1.0 + H
       IF (X .LT. 0.25) GO TO 20

@@ -1,4 +1,5 @@
-      REAL FUNCTION ALGDIV (A, B)
+      REAL*8 FUNCTION ALGDIV (A, B)
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C
 C     COMPUTATION OF LN(GAMMA(B)/GAMMA(A+B)) WHEN B .GE. 8
@@ -9,9 +10,9 @@ C     IN THIS ALGORITHM, DEL(X) IS THE FUNCTION DEFINED BY
 C     LN(GAMMA(X)) = (X - 0.5)*LN(X) - X + 0.5*LN(2*PI) + DEL(X).
 C
 C-----------------------------------------------------------------------
-      DATA C0/.833333333333333E-01/, C1/-.277777777760991E-02/,
-     *     C2/.793650666825390E-03/, C3/-.595202931351870E-03/,
-     *     C4/.837308034031215E-03/, C5/-.165322962780713E-02/
+      DATA C0/.833333333333333D-01/, C1/-.277777777760991D-02/,
+     *     C2/.793650666825390D-03/, C3/-.595202931351870D-03/,
+     *     C4/.837308034031215D-03/, C5/-.165322962780713D-02/
 C------------------------
       IF (A .LE. B) GO TO 10
          H = B/A
@@ -42,7 +43,7 @@ C
 C                    COMBINE THE RESULTS
 C
       U = D*ALNREL(A/B)
-      V = A*(ALOG(B) - 1.0)
+      V = A*(LOG(B) - 1.0)
       IF (U .LE. V) GO TO 30
          ALGDIV = (W - V) - U 
          RETURN

@@ -1,28 +1,29 @@
       SUBROUTINE BGRAT(A, B, X, Y, W, EPS, IERR)
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C     ASYMPTOTIC EXPANSION FOR IX(A,B) WHEN A IS LARGER THAN B.
 C     THE RESULT OF THE EXPANSION IS ADDED TO W. IT IS ASSUMED
 C     THAT A .GE. 15 AND B .LE. 1.  EPS IS THE TOLERANCE USED.
 C     IERR IS A VARIABLE THAT REPORTS THE STATUS OF THE RESULTS.
 C-----------------------------------------------------------------------
-      REAL J, L, LNX, NU, N2
-      REAL C(30), D(30)
+      REAL*8 J, L, LNX, NU, N2
+      REAL*8 C(30), D(30)
 C
       BM1 = (B - 0.5) - 0.5
       NU = A + 0.5*BM1
       IF (Y .GT. 0.375) GO TO 10
          LNX = ALNREL(-Y)
          GO TO 11
-   10 LNX = ALOG(X) 
+   10 LNX = LOG(X) 
    11 Z = -NU*LNX
       IF (B*Z .EQ. 0.0) GO TO 100
 C
 C                 COMPUTATION OF THE EXPANSION
 C                 SET R = EXP(-Z)*Z**B/GAMMA(B)
 C
-      R = B*(1.0 + GAM1(B))*EXP(B*ALOG(Z))
+      R = B*(1.0 + GAM1(B))*EXP(B*LOG(Z))
       R = R*EXP(A*LNX)*EXP(0.5*BM1*LNX) 
-      U = ALGDIV(B,A) + B*ALOG(NU)
+      U = ALGDIV(B,A) + B*LOG(NU)
       U = R*EXP(-U) 
       IF (U .EQ. 0.0) GO TO 100
       CALL GRAT1(B,Z,R,P,Q,EPS)

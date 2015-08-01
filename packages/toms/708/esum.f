@@ -1,4 +1,5 @@
-      REAL FUNCTION ESUM (MU, X)
+      REAL*8 FUNCTION ESUM (MU, X)
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C                    EVALUATION OF EXP(MU + X)
 C-----------------------------------------------------------------------

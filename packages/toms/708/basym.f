@@ -1,12 +1,13 @@
-      REAL FUNCTION BASYM(A, B, LAMBDA, EPS)
+      REAL*8 FUNCTION BASYM(A, B, LAMBDA, EPS)
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C     ASYMPTOTIC EXPANSION FOR IX(A,B) FOR LARGE A AND B.
 C     LAMBDA = (A + B)*Y - B  AND EPS IS THE TOLERANCE USED.
 C     IT IS ASSUMED THAT LAMBDA IS NONNEGATIVE AND THAT
 C     A AND B ARE GREATER THAN OR EQUAL TO 15.
 C-----------------------------------------------------------------------
-      REAL J0, J1, LAMBDA
-      REAL A0(21), B0(21), C(21), D(21) 
+      REAL*8 J0, J1, LAMBDA
+      REAL*8 A0(21), B0(21), C(21), D(21) 
 C------------------------
 C     ****** NUM IS THE MAXIMUM VALUE THAT N CAN TAKE IN THE DO LOOP
 C            ENDING AT STATEMENT 50. IT IS REQUIRED THAT NUM BE EVEN. 
@@ -17,7 +18,7 @@ C------------------------
 C     E0 = 2/SQRT(PI)
 C     E1 = 2**(-3/2)
 C------------------------
-      DATA E0/1.12837916709551/, E1/.353553390593274/
+      DATA E0/1.12837916709551d0/, E1/.353553390593274d0/
 C------------------------
       BASYM = 0.0
       IF (A .GE. B) GO TO 10

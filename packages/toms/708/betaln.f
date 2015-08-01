@@ -1,13 +1,14 @@
-      REAL FUNCTION BETALN (A0, B0)
+      REAL*8 FUNCTION BETALN (A0, B0)
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C     EVALUATION OF THE LOGARITHM OF THE BETA FUNCTION
 C-----------------------------------------------------------------------
 C     E = 0.5*LN(2*PI)
 C--------------------------
-      DATA E /.918938533204673/
+      DATA E /.918938533204673d0/
 C--------------------------
-      A = AMIN1(A0,B0)
-      B = AMAX1(A0,B0)
+      A = MIN1(A0,B0)
+      B = MAX1(A0,B0)
       IF (A .GE. 8.0) GO TO 60
       IF (A .GE. 1.0) GO TO 20
 C-----------------------------------------------------------------------
@@ -40,7 +41,7 @@ C
          H = A/B
          W = W * (H/(1.0 + H))
    31 CONTINUE
-      W = ALOG(W)
+      W = LOG(W)
       IF (B .LT. 8.0) GO TO 40
       BETALN = W + GAMLN(A) + ALGDIV(A,B)
       RETURN
@@ -53,7 +54,7 @@ C
          B = B - 1.0
          Z = Z * (B/(A + B))
    41 CONTINUE
-      BETALN = W + ALOG(Z) + (GAMLN(A) + (GAMLN(B) - GSUMLN(A,B)))
+      BETALN = W + LOG(Z) + (GAMLN(A) + (GAMLN(B) - GSUMLN(A,B)))
       RETURN
 C
 C                REDUCTION OF A WHEN B .GT. 1000
@@ -64,7 +65,7 @@ C
          A = A - 1.0
          W = W * (A/(1.0 + A/B))
    51 CONTINUE
-      BETALN = (ALOG(W) - N*ALOG(B)) + (GAMLN(A) + ALGDIV(A,B))
+      BETALN = (LOG(W) - N*LOG(B)) + (GAMLN(A) + ALGDIV(A,B))
       RETURN
 C-----------------------------------------------------------------------
 C                   PROCEDURE WHEN A .GE. 8
@@ -72,11 +73,11 @@ C-----------------------------------------------------------------------
    60 W = BCORR(A,B)
       H = A/B
       C = H/(1.0 + H)
-      U = -(A - 0.5)*ALOG(C)
+      U = -(A - 0.5)*LOG(C)
       V = B*ALNREL(H)
       IF (U .LE. V) GO TO 61
-         BETALN = (((-0.5*ALOG(B) + E) + W) - V) - U
+         BETALN = (((-0.5*LOG(B) + E) + W) - V) - U
          RETURN
-   61 BETALN = (((-0.5*ALOG(B) + E) + W) - U) - V 
+   61 BETALN = (((-0.5*LOG(B) + E) + W) - U) - V 
       RETURN
       END 

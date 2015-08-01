@@ -1,12 +1,13 @@
-      REAL FUNCTION BRCOMP (A, B, X, Y) 
+      REAL*8 FUNCTION BRCOMP (A, B, X, Y) 
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C               EVALUATION OF X**A*Y**B/BETA(A,B) 
 C-----------------------------------------------------------------------
-      REAL LAMBDA, LNX, LNY
+      REAL*8 LAMBDA, LNX, LNY
 C-----------------
 C     CONST = 1/SQRT(2*PI)
 C-----------------
-      DATA CONST/.398942280401433/
+      DATA CONST/.398942280401433d0/
 C
       BRCOMP = 0.0
       IF (X .EQ. 0.0 .OR. Y .EQ. 0.0) RETURN
@@ -14,15 +15,15 @@ C
       IF (A0 .GE. 8.0) GO TO 100
 C
       IF (X .GT. 0.375) GO TO 10
-         LNX = ALOG(X)
+         LNX = LOG(X)
          LNY = ALNREL(-X)
          GO TO 20
    10 IF (Y .GT. 0.375) GO TO 11
          LNX = ALNREL(-Y)
-         LNY = ALOG(Y)
+         LNY = LOG(Y)
          GO TO 20
-   11 LNX = ALOG(X) 
-      LNY = ALOG(Y) 
+   11 LNX = LOG(X) 
+      LNY = LOG(Y) 
 C
    20 Z = A*LNX + B*LNY
       IF (A0 .LT. 1.0) GO TO 30
@@ -62,7 +63,7 @@ C
          B0 = B0 - 1.0
          C = C*(B0/(A0 + B0)) 
    61 CONTINUE
-      U = ALOG(C) + U
+      U = LOG(C) + U
 C
    70 Z = Z - U
       B0 = B0 - 1.0 
@@ -98,13 +99,13 @@ C
       IF (ABS(E) .GT. 0.6) GO TO 111
          U = RLOG1(E)
          GO TO 120
-  111 U = E - ALOG(X/X0)
+  111 U = E - LOG(X/X0)
 C
   120 E = LAMBDA/B
       IF (ABS(E) .GT. 0.6) GO TO 121
          V = RLOG1(E)
          GO TO 130
-  121 V = E - ALOG(Y/Y0)
+  121 V = E - LOG(Y/Y0)
 C
   130 Z = EXP(-(A*U + B*V))
       BRCOMP = CONST*SQRT(B*X0)*Z*EXP(-BCORR(A,B))

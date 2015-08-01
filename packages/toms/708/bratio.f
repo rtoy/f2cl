@@ -1,4 +1,5 @@
       SUBROUTINE BRATIO (A, B, X, Y, W, W1, IERR) 
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C
 C            EVALUATION OF THE INCOMPLETE BETA FUNCTION IX(A,B)
@@ -31,13 +32,13 @@ C        NAVAL SURFACE WARFARE CENTER
 C        DAHLGREN, VIRGINIA
 C     REVISED ... NOV 1991
 C-----------------------------------------------------------------------
-      REAL LAMBDA
+      REAL*8 LAMBDA
 C-----------------------------------------------------------------------
 C
 C     ****** EPS IS A MACHINE DEPENDENT CONSTANT. EPS IS THE SMALLEST 
 C            FLOATING POINT NUMBER FOR WHICH 1.0 + EPS .GT. 1.0
 C
-                       EPS = SPMPAR(1)
+                       EPS = DPMPAR(1)
 C
 C-----------------------------------------------------------------------
       W = 0.0
@@ -55,8 +56,8 @@ C
       IF (A .EQ. 0.0) GO TO 211
       IF (B .EQ. 0.0) GO TO 201
 C
-      EPS = AMAX1(EPS, 1.E-15)
-      IF (AMAX1(A,B) .LT. 1.E-3*EPS) GO TO 230
+      EPS = AMAX1(EPS, 1.d-15)
+      IF (AMAX1(A,B) .LT. 1.d-3*EPS) GO TO 230
 C
       IND = 0
       A0 = A

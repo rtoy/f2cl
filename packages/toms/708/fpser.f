@@ -1,4 +1,5 @@
-      REAL FUNCTION FPSER (A, B, X, EPS)
+      REAL*8 FUNCTION FPSER (A, B, X, EPS)
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C
 C                 EVALUATION OF I (A,B) 
@@ -13,7 +14,7 @@ C
       FPSER = 1.0
       IF (A .LE. 1.E-3*EPS) GO TO 10
       FPSER = 0.0
-      T = A*ALOG(X) 
+      T = A*LOG(X) 
       IF (T .LT. EXPARG(1)) RETURN
       FPSER = EXP(T)
 C

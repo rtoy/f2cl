@@ -1,9 +1,10 @@
-      REAL FUNCTION BPSER(A, B, X, EPS) 
+      REAL*8 FUNCTION BPSER(A, B, X, EPS) 
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C     POWER SERIES EXPANSION FOR EVALUATING IX(A,B) WHEN B .LE. 1
 C     OR B*X .LE. 0.7.  EPS IS THE TOLERANCE USED.
 C-----------------------------------------------------------------------
-      REAL N
+      REAL*8 N
 C
       BPSER = 0.0
       IF (X .EQ. 0.0) RETURN
@@ -12,7 +13,7 @@ C            COMPUTE THE FACTOR X**A/(A*BETA(A,B))
 C-----------------------------------------------------------------------
       A0 = AMIN1(A,B)
       IF (A0 .LT. 1.0) GO TO 10
-         Z = A*ALOG(X) - BETALN(A,B)
+         Z = A*LOG(X) - BETALN(A,B)
          BPSER = EXP(Z)/A
          GO TO 70
    10 B0 = AMAX1(A,B)
@@ -44,9 +45,9 @@ C
       DO 41 I = 1,M 
          B0 = B0 - 1.0
    41    C = C*(B0/(A0 + B0)) 
-      U = ALOG(C) + U
+      U = LOG(C) + U
 C
-   50 Z = A*ALOG(X) - U
+   50 Z = A*LOG(X) - U
       B0 = B0 - 1.0 
       APB = A0 + B0 
       IF (APB .GT. 1.0) GO TO 51
@@ -60,7 +61,7 @@ C
 C            PROCEDURE FOR A0 .LT. 1 AND B0 .GE. 8
 C
    60 U = GAMLN1(A0) + ALGDIV(A0,B0)
-      Z = A*ALOG(X) - U
+      Z = A*LOG(X) - U
       BPSER = (A0/A)*EXP(Z)
    70 IF (BPSER .EQ. 0.0 .OR. A .LE. 0.1*EPS) RETURN
 C-----------------------------------------------------------------------

@@ -1,9 +1,10 @@
-      REAL FUNCTION BFRAC(A, B, X, Y, LAMBDA, EPS)
+      REAL*8 FUNCTION BFRAC(A, B, X, Y, LAMBDA, EPS)
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C     CONTINUED FRACTION EXPANSION FOR IX(A,B) WHEN A,B .GT. 1.
 C     IT IS ASSUMED THAT  LAMBDA = (A + B)*Y - B. 
 C-----------------------------------------------------------------------
-      REAL LAMBDA, N
+      REAL*8 LAMBDA, N
 C--------------------
       BFRAC = BRCOMP(A,B,X,Y) 
       IF (BFRAC .EQ. 0.0) RETURN

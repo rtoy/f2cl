@@ -1,9 +1,10 @@
-      REAL FUNCTION BUP(A, B, X, Y, N, EPS)
+      REAL*8 FUNCTION BUP(A, B, X, Y, N, EPS)
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C     EVALUATION OF IX(A,B) - IX(A+N,B) WHERE N IS A POSITIVE INTEGER.
 C     EPS IS THE TOLERANCE USED.
 C-----------------------------------------------------------------------
-      REAL L
+      REAL*8 L
 C
 C          OBTAIN THE SCALING FACTOR EXP(-MU) AND 
 C             EXP(MU)*(X**A*Y**B/BETA(A,B))/A
