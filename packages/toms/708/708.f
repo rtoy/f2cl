@@ -1952,16 +1952,16 @@ C     MACHINE CONSTANTS FOR THE CDC 6000/7000 SERIES
 C     60 BIT ARITHMETIC, AND THE CDC CYBER 995 64 BIT
 C     ARITHMETIC (NOS OPERATING SYSTEM).
 C
-      DATA IMACH( 1) /    2 / 
-      DATA IMACH( 2) /   48 / 
-      DATA IMACH( 3) / 281474976710655 /
-      DATA IMACH( 4) /    2 / 
-      DATA IMACH( 5) /   48 / 
-      DATA IMACH( 6) / -974 / 
-      DATA IMACH( 7) / 1070 / 
-      DATA IMACH( 8) /   95 / 
-      DATA IMACH( 9) / -926 / 
-      DATA IMACH(10) / 1070 / 
+c      DATA IMACH( 1) /    2 / 
+c      DATA IMACH( 2) /   48 / 
+c      DATA IMACH( 3) / 281474976710655 /
+c      DATA IMACH( 4) /    2 / 
+c      DATA IMACH( 5) /   48 / 
+c      DATA IMACH( 6) / -974 / 
+c      DATA IMACH( 7) / 1070 / 
+c      DATA IMACH( 8) /   95 / 
+c      DATA IMACH( 9) / -926 / 
+c      DATA IMACH(10) / 1070 / 
 C
 C     MACHINE CONSTANTS FOR THE CDC CYBER 995 64 BIT
 C     ARITHMETIC (NOS/VE OPERATING SYSTEM).
@@ -2088,16 +2088,16 @@ C     DATA IMACH(10) /   63 /
 C
 C     MACHINE CONSTANTS FOR THE IBM PC. 
 C
-C     DATA IMACH( 1) /     2 /
-C     DATA IMACH( 2) /    31 /
-C     DATA IMACH( 3) / 2147483647 /
-C     DATA IMACH( 4) /     2 /
-C     DATA IMACH( 5) /    24 /
-C     DATA IMACH( 6) /  -125 /
-C     DATA IMACH( 7) /   128 /
-C     DATA IMACH( 8) /    53 /
-C     DATA IMACH( 9) / -1021 /
-C     DATA IMACH(10) /  1024 /
+      DATA IMACH( 1) /     2 /
+      DATA IMACH( 2) /    31 /
+      DATA IMACH( 3) / 2147483647 /
+      DATA IMACH( 4) /     2 /
+      DATA IMACH( 5) /    24 /
+      DATA IMACH( 6) /  -125 /
+      DATA IMACH( 7) /   128 /
+      DATA IMACH( 8) /    53 /
+      DATA IMACH( 9) / -1021 /
+      DATA IMACH(10) /  1024 /
 C
 C     MACHINE CONSTANTS FOR THE MACINTOSH II - ABSOFT
 C     MACFORTRAN II.
