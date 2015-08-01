@@ -1,4 +1,5 @@
-C     PROGRAM BTST (OUTPUT, TAPE6=OUTPUT)
+      PROGRAM BTST
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C
 C     SAMPLE PROGRAM USING BRATIO. GIVEN THE NONNEGATIVE VALUES
@@ -26,17 +27,17 @@ C     BEGIN THE PROGRAM FOR THE CDC 6000-7000 SERIES COMPUTERS.
 C-----------------------------------------------------------------------
       WRITE (6,1)
     1 FORMAT(11H1   X     Y,11X,1HW,14X,2HW1/)
-    2 FORMAT(2F6.2,2E16.6)
+    2 FORMAT(2F6.2,2E22.15)
 C
-      A = 5.3
-      B = 10.1
-      X = 1.E-2
+      A = 5.3d0
+      B = 10.1d0
+      X = 1.d-2
       DO 10 L = 1,50
          Y = 0.5 + (0.5 - X)
          CALL BRATIO (A, B, X, Y, W, W1, IERR)
          IF (IERR .NE. 0) STOP
          WRITE (6,2) X, Y, W, W1
-         X = X + 1.E-2
+         X = X + 1.d-2
    10 CONTINUE
       STOP
       END 
