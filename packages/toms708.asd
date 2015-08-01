@@ -66,28 +66,30 @@
      (:file "brcomp"
 	    :depends-on ("gam1" "gamln1" "rlog1"))
      (:file "bup"
-	    :depends-on ("exparg"))
+	    :depends-on ("exparg" "brcmp1"))
      (:file "erf")
      (:file "erfc1"
-	    :depends-on ("ipmpar"))
+	    :depends-on ("ipmpar" "exparg"))
      (:file "esum")
      (:file "exparg")
-     (:file "fpser")
+     (:file "fpser"
+	    :depends-on ("exparg"))
      (:file "gam1")
      (:file "gamln"
 	    :depends-on ("gamln1"))
      (:file "gamln1")
      (:file "grat1"
-	    :depends-on ("rexp"))
+	    :depends-on ("rexp" "erf"))
      (:file "gsumln")
      (:file "ipmpar")
      ;;(:file "main")
      (:file "psi"
-	    :depends-on ("dpmpar"))
+	    :depends-on ("dpmpar" "ipmpar"))
      (:file "rexp")
      (:file "rlog1")
      ;;(:file "spmpar")
-     (:file "dpmpar")))))
+     (:file "dpmpar"
+	    :depends-on ("ipmpar"))))))
 
 
 
