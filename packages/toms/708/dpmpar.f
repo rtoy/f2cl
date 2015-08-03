@@ -1,4 +1,5 @@
       REAL*8 FUNCTION DPMPAR (I)
+      implicit double precision (A-H,O-Z)
 C-----------------------------------------------------------------------
 C
 C     DPMPAR PROVIDES THE SINGLE PRECISION MACHINE CONSTANTS FOR
