@@ -132,7 +132,8 @@
 		    :depends-on ("jgroup" "odrv"))
 	     (:file "dprepi"
 		    :depends-on ("jgroup" "odrv"))
-	     (:file "dprepj")
+	     (:file "dprepj"
+	      :depends-on ("dgbfa"))
 	     (:file "dprepji")
 	     (:file "dprja")
 	     (:file "dprjis")
@@ -196,6 +197,81 @@
 (defmethod perform ((op test-op) (c (eql (find-system "odepack"))))
     (oos 'test-op "odedemo-lsode"))
 
+(defsystem odepack-lsode
+  :pathname "odepack/"
+  :components
+  ((:module "package"
+    :pathname ""
+    :components
+    ((:file "package")))
+   (:module "lsode"
+    :pathname ""
+    :default-component-class odepack-fortran-file
+    :components
+    (
+     (:file "dlsode"
+      :depends-on ("dstode" "diprep" "dewset" "dvnorm"
+			    "dintdy" "xerrwd"
+			    "dsolsy"))
+     (:file "dsolsy"
+	    :depends-on ("dgesl" "dgbsl"))
+     (:file "dgbsl"
+      :depends-on ("daxpy"))
+     (:file "dewset")
+     (:file "dvnorm")
+     (:file "dintdy"
+      :depends-on ("xerrwd"))
+     (:file "xerrwd"
+      :depends-on ("ixsav"))
+     (:file "ixsav"
+      :depends-on ("iumach"))
+     (:file "iumach")
+     (:file "dstode"
+      :depends-on ("dcfode" "dvnorm" "dprepj"))
+     (:file "dcfode")
+     (:file "dprepj"
+	    :depends-on ("dgefa" "dgbfa"))
+     (:file "dgefa"
+     :depends-on ("idamax" "dscal" "daxpy"))
+     (:file "dgbfa"
+		    :depends-on ("idamax" "dscal" "daxpy"))
+
+     (:file "idamax")
+     (:file "dscal")
+     (:file "daxpy")
+     (:file "diprep"
+      :depends-on ("dprep")
+      :perform (compile-op :around (op c)
+			   (fortran-compile op c
+					    :common-as-array t :declare-common t)))
+     (:file "dprep"
+      :depends-on ("jgroup" "odrv" "cdrv" "adjlr" "cntnzu"))
+     (:file "jgroup")
+     (:file "odrv"
+      :depends-on ("sro" "md"))
+     (:file "cdrv"
+      :depends-on ("nntc"))
+     (:file "nntc")
+     (:file "adjlr"
+      :depends-on ("nroc" "nsfc" "nnfc" "nnsc"))
+     (:file "nroc")
+     (:file "nsfc")
+     (:file "nnfc")
+     (:file "nnsc")
+     (:file "cntnzu")
+     (:file "sro")
+     (:file "md"
+      :depends-on ("mdi" "mdm" "mdp" "mdu"))
+     (:file "mdi")
+     (:file "mdm")
+     (:file "mdp")
+     (:file "mdu")
+     (:file "dumach"
+      :depends-on ("dumsum"))
+     (:file "dumsum")
+     (:file "dgesl"
+      :depends-on ("daxpy" "ddot"))
+     (:file "ddot")))))
 
 
 ;;; Demo programs
@@ -211,7 +287,7 @@
 ;; Output matches Fortran code.
 (defsystem odedemo-lsode
   :pathname "odepack/"
-  :depends-on ("odepack")
+  :depends-on ("odepack-lsode")
   :components
   ((:module "demo1"
 	    :default-component-class odepack-fortran-file
