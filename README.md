@@ -11,16 +11,16 @@ is to simply run "make system" from a shell, as is usual with CLOCC
 packages.
 
 A second method is to use defsystem from CLOCC.  Then load
-f2cl.system, and then finally run (mk:oos "f2cl" :compile).  
+`f2cl.system`, and then finally run `(mk:oos "f2cl" :compile)`.  
 
-A third method is to use asdf.  You can load f2cl.asd and run
-(asdf:oos 'asdf:load-op :f2cl).
+A third method is to use asdf.  You can load `f2cl.asd` and run
+`(asdf:oos 'asdf:load-op :f2cl)`.
 
 Finally, a fourth method, if you have none of the above, is to
 manually run everything as follows:
 
 1. Start your favorite Common Lisp implementation use the function
-   "compile-file" to compile each of the source files:
+   `compile-file` to compile each of the source files:
 
 		f2cl0.l
 		f2cl1.l
@@ -34,15 +34,15 @@ manually run everything as follows:
 
 2. Load up all of the files
 
-           (load "f2cl0.l")
-           (load "f2cl1.l")
-           (load "f2cl2.l")
-           (load "f2cl3.l")
-           (load "f2cl4.l")
-           (load "f2cl5.l")
-           (load "f2cl6.l")
-           (load "f2cl7.l")
-	   (load "macros.l")
+        (load "f2cl0.l")
+        (load "f2cl1.l")
+        (load "f2cl2.l")
+        (load "f2cl3.l")
+        (load "f2cl4.l")
+        (load "f2cl5.l")
+        (load "f2cl6.l")
+        (load "f2cl7.l")
+	    (load "macros.l")
 
    to load all the compiled files.
 
@@ -53,17 +53,17 @@ Usage
 Converting Fortran Code
 -----------------------
 To use f2cl:
-
+```
 (f2cl:f2cl "<path>/fortran.f")
-
-will convert the file "<path>/fortran.f" to Lisp code and places the
-result in the file "<path>/fortran.lisp".
+```
+will convert the file `<path>/fortran.f` to Lisp code and places the
+result in the file `<path>/fortran.lisp`.
 
 Alternatively,
-
+```
 (f2cl:f2cl-compile "<path>/fortran.f")
-
-will also run compile-file on the Lisp file so you can load it
+```
+will also run `compile-file` on the Lisp file so you can load it
 directly into your lisp.
 
 
@@ -75,28 +75,29 @@ here is a short list of restrictions that may result in obscure errors:
    exclusively within subroutines,
  - linebreaks must occur within whitespace,
  - spaces are required to separate symbols.
+
 Note also that an intermediate file called "prep.tmp" is produced by the
 preprocessing stage of the translation.
 
 Options
 -------
 
-These are the options available to f2cl:f2cl and f2cl:f2cl-compile
+These are the options available to `f2cl:f2cl` and `f2cl:f2cl-compile`
 
-:OUTPUT-FILE             
+* `:OUTPUT-FILE`             
 	File to contain Lisp code
 
-:VERBOSE                
+* `:VERBOSE`                
 	Verbose output. Default = NIL.  Mostly for debugging.
 
-:PRUNE-LABELS           
+* `:PRUNE-LABELS`           
 	Prune unused labels. Default = NIL.
 
-:INCLUDE-COMMENTS       
+* `:INCLUDE-COMMENTS`       
 	Include Fortran comments in the Lisp output.
         Default = NIL
 
-:AUTO-SAVE              
+* `:AUTO-SAVE`              
 	Variables in DATA statements are automatically SAVE'd. Default
 	= T.
 
