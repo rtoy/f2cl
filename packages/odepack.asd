@@ -197,8 +197,47 @@
 (defmethod perform ((op test-op) (c (eql (find-system "odepack"))))
     (oos 'test-op "odedemo-lsode"))
 
+(defsystem odepack-blas-util
+  :pathname "odepack/"
+  :components
+  ((:module "package"
+    :pathname ""
+    :components
+    ((:file "package")))
+   (:module "blas"
+    :pathname ""
+    :default-component-class odepack-fortran-file
+    :components
+    (
+     (:file "dgesl"
+      :depends-on ("daxpy" "ddot"))
+     (:file "dgbsl"
+      :depends-on ("daxpy"))
+     (:file "dgefa"
+      :depends-on ("idamax" "dscal" "daxpy"))
+     (:file "dgbfa"
+      :depends-on ("idamax" "dscal" "daxpy"))
+     (:file "idamax")
+     (:file "dscal")
+     (:file "daxpy")
+     (:file "ddot")
+     ))
+   (:module "util"
+    :pathname ""
+    :components
+    ((:file "xerrwd"
+      :depends-on ("ixsav"))
+     (:file "ixsav"
+      :depends-on ("iumach"))
+     (:file "iumach")
+     (:file "dumach"
+      :depends-on ("dumsum"))
+     (:file "dumsum")
+     ))))
+
 (defsystem odepack-lsode
   :pathname "odepack/"
+  :depends-on ("odepack-blas-util")
   :components
   ((:module "package"
     :pathname ""
@@ -214,43 +253,60 @@
 			   (fortran-compile op c
 					    :common-as-array t :declare-common t))
       :depends-on ("dstode" "dewset" "dvnorm"
-			    "dintdy" "xerrwd"
+			    "dintdy" #+nil "xerrwd"
 			    "dsolsy"))
      (:file "dsolsy"
-	    :depends-on ("dgesl" "dgbsl"))
+      ;;:depends-on ("dgesl" "dgbsl")
+	    )
+     #+nil
      (:file "dgbsl"
       :depends-on ("daxpy"))
      (:file "dewset")
      (:file "dvnorm")
      (:file "dintdy"
-      :depends-on ("xerrwd"))
+      ;;:depends-on ("xerrwd")
+	    )
+     #+nil
      (:file "xerrwd"
       :depends-on ("ixsav"))
+     #+nil
      (:file "ixsav"
       :depends-on ("iumach"))
+     #+nil
      (:file "iumach")
      (:file "dstode"
       :depends-on ("dcfode" "dvnorm" "dprepj"))
      (:file "dcfode")
      (:file "dprepj"
-	    :depends-on ("dgefa" "dgbfa"))
+	    ;;:depends-on ("dgefa" "dgbfa")
+	    )
+     #+nil
      (:file "dgefa"
      :depends-on ("idamax" "dscal" "daxpy"))
+     #+nil
      (:file "dgbfa"
 		    :depends-on ("idamax" "dscal" "daxpy"))
 
+     #+nil
      (:file "idamax")
+     #+nil
      (:file "dscal")
+     #+nil
      (:file "daxpy")
+     #+nil
      (:file "dumach"
       :depends-on ("dumsum"))
+     #+nil
      (:file "dumsum")
+     #+nil
      (:file "dgesl"
       :depends-on ("daxpy" "ddot"))
+     #+nil
      (:file "ddot")))))
 
 (defsystem odepack-lsoda
   :pathname "odepack/"
+  :depends-on ("odepack-blas-util")
   :components
   ((:module "package"
     :pathname ""
@@ -262,42 +318,56 @@
     :components
     (
      (:file "dlsoda"
-      :depends-on ("dstoda" "xerrwd" "dewset" "dmnorm" "dintdy" "dumach"
+      :depends-on ("dstoda" #+nil "xerrwd" "dewset" "dmnorm" "dintdy" #+nil "dumach"
 			    "dsolsy")
       :perform (compile-op :around (op c)
 			   (fortran-compile op c
 					    :common-as-array t :declare-common t)))
      (:file "dsolsy"
-      :depends-on ("dgesl" "dgbsl"))
+      ;;:depends-on ("dgesl" "dgbsl")
+	    )
+     #+nil
      (:file "dgesl"
       :depends-on ("daxpy" "ddot"))
+     #+nil
      (:file "dgbsl"
       :depends-on ("daxpy"))
      (:file "dstoda"
       :depends-on ("dcfode" "dmnorm" "dprja"))
      (:file "dprja"
-      :depends-on ("dfnorm" "dgefa" "dbnorm" "dgbfa"))
+      :depends-on ("dfnorm" #+nil "dgefa" "dbnorm" #+nil "dgbfa"))
      (:file "dfnorm")
+     #+nil
      (:file "dgefa"
       :depends-on ("idamax" "dscal" "daxpy"))
      (:file "dbnorm")
+     #+nil
      (:file "dgbfa"
       :depends-on ("idamax" "dscal" "daxpy"))
      (:file "dcfode")
      (:file "dintdy")
      (:file "dmnorm")
      (:file "dewset")
+     #+nil
      (:file "xerrwd"
       :depends-on ("ixsav"))
+     #+nil
      (:file "ixsav"
       :depends-on ("iumach"))
+     #+nil
      (:file "iumach")
+     #+nil
      (:file "dumach"
       :depends-on ("dumsum"))
+     #+nil
      (:file "dumsum")
+     #+nil
      (:file "idamax")
+     #+nil
      (:file "dscal")
+     #+nil
      (:file "daxpy")
+     #+nil
      (:file "ddot")
      ))))
 
