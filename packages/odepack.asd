@@ -197,32 +197,40 @@
 (defmethod perform ((op test-op) (c (eql (find-system "odepack"))))
     (oos 'test-op "odedemo-lsode"))
 
-(defsystem odepack-blas-util
+(defsystem odepack-package
   :pathname "odepack/"
   :components
   ((:module "package"
     :pathname ""
     :components
-    ((:file "package")))
-   (:module "blas"
+    ((:file "package")))))
+
+(defsystem odepack-blas-util
+  :pathname "odepack/fortran/"
+  :depends-on ("odepack-package")
+  :default-component-class odepack-fortran-file
+  :components
+  ((:module "blas"
     :pathname ""
-    :default-component-class odepack-fortran-file
     :components
-    (
-     (:file "dgesl"
-      :depends-on ("daxpy" "ddot"))
+    ((:file "dgesl"
+      :depends-on ("daxpy"
+		   "ddot"))
      (:file "dgbsl"
       :depends-on ("daxpy"))
      (:file "dgefa"
-      :depends-on ("idamax" "dscal" "daxpy"))
+      :depends-on ("idamax"
+		   "dscal"
+		   "daxpy"))
      (:file "dgbfa"
-      :depends-on ("idamax" "dscal" "daxpy"))
+      :depends-on ("idamax"
+		   "dscal"
+		   "daxpy"))
      (:file "idamax")
      (:file "dscal")
      (:file "daxpy")
      (:file "ddot")
-     (:file "dcopy")
-     ))
+     (:file "dcopy")))
    (:module "util"
     :pathname ""
     :components
@@ -233,89 +241,93 @@
      (:file "iumach")
      (:file "dumach"
       :depends-on ("dumsum"))
-     (:file "dumsum")
-     ))))
+     (:file "dumsum")))))
 
 (defsystem odepack-lsode
-  :pathname "odepack/"
+  :pathname "odepack/fortran/"
   :depends-on ("odepack-blas-util")
   :components
-  ((:module "package"
-    :pathname ""
-    :components
-    ((:file "package")))
-   (:module "lsode"
+  ((:module "lsode"
     :pathname ""
     :default-component-class odepack-fortran-file
     :components
-    (
-     (:file "dlsode"
+    ((:file "dlsode"
       :perform (compile-op :around (op c)
 			   (fortran-compile op c
 					    :common-as-array t :declare-common t))
-      :depends-on ("dstode" "dewset" "dvnorm"
-			    "dintdy"
-			    "dsolsy"))
+      :depends-on ("dstode"
+		   "dewset"
+		   "dvnorm"
+		   "dintdy"
+		   "dsolsy"))
      (:file "dsolsy")
      (:file "dewset")
      (:file "dvnorm")
      (:file "dintdy")
      (:file "dstode"
-      :depends-on ("dcfode" "dvnorm" "dprepj"))
+      :depends-on ("dcfode"
+		   "dvnorm"
+		   "dprepj"))
      (:file "dcfode")
      (:file "dprepj")))))
 
 (defsystem odepack-lsoda
-  :pathname "odepack/"
+  :pathname "odepack/fortran"
   :depends-on ("odepack-blas-util")
   :components
-  ((:module "package"
-    :pathname ""
-    :components
-    ((:file "package")))
-   (:module "lsoda"
+  ((:module "lsoda"
     :pathname ""
     :default-component-class odepack-fortran-file
     :components
-    (
-     (:file "dlsoda"
-      :depends-on ("dstoda" "dewset" "dmnorm" "dintdy"
-			    "dsolsy")
+    ((:file "dlsoda"
+      :depends-on ("dstoda"
+		   "dewset"
+		   "dmnorm"
+		   "dintdy"
+		   "dsolsy")
       :perform (compile-op :around (op c)
 			   (fortran-compile op c
 					    :common-as-array t :declare-common t)))
      (:file "dsolsy")
      (:file "dstoda"
-      :depends-on ("dcfode" "dmnorm" "dprja"))
+      :depends-on ("dcfode"
+		   "dmnorm"
+		   "dprja"))
      (:file "dprja"
-      :depends-on ("dfnorm" "dbnorm"))
+      :depends-on ("dfnorm"
+		   "dbnorm"))
      (:file "dfnorm")
      (:file "dbnorm")
      (:file "dcfode")
      (:file "dintdy")
      (:file "dmnorm")
-     (:file "dewset")
-     ))))
+     (:file "dewset")))))
 
 (defsystem odepack-lsodar
-  :pathname "odepack/"
+  :pathname "odepack/fortran"
   :depends-on ("odepack-blas-util")
   :components
-  (
-   (:module "lsoda"
+  ((:module "lsoda"
     :pathname ""
     :default-component-class odepack-fortran-file
     :components
-    (
-     (:file "dlsodar"
-	    :depends-on ("dewset" "dmnorm" "drchek" "dintdy" "dstoda" "dsolsy")
+    ((:file "dlsodar"
+      :depends-on ("dewset"
+		   "dmnorm"
+		   "drchek"
+		   "dintdy"
+		   "dstoda"
+		   "dsolsy")
       :perform (compile-op :around (op c)
 			   (fortran-compile op c
 					    :common-as-array t :declare-common t)))
      (:file "dstoda"
-      :depends-on ("dcfode" "dmnorm" "dprja"))
+      :depends-on ("dcfode"
+		   "dmnorm"
+		   "dprja"))
      (:file "dprja"
-      :depends-on ("dfnorm" "dbnorm"))
+      :depends-on ("dfnorm"
+		   "dbnorm"))
      (:file "dsolsy")
      (:file "dcfode")
      (:file "dfnorm")
@@ -325,8 +337,7 @@
      (:file "drchek"
       :depends-on ("droots"))
      (:file "droots")
-     (:file "dintdy")
-     ))))
+     (:file "dintdy")))))
 
 
 
