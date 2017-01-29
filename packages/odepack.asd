@@ -253,56 +253,16 @@
 			   (fortran-compile op c
 					    :common-as-array t :declare-common t))
       :depends-on ("dstode" "dewset" "dvnorm"
-			    "dintdy" #+nil "xerrwd"
+			    "dintdy"
 			    "dsolsy"))
-     (:file "dsolsy"
-      ;;:depends-on ("dgesl" "dgbsl")
-	    )
-     #+nil
-     (:file "dgbsl"
-      :depends-on ("daxpy"))
+     (:file "dsolsy")
      (:file "dewset")
      (:file "dvnorm")
-     (:file "dintdy"
-      ;;:depends-on ("xerrwd")
-	    )
-     #+nil
-     (:file "xerrwd"
-      :depends-on ("ixsav"))
-     #+nil
-     (:file "ixsav"
-      :depends-on ("iumach"))
-     #+nil
-     (:file "iumach")
+     (:file "dintdy")
      (:file "dstode"
       :depends-on ("dcfode" "dvnorm" "dprepj"))
      (:file "dcfode")
-     (:file "dprepj"
-	    ;;:depends-on ("dgefa" "dgbfa")
-	    )
-     #+nil
-     (:file "dgefa"
-     :depends-on ("idamax" "dscal" "daxpy"))
-     #+nil
-     (:file "dgbfa"
-		    :depends-on ("idamax" "dscal" "daxpy"))
-
-     #+nil
-     (:file "idamax")
-     #+nil
-     (:file "dscal")
-     #+nil
-     (:file "daxpy")
-     #+nil
-     (:file "dumach"
-      :depends-on ("dumsum"))
-     #+nil
-     (:file "dumsum")
-     #+nil
-     (:file "dgesl"
-      :depends-on ("daxpy" "ddot"))
-     #+nil
-     (:file "ddot")))))
+     (:file "dprepj")))))
 
 (defsystem odepack-lsoda
   :pathname "odepack/"
@@ -318,57 +278,22 @@
     :components
     (
      (:file "dlsoda"
-      :depends-on ("dstoda" #+nil "xerrwd" "dewset" "dmnorm" "dintdy" #+nil "dumach"
+      :depends-on ("dstoda" "dewset" "dmnorm" "dintdy"
 			    "dsolsy")
       :perform (compile-op :around (op c)
 			   (fortran-compile op c
 					    :common-as-array t :declare-common t)))
-     (:file "dsolsy"
-      ;;:depends-on ("dgesl" "dgbsl")
-	    )
-     #+nil
-     (:file "dgesl"
-      :depends-on ("daxpy" "ddot"))
-     #+nil
-     (:file "dgbsl"
-      :depends-on ("daxpy"))
+     (:file "dsolsy")
      (:file "dstoda"
       :depends-on ("dcfode" "dmnorm" "dprja"))
      (:file "dprja"
-      :depends-on ("dfnorm" #+nil "dgefa" "dbnorm" #+nil "dgbfa"))
+      :depends-on ("dfnorm" "dbnorm"))
      (:file "dfnorm")
-     #+nil
-     (:file "dgefa"
-      :depends-on ("idamax" "dscal" "daxpy"))
      (:file "dbnorm")
-     #+nil
-     (:file "dgbfa"
-      :depends-on ("idamax" "dscal" "daxpy"))
      (:file "dcfode")
      (:file "dintdy")
      (:file "dmnorm")
      (:file "dewset")
-     #+nil
-     (:file "xerrwd"
-      :depends-on ("ixsav"))
-     #+nil
-     (:file "ixsav"
-      :depends-on ("iumach"))
-     #+nil
-     (:file "iumach")
-     #+nil
-     (:file "dumach"
-      :depends-on ("dumsum"))
-     #+nil
-     (:file "dumsum")
-     #+nil
-     (:file "idamax")
-     #+nil
-     (:file "dscal")
-     #+nil
-     (:file "daxpy")
-     #+nil
-     (:file "ddot")
      ))))
 
 
