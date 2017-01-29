@@ -158,6 +158,145 @@
      (:file "xsetf")
      (:file "xsetun")))
 
+(mk:defsystem odepack-blas-util
+  :source-pathname (translate-logical-pathname "odepack:")
+  :binary-pathname (translate-logical-pathname "odepack:lib")
+  :components
+  ((:module "package"
+    :source-pathname ""
+    :components
+    ((:file "package")))
+   (:module "blas"
+    :source-pathname ""
+    :source-extension "f"
+    :language :f2cl
+    :components
+    (
+     (:file "dgesl"
+      :depends-on ("daxpy" "ddot"))
+     (:file "dgbsl"
+      :depends-on ("daxpy"))
+     (:file "dgefa"
+      :depends-on ("idamax" "dscal" "daxpy"))
+     (:file "dgbfa"
+      :depends-on ("idamax" "dscal" "daxpy"))
+     (:file "idamax")
+     (:file "dscal")
+     (:file "daxpy")
+     (:file "ddot")
+     (:file "dcopy")
+     ))
+   (:module "util"
+    :source-pathname ""
+    :source-extension "f"
+    :language :f2cl
+    :components
+    ((:file "xerrwd"
+      :depends-on ("ixsav"))
+     (:file "ixsav"
+      :depends-on ("iumach"))
+     (:file "iumach")
+     (:file "dumach"
+      :depends-on ("dumsum"))
+     (:file "dumsum")
+     ))))
+
+(mk:defsystem odepack-lsode
+  :source-pathname (translate-logical-pathname "odepack:")
+  :binary-pathname (translate-logical-pathname "odepack:lib")
+  :source-extension "f"
+  :depends-on ("odepack-blas-util")
+  :components
+  ((:module "package"
+    :source-pathname ""
+    :components
+    ((:file "package")))
+   (:module "lsode"
+    :source-pathname ""
+    :language :f2cl
+    :source-extension "f"
+    :compiler-options (:common-as-array t)
+    :components
+    (
+     (:file "dlsode"
+      :compiler-options (:common-as-array t :declare-common t)
+      :depends-on ("dstode" "dewset" "dvnorm"
+			    "dintdy"
+			    "dsolsy"))
+     (:file "dsolsy")
+     (:file "dewset")
+     (:file "dvnorm")
+     (:file "dintdy")
+     (:file "dstode"
+      :depends-on ("dcfode" "dvnorm" "dprepj"))
+     (:file "dcfode")
+     (:file "dprepj")))))
+
+(mk:defsystem odepack-lsoda
+  :source-pathname (translate-logical-pathname "odepack:")
+  :binary-pathname (translate-logical-pathname "odepack:lib")
+  :depends-on ("odepack-blas-util")
+  :components
+  ((:module "package"
+    :source-pathname ""
+    :components
+    ((:file "package")))
+   (:module "lsoda"
+    :source-pathname ""
+    :language :f2cl
+    :source-extension "f"
+    :compiler-options (:common-as-array t)
+    :components
+    (
+     (:file "dlsoda"
+      :depends-on ("dstoda" "dewset" "dmnorm" "dintdy"
+			    "dsolsy")
+      :compiler-options (:common-as-array t :declare-common t))
+     (:file "dsolsy")
+     (:file "dstoda"
+      :depends-on ("dcfode" "dmnorm" "dprja"))
+     (:file "dprja"
+      :depends-on ("dfnorm" "dbnorm"))
+     (:file "dfnorm")
+     (:file "dbnorm")
+     (:file "dcfode")
+     (:file "dintdy")
+     (:file "dmnorm")
+     (:file "dewset")
+     ))))
+
+(mk:defsystem odepack-lsodar
+  :source-pathname (translate-logical-pathname "odepack:")
+  :binary-pathname (translate-logical-pathname "odepack:lib")
+  :source-extension "f"
+  :depends-on ("odepack-blas-util")
+  :components
+  (
+   (:module "lsoda"
+    :source-pathname ""
+    :language :f2cl
+    :source-extension "f"
+    :compiler-options (:common-as-array t)
+    :components
+    (
+     (:file "dlsodar"
+	    :depends-on ("dewset" "dmnorm" "drchek" "dintdy" "dstoda" "dsolsy")
+      :compiler-options (:common-as-array t :declare-common t))
+     (:file "dstoda"
+      :depends-on ("dcfode" "dmnorm" "dprja"))
+     (:file "dprja"
+      :depends-on ("dfnorm" "dbnorm"))
+     (:file "dsolsy")
+     (:file "dcfode")
+     (:file "dfnorm")
+     (:file "dbnorm")
+     (:file "dewset")
+     (:file "dmnorm")
+     (:file "drchek"
+      :depends-on ("droots"))
+     (:file "droots")
+     (:file "dintdy")
+     ))))
 
 ;;; Demo programs
 ;;;
@@ -176,7 +315,7 @@
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t)
-    :depends-on ("odepack")
+    :depends-on ("odepack-lsode")
     :components
     ((:file "opkdemo1")
      (:file "f1")
@@ -207,7 +346,7 @@
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t)
-    :depends-on ("odepack")
+    :depends-on ("odepack-lsoda")
     :components
     ((:file "opkdemo3")
      (:file "f1")
@@ -225,7 +364,7 @@
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t)
-    :depends-on ("odepack")
+    :depends-on ("odepack-lsodar")
     :components
     ((:file "opkdemo4")
      (:file "f1")
