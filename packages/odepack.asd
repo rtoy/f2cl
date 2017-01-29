@@ -221,6 +221,7 @@
      (:file "dscal")
      (:file "daxpy")
      (:file "ddot")
+     (:file "dcopy")
      ))
    (:module "util"
     :pathname ""
@@ -296,6 +297,37 @@
      (:file "dewset")
      ))))
 
+(defsystem odepack-lsodar
+  :pathname "odepack/"
+  :depends-on ("odepack-blas-util")
+  :components
+  (
+   (:module "lsoda"
+    :pathname ""
+    :default-component-class odepack-fortran-file
+    :components
+    (
+     (:file "dlsodar"
+	    :depends-on ("dewset" "dmnorm" "drchek" "dintdy" "dstoda" "dsolsy")
+      :perform (compile-op :around (op c)
+			   (fortran-compile op c
+					    :common-as-array t :declare-common t)))
+     (:file "dstoda"
+      :depends-on ("dcfode" "dmnorm" "dprja"))
+     (:file "dprja"
+      :depends-on ("dfnorm" "dbnorm"))
+     (:file "dsolsy")
+     (:file "dcfode")
+     (:file "dfnorm")
+     (:file "dbnorm")
+     (:file "dewset")
+     (:file "dmnorm")
+     (:file "drchek"
+      :depends-on ("droots"))
+     (:file "droots")
+     (:file "dintdy")
+     ))))
+
 
 
 ;;; Demo programs
@@ -367,7 +399,7 @@
 ;; Output matches Fortran code.
 (defsystem odedemo-lsodar
   :pathname "odepack/"
-  :depends-on ("odepack")
+  :depends-on ("odepack-lsodar")
   :components
   ((:module "demo4"
 	    :default-component-class odepack-fortran-file
