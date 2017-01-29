@@ -249,6 +249,59 @@
       :depends-on ("daxpy" "ddot"))
      (:file "ddot")))))
 
+(defsystem odepack-lsoda
+  :pathname "odepack/"
+  :components
+  ((:module "package"
+    :pathname ""
+    :components
+    ((:file "package")))
+   (:module "lsoda"
+    :pathname ""
+    :default-component-class odepack-fortran-file
+    :components
+    (
+     (:file "dlsoda"
+      :depends-on ("dstoda" "xerrwd" "dewset" "dmnorm" "dintdy" "dumach"
+			    "dsolsy")
+      :perform (compile-op :around (op c)
+			   (fortran-compile op c
+					    :common-as-array t :declare-common t)))
+     (:file "dsolsy"
+      :depends-on ("dgesl" "dgbsl"))
+     (:file "dgesl"
+      :depends-on ("daxpy" "ddot"))
+     (:file "dgbsl"
+      :depends-on ("daxpy"))
+     (:file "dstoda"
+      :depends-on ("dcfode" "dmnorm" "dprja"))
+     (:file "dprja"
+      :depends-on ("dfnorm" "dgefa" "dbnorm" "dgbfa"))
+     (:file "dfnorm")
+     (:file "dgefa"
+      :depends-on ("idamax" "dscal" "daxpy"))
+     (:file "dbnorm")
+     (:file "dgbfa"
+      :depends-on ("idamax" "dscal" "daxpy"))
+     (:file "dcfode")
+     (:file "dintdy")
+     (:file "dmnorm")
+     (:file "dewset")
+     (:file "xerrwd"
+      :depends-on ("ixsav"))
+     (:file "ixsav"
+      :depends-on ("iumach"))
+     (:file "iumach")
+     (:file "dumach"
+      :depends-on ("dumsum"))
+     (:file "dumsum")
+     (:file "idamax")
+     (:file "dscal")
+     (:file "daxpy")
+     (:file "ddot")
+     ))))
+
+
 
 ;;; Demo programs
 ;;;
@@ -299,7 +352,7 @@
 ;; Output matches Fortran code.
 (defsystem odedemo-lsoda
   :pathname "odepack/"
-  :depends-on ("odepack")
+  :depends-on ("odepack-lsoda")
   :components
   ((:module "demo3"
 	    :default-component-class odepack-fortran-file
