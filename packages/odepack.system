@@ -159,7 +159,7 @@
      (:file "xsetun")))
 
 (mk:defsystem odepack-package
-  :source-pathname (translate-logical-pathname "odepack:")
+  :source-pathname (translate-logical-pathname "odepack:fortran")
   :binary-pathname (translate-logical-pathname "odepack:lib")
   :components
   ((:module "package"
@@ -168,7 +168,7 @@
     ((:file "package")))))
 
 (mk:defsystem odepack-blas-util
-  :source-pathname (translate-logical-pathname "odepack:")
+  :source-pathname (translate-logical-pathname "odepack:fortran")
   :binary-pathname (translate-logical-pathname "odepack:lib")
   :depends-on ("odepack-package")
   :components
@@ -211,7 +211,7 @@
      (:file "dumsum")))))
 
 (mk:defsystem odepack-lsode
-  :source-pathname (translate-logical-pathname "odepack:")
+  :source-pathname (translate-logical-pathname "odepack:fortran")
   :binary-pathname (translate-logical-pathname "odepack:lib")
   :source-extension "f"
   :depends-on ("odepack-blas-util")
@@ -241,7 +241,7 @@
      (:file "dprepj")))))
 
 (mk:defsystem odepack-lsoda
-  :source-pathname (translate-logical-pathname "odepack:")
+  :source-pathname (translate-logical-pathname "odepack:fortran")
   :binary-pathname (translate-logical-pathname "odepack:lib")
   :depends-on ("odepack-blas-util")
   :components
@@ -274,7 +274,7 @@
      (:file "dewset")))))
 
 (mk:defsystem odepack-lsodar
-  :source-pathname (translate-logical-pathname "odepack:")
+  :source-pathname (translate-logical-pathname "odepack:fortran")
   :binary-pathname (translate-logical-pathname "odepack:lib")
   :source-extension "f"
   :depends-on ("odepack-blas-util")
