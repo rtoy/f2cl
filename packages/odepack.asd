@@ -210,7 +210,10 @@
     :components
     (
      (:file "dlsode"
-      :depends-on ("dstode" "diprep" "dewset" "dvnorm"
+      :perform (compile-op :around (op c)
+			   (fortran-compile op c
+					    :common-as-array t :declare-common t))
+      :depends-on ("dstode" "dewset" "dvnorm"
 			    "dintdy" "xerrwd"
 			    "dsolsy"))
      (:file "dsolsy"
@@ -239,32 +242,44 @@
      (:file "idamax")
      (:file "dscal")
      (:file "daxpy")
-     (:file "diprep"
-      :depends-on ("dprep")
-      :perform (compile-op :around (op c)
-			   (fortran-compile op c
-					    :common-as-array t :declare-common t)))
+     #+nil
      (:file "dprep"
       :depends-on ("jgroup" "odrv" "cdrv" "adjlr" "cntnzu"))
+     #+nil
      (:file "jgroup")
+     #+nil
      (:file "odrv"
       :depends-on ("sro" "md"))
+     #+nil
      (:file "cdrv"
       :depends-on ("nntc"))
+     #+nil
      (:file "nntc")
+     #+nil
      (:file "adjlr"
       :depends-on ("nroc" "nsfc" "nnfc" "nnsc"))
+     #+nil
      (:file "nroc")
+     #+nil
      (:file "nsfc")
+     #+nil
      (:file "nnfc")
+     #+nil
      (:file "nnsc")
+     #+nil
      (:file "cntnzu")
+     #+nil
      (:file "sro")
+     #+nil
      (:file "md"
       :depends-on ("mdi" "mdm" "mdp" "mdu"))
+     #+nil
      (:file "mdi")
+     #+nil
      (:file "mdm")
+     #+nil
      (:file "mdp")
+     #+nil
      (:file "mdu")
      (:file "dumach"
       :depends-on ("dumsum"))
