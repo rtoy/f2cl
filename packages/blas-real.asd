@@ -1,39 +1,16 @@
 ;;; -*- Mode: lisp -*-
 
-(require :f2cl)
+(load-system "f2cl")
 
-(defpackage blas-real-system
-  (:use #:cl #:asdf))
+(in-package :f2cl-asdf)
 
-(in-package #:blas-real-system)
-
-(defclass blas-real-fortran-file (cl-source-file)
-  ()
-  (:default-initargs :type "f"))
-
-(defun fortran-compile (op c &key (array-slicing t) (array-type :array) package declare-common)
-  (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
-		       :output-file (first (output-files op c))
-		       :array-slicing array-slicing
-		       :array-type array-type
-		       :package package
-		       :relaxed-array-decls t
-		       :declare-common declare-common
-		       )))
-
-(defmethod perform ((op compile-op) (c blas-real-fortran-file))
-  (fortran-compile op c :package "BLAS"))
-
-(defmethod perform ((op load-op) (c blas-real-fortran-file))
-  (load (first (input-files op c))))
-
-(defsystem blas-real
+(defsystem "blas-real"
   :description "BLAS routines for real double-float matrices"
+  :class f2cl-system
+  :f2cl-options (:package "BLAS" :array-slicing t :relaxed-array-decls t :array-type :array)
   :depends-on ("blas-hompack")
   :components
   ((:module "blas"
-    :default-component-class blas-real-fortran-file
     :components
     ( ;; Here are the rest of the BLAS routines
      (:file "dasum")

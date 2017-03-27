@@ -1,10 +1,14 @@
 ;;; -*- Mode: lisp -*-
 
-(in-package :asdf)
+(defclass cl-source-file.l (cl-source-file)
+  ((type :initform "l"))
+  (:documentation "Component class for a Common Lisp source file using type \"l\""))
 
-(defsystem :f2cl
-    :components
-  ((:file "f2cl0")
+(defsystem "f2cl"
+  :default-component-class cl-source-file.l
+  :components
+  ((:file "f2cl-asdf")
+   (:file "f2cl0")
    (:file "f2cl1" :depends-on ("f2cl0"))
    (:file "f2cl2" :depends-on ("f2cl1"))
    (:file "f2cl3" :depends-on ("f2cl2"))
@@ -14,7 +18,3 @@
    (:file "f2cl7" :depends-on ("f2cl6"))
    (:file "f2cl8" :depends-on ("f2cl7"))
    (:file "macros" :depends-on ("f2cl8"))))
-
-
-(defmethod source-file-type ((c cl-source-file) (s (eql (find-system :f2cl))))
-  "l")

@@ -6,16 +6,13 @@
 ;;; $Id$
 
 ;; Need f2cl to be loaded before we can even read this file.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:load-system :f2cl))
+(load-system "f2cl")
 
-;; Package to use for this file.
-(defpackage #:quadpack-system
-  (:use #:cl #:asdf))
+(in-package :f2cl-asdf)
 
 ;; Package for the quadpack routines.
-(defpackage quadpack
-  (:use #:cl)
+(defpackage :quadpack
+  (:use :cl)
   (:export
    ;; Support
    #:dqwgtf
@@ -25,7 +22,7 @@
    #:dqwgtc
    #:dgtsl
    #:xerror
-	       
+
    ;; Core integration routines
    #:dqk15
    #:dqk31
@@ -60,48 +57,24 @@
    #:dqaws
    #:dqawc))
 
-(in-package #:quadpack-system)
-
 ;; Defsystem for d1mach and i1mach
-(defsystem mach-par
-    :components
-    ((:file "d1mach")
-     (:file "i1mach")))
-
-
-(defclass quadpack-fortran-file (cl-source-file)
-  ()
-  (:default-initargs :type "f"))
-
-(defun fortran-compile (op c &key (array-slicing t) (array-type :array) package)
-  (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
-		       :keep-lisp-file t
-		       :output-file (first (output-files op c))
-		       :array-slicing array-slicing
-		       :array-type array-type
-		       :package package)))
-
-(defmethod perform ((op compile-op) (c quadpack-fortran-file))
-  (fortran-compile op c :package "QUADPACK"))
-
-(defmethod perform ((op load-op) (c quadpack-fortran-file))
-  (load (first (input-files op c))))
-
+(defsystem "quadpack/mach-par"
+  :components
+  ((:file "d1mach")
+   (:file "i1mach")))
 
 ;; Defsystem for quadpack.  This converts the Fortran code to Lisp and
 ;; then compiles the result.
-(defsystem quadpack
+(defsystem "quadpack"
   :description "F2CL conversion of QUADPACK: Adaptive numerical integration"
-  :depends-on ("mach-par")
+  :class f2cl-system
+  :f2cl-options (:package "QUADPACK" :array-slicing t :array-type :array :keep-lisp-file t)
+  :depends-on ("quadpack/mach-par")
   :pathname "quadpack/"
   :components
-  ((:module Fortran
-	    :pathname "Fortran"
-	    :default-component-class quadpack-fortran-file
+  ((:module "Fortran"
 	    :components
-	    (
-	     ;; Support
+	    (;; Support
 	     (:file "dqwgtf")
 	     (:file "dqcheb")
 	     (:file "dqk15w")
@@ -123,7 +96,7 @@
 	     (:file "xerabt")
 	     (:file "xerprt")
 	     (:file "xerctl")
-	     
+
 	     ;; Core integration routines
 	     (:file "dqk15")
 	     (:file "dqk31")
@@ -173,8 +146,7 @@
 		    :depends-on ("dqagie"
 				 "dqawoe"
 				 "dqelg")
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :array-slicing nil :array-type :array)))
+                    :f2cl-options (:array-slicing nil :array-type :array))
 	     (:file "dqawoe"
 		    :depends-on ("dqc25f"
 				 "dqpsrt"
@@ -209,18 +181,14 @@
 				 "xerror"))
 	     (:file "dqawc"
 		    :depends-on ("dqawce"
-				 "xerror"))))))
-
-(defmethod perform ((op test-op) (c (eql (find-system :quadpack))))
-    (oos 'test-op "quadpack-tests"))
+				 "xerror")))))
+  :in-order-to ((test-op (test-op "quadpack/tests"))))
 
 (defpackage quadpack-tests
-  (:use #:cl))
+  (:use :cl))
 
-(defsystem quadpack-tests
+(defsystem "quadpack/tests"
   :depends-on ("quadpack" "rt")
-  :in-order-to ((compile-op (load-op :quadpack :rt))
-		(test-op (load-op :quadpack :rt)))
   :components
   ((:module quadpack
 	    :components
@@ -228,8 +196,7 @@
 	     (:file "test-2")
 	     ;;(:file "test-3")
 	     (:file "test-4-qng")
-	     (:file "test-4-qags")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "quadpack-tests"))))
-  (or (funcall (intern "DO-TESTS" (find-package '#:rt)))
-      (error "TEST-OP filed for quadpack-tests")))
+	     (:file "test-4-qags"))))
+  :perform (test-op (o c)
+             (or (symbol-call :rt :do-tests)
+                 (error "TEST-OP failed for quadpack/tests"))))

@@ -1,25 +1,19 @@
 ;;; -*- Mode: lisp -*-
 ;; f2cl asd file
 
-(defpackage #:f2cl-asd
-  (:use :cl :asdf))
-
-(in-package #:f2cl-asd)
-
-(defclass f2cl-cl-source-file (asdf:cl-source-file)
-  ())
-
-(defmethod source-file-type ((f f2cl-cl-source-file) (m module))
-  "l")
+(defclass cl-source-file.l (cl-source-file)
+  ((type :initform "l"))
+  (:documentation "Component class for a Common Lisp source file using type \"l\""))
 
 (defsystem f2cl
   :description "F2CL:  Fortran to Lisp converter"
   :components
-  ((:module src
-	    :default-component-class f2cl-cl-source-file
+  ((:module "src"
+	    :default-component-class cl-source-file.l
 	    :serial t
 	    :components
-	    ((:file "f2cl0")
+	    ((:file "f2cl-asdf")
+             (:file "f2cl0")
 	     (:file "f2cl1")
 	     (:file "f2cl2")
 	     (:file "f2cl3")

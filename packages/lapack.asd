@@ -1,45 +1,16 @@
 ;;; -*- Mode: lisp -*-
 
-(require :f2cl)
+(load-system "f2cl")
 
-(defpackage lapack-system
-  (:use #:cl #:asdf))
+(in-package :f2cl-asdf)
 
-(in-package #:lapack-system)
-
-(defclass lapack-fortran-file (cl-source-file)
-  ()
-  (:default-initargs :type "f"))
-
-(defun fortran-compile (op c &key
-			       (array-slicing t)
-			       (array-type :array)
-			       (package "LAPACK")
-			       declare-common
-			       (common-as-array t))
-  (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
-		       :output-file (first (output-files op c))
-		       :array-slicing array-slicing
-		       :array-type array-type
-		       :package package
-		       :declare-common declare-common
-		       :common-as-array common-as-array
-		       :relaxed-array-decls t
-		       )))
-
-(defmethod perform ((op compile-op) (c lapack-fortran-file))
-  (fortran-compile op c :package "LAPACK"))
-
-(defmethod perform ((op load-op) (c lapack-fortran-file))
-  (load (first (input-files op c))))
-
-(defsystem lapack-real
+(defsystem "lapack/real"
   :description "LAPACK routines for real double-float matrices"
-  :depends-on ("blas-real" "lapack-package")
+  :class f2cl-system
+  :f2cl-options (:package "LAPACK" :array-slicing t :array-type :array :common-as-array t :relaxed-array-decls nil)
+  :depends-on ("blas-real" "lapack/package")
   :components
-  ((:module lapack
-    :default-component-class lapack-fortran-file
+  ((:module "lapack"
     :components
     ((:file "dgeev"
       :depends-on ("dlartg" "dlapy2" "dgebak" "dtrevc" "dhseqr"
@@ -223,16 +194,17 @@
 
      ;; For condition numbers of the singular vectors
      (:file "ddisna")
-	     
+
      ;;(:file "zgeev")
      ))))
 
-(defsystem lapack-complex
+(defsystem "lapack/complex"
   :description "LAPACK routines for complex double-float matrices"
-  :depends-on ("blas-complex" "lapack-real")
+  :class f2cl-system
+  :f2cl-options (:package "LAPACK" :array-slicing t :array-type :array :common-as-array t :relaxed-array-decls nil)
+  :depends-on ("blas-complex" "lapack/real")
   :components
-  ((:module complex
-    :default-component-class lapack-fortran-file
+  ((:module "complex"
     :pathname "lapack/"
     :components
     ((:file "zgeev"
@@ -310,7 +282,7 @@
 	    :depends-on ("dlaev2" "zlasr" "dlae2"))
      (:file "zlanhe")
      (:file "zungtr"
-	    :depends-on ("zungql"))
+            :depends-on ("zungql"))
      (:file "dlae2")
      (:file "dlaev2")
      (:file "zhetd2")
@@ -321,34 +293,18 @@
      (:file "zung2l")
      ))))
 
-(defsystem "lapack-package"
+(defsystem "lapack/package"
   :description "Package definition for LAPACK"
-  :pathname "lapack/"
   :depends-on ("blas-package")
-  :components
-  ((:file "lapack-package")))
+  :components ((:file "lapack/lapack-package")))
 
-(defsystem lapack
+(defsystem "lapack"
   :description "LAPACK - Linear Algebra PACKage for double-float matrices"
-  :pathname "lapack/"
-  :depends-on ("lapack-package" "lapack-real" "lapack-complex"))
+  :depends-on ("lapack/package" "lapack/real" "lapack/complex")
+  :in-order-to ((test-op (test-op "lapack/tests"))))
 
-(defmethod perform ((op test-op) (c (eql (find-system "lapack"))))
-    (oos 'test-op "lapack-tests"))
-
-(defpackage lapack-tests
-  (:use #:cl))
-
-(defsystem lapack-tests
+(defsystem "lapack/tests"
   :depends-on ("lapack" "rt")
-  :in-order-to ((compile-op (load-op :lapack :rt))
-		(test-op (load-op :lapack :rt)))
-  :components
-  ((:module lapack
-    :components
-    ((:file "lapack-tests")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "lapack-tests"))))
-  (or (funcall (intern "DO-TESTS" (find-package '#:rt)))
-      (error "TEST-OP filed for quadpack-tests")))
-  
+  :components ((:file "lapack/lapack-tests"))
+  :perform (test-op (o c)
+             (or (symbol-call :rt :do-tests) (error "TEST-OP failed for lapack/tests"))))

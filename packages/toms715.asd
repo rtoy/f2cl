@@ -1,72 +1,24 @@
 ;;; -*- Mode: lisp -*-
 ;;;
-;;; $Id$
-;;;
 
 ;; Need f2cl to be loaded before we can even read this file.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:load-system :f2cl))
+(load-system "f2cl")
 
-(defpackage toms715-system
-  (:use #:cl #:asdf))
+(in-package :f2cl-asdf)
 
-(in-package #:toms715-system)
-
-;; Defsystem for d1mach and i1mach
-(defsystem mach-par
-    :components
-    ((:file "d1mach")
-     (:file "i1mach")))
-
-
-(defclass toms715-fortran-file (cl-source-file)
-  ()
-  (:default-initargs :type "f"))
-
-(defun fortran-compile (op c &key (array-slicing t) (array-type :array) package)
-  (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
-		       :keep-lisp-file t
-		       :output-file (first (output-files op c))
-		       :array-slicing array-slicing
-		       :array-type array-type
-		       :package package)))
-
-(defmethod perform ((op compile-op) (c toms715-fortran-file))
-  (fortran-compile op c :package "TOMS715"))
-
-(defmethod perform ((op load-op) (c toms715-fortran-file))
-  (load (first (input-files op c))))
-
-(defsystem machar
-  :description "F2CL conversion of MACHAR:  Determine machine floating-point characteristics"
+(defsystem "toms715"
+  :description "F2CL conversion of TOMS 715:  Numerical Evaluation of Special Functions"
+  :class f2cl-system
+  :f2cl-options (:package "TOMS715" :array-slicing t :array-type :array :keep-lisp-file t)
   :pathname "toms/715/"
   :components
-  ((:module package
-	    :pathname ""
-	    :components
-	    ((:file "package")))
-   (:module machar
-	    :pathname ""
-            :default-component-class toms715-fortran-file
-	    :components
-	    ((:file "machar")))))
-
-(defsystem toms715
-  :description "F2CL conversion of TOMS 715:  Numerical Evaluation of Special Functions"
-  :depends-on ("machar")
-  :pathname "toms/"
-  :components
-  ((:module package
-	    :pathname "715/"
-	    :components
-	    ((:file "package")))
+  ((:cl-source-file "package")
+   (:file "machar" :depends-on ("package"))
    (:module "715"
-	    :depends-on ("package")
-	    :default-component-class toms715-fortran-file
+            :pathname ""
+	    :depends-on ("machar")
 	    :components
-	    (
-	     (:file "anorm")
+	    ((:file "anorm")
 	     (:file "besei0" :depends-on ("calci0"))
 	     (:file "besei1" :depends-on ("calci1"))
 	     (:file "besek0" :depends-on ("calck0"))
@@ -102,43 +54,35 @@
 	     (:file "ribesl")
 	     (:file "rjbesl")
 	     (:file "rkbesl")
-	     (:file "rybesl")
-	     ))))
+	     (:file "rybesl"))))
+  :in-order-to ((test-op (test-op "toms715/tests"))))
 
-(defmethod perform ((op test-op) (c (eql (find-system :toms715))))
-    (oos 'test-op "toms715-tests"))
-
-(defsystem toms715-tests
+(defsystem "toms715/tests"
+  :class f2cl-system
+  :f2cl-options (:package "TOMS715" :array-slicing t :array-type :array :keep-lisp-file t)
   :depends-on ("toms715")
-  :pathname "toms/"
+  :pathname "toms/715"
   :components
-  ((:module "715"
-	    :default-component-class toms715-fortran-file
-	    :components
-	    (
-	     (:file "algtst")
-	     (:file "anrtst")
-	     (:file "dawtst")
-	     (:file "eitest")
-	     (:file "erftst")
-	     (:file "gamtst")
-	     (:file "i0test")
-	     (:file "i1test")
-	     (:file "j0test")
-	     (:file "j1test")
-	     (:file "k0test")
-	     (:file "k1test")
-	     (:file "psitst")
-	     (:file "ritest")
-	     (:file "rjtest")
-	     (:file "rktest")
-	     (:file "rytest")
-	     (:file "y0test")
-	     (:file "y1test")
-	     ))))
-
-
-(defmethod perform ((op test-op) (c (eql (find-system "toms715-tests"))))
+  ((:file "algtst")
+   (:file "anrtst")
+   (:file "dawtst")
+   (:file "eitest")
+   (:file "erftst")
+   (:file "gamtst")
+   (:file "i0test")
+   (:file "i1test")
+   (:file "j0test")
+   (:file "j1test")
+   (:file "k0test")
+   (:file "k1test")
+   (:file "psitst")
+   (:file "ritest")
+   (:file "rjtest")
+   (:file "rktest")
+   (:file "rytest")
+   (:file "y0test")
+   (:file "y1test"))
+  :perform (test-op (o c)
   (dolist (test '(algtst
 		  anrtst
 		  dawtst
@@ -163,4 +107,4 @@
       ;; signal errors and we do.  But we don't want asdf to stop the
       ;; tests.  So we just ignore all errors and expect the user to
       ;; look through the results to see if they make sense.
-      (ignore-errors (funcall (find-symbol (symbol-name test) "TOMS715"))))))
+      (ignore-errors (symbol-call :toms715 test))))))
