@@ -2,53 +2,22 @@
 ;;;
 
 ;; Need f2cl to be loaded before we can even read this file.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:load-system :f2cl))
+(load-system "f2cl")
 
-(defpackage toms717-system
-  (:use #:cl #:asdf))
+(in-package :f2cl-asdf)
 
-(in-package #:toms717-system)
-
-
-(defclass toms717-fortran-file (cl-source-file)
-  ()
-  (:default-initargs :type "f"))
-
-(defun fortran-compile (op c &key (array-slicing t) (array-type :array) package declare-common)
-  (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
-		       :keep-lisp-file t
-		       :output-file (first (output-files op c))
-		       :array-slicing array-slicing
-		       :array-type array-type
-		       :package package
-		       :relaxed-array-decls t
-		       :declare-common declare-common
-		       )))
-
-(defmethod perform ((op compile-op) (c toms717-fortran-file))
-  (fortran-compile op c :package "TOMS717"))
-
-(defmethod perform ((op load-op) (c toms717-fortran-file))
-  (load (first (input-files op c))))
-
-
-(defsystem toms717
+(defsystem "toms717"
   :description "F2CL conversion of TOMS 717: Max- and quasi-likelihood estimation in non-linear regression"
-  :pathname "toms/"
+  :class f2cl-system
+  :f2cl-options (:package "TOMS717" :array-slicing t :array-type :array :keep-lisp-file t :relaxed-array-decls t)
+  :pathname "toms/717/"
   :components
-  ((:module "package"
-	    :pathname "717"
-	    :components
-	    ((:file "package"
-		    :type "lisp")))
+  ((:cl-source-file "package")
    (:module "717"
+            :pathname ""
 	    :depends-on ("package")
-	    :default-component-class toms717-fortran-file
 	    :components
-	    (
-	     ;;(:file "dglfg")
+	    (;;(:file "dglfg")
 	     (:file "df7hes"
 		    :depends-on ("dv7cpy"))
 	     (:file "dg2lrd"
@@ -69,7 +38,7 @@
 	     (:file "dl7nvr")
 	     (:file "dl7tsq")
 	     (:file "dn3rdp")
-	       
+
 	     ;;(:file "dglfgb")
 	     ;;(:file "dgletc")
 	     ;; dgletc split into one function per file
@@ -115,14 +84,14 @@
 	     (:file "stopx")
 
 	     (:file "dmdc")
-	       
+
 	     ;;(:file "mecdf")
 	     ;; mecdf split into 1 function/file
 	     (:file "alnorm")
 	     (:file "phi")
 	     (:file "mecdf"
 		    :depends-on ("alnorm" "phi"))
-	       
+
 	     ;;(:file "mnpsubs")
 	     (:file "drglg"
 		    :depends-on ("dv7scl" "dq7adr" "dl7vml" "dl7svx" "do7prd"
@@ -160,21 +129,19 @@
 	     (:file "i7copy")
 	     (:file "i7pnvr")
 	     (:file "i7shft")
-	     ))))
+	     )))
+  :in-order-to ((test-op (test-op "toms717/tests"))))
 
-(defmethod perform ((op test-op) (c (eql (find-system "toms717"))))
-  (oos 'test-op "toms717-tests"))
-
-(defsystem toms717-tests
+(defsystem "toms717/tests"
+  :class f2cl-system
+  :f2cl-options (:package "TOMS717" :array-slicing t :array-type :array :keep-lisp-file t :relaxed-array-decls t)
   :pathname "toms/"
   :depends-on ("toms717")
   :components
   ((:module "tests"
 	    :pathname "717"
-	    :default-component-class toms717-fortran-file
 	    :components
-	    (
-	     ;; This test appears to work and matches madsen.sgi,
+	    (;; This test appears to work and matches madsen.sgi,
 	     ;; more or less.  Run (madsen).
 	     (:file "madsen"
 		    :depends-on ("madrj" "rhols"))
@@ -222,10 +189,9 @@
 
 	     ;;(:file "mlmnp")
 	     ;;(:file "mlmnpb")
-	     ))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "toms717-tests"))))
-  (format t "~&*** MADSEN test~%")
-  (funcall (find-symbol "MADSEN" (find-package "TOMS717")))
-  (format t "~4&*** MADSENB test~%")
-  (funcall (find-symbol "MADSENB" (find-package "TOMS717"))))
+	     )))
+  :perform (test-op (o c)
+             (format t "~&*** MADSEN test~%")
+             (symbol-call :toms717 :madsen)
+             (format t "~4&*** MADSENB test~%")
+             (symbol-call :toms717 :madsenb)))

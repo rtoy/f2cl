@@ -1,7 +1,7 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 
-(asdf:defsystem blas-package
+(defsystem "blas-package"
   :description "Package definition for BLAS"
   :components
   ((:module "blas"

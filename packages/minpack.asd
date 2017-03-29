@@ -1,58 +1,21 @@
 ;;; -*- Mode: lisp -*-
 ;;;
-;;;
-;;; $Id$
-;;;
 
 ;; Need f2cl to be loaded before we can even read this file.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:load-system :f2cl))
+(load-system "f2cl")
 
-(defpackage minpack-system
-  (:use #:cl #:asdf))
+(in-package :f2cl-asdf)
 
-(in-package #:minpack-system)
-
-
-(defclass minpack-fortran-file (cl-source-file)
-  ()
-  (:default-initargs :type "f"))
-
-(defun fortran-compile (op c &key (array-slicing t) (array-type :array) package declare-common)
-  (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
-		       :keep-lisp-file t
-		       :output-file (first (output-files op c))
-		       :array-slicing array-slicing
-		       :array-type array-type
-		       :package package
-		       :relaxed-array-decls nil
-		       :declare-common declare-common
-		       )))
-
-(defmethod perform ((op compile-op) (c minpack-fortran-file))
-  (fortran-compile op c :package "MINPACK"))
-
-(defmethod perform ((op load-op) (c minpack-fortran-file))
-  (load (first (input-files op c))))
-
-
-
-(defsystem minpack
+(defsystem "minpack"
   :description "F2CL conversion of MINPACK: Solutions to non-linear equations and least-squares problems"
+  :class f2cl-system
+  :f2cl-options (:package "MINPACK" :keep-lisp-file t :array-slicing t :array-type :array :relaxed-array-decls nil)
   :components
-  ((:module "package"
-	    :pathname "minpack"
-	    :components
-	    ((:file "package"
-		    :type "lisp")))
+  ((:cl-source-file "minpack/package")
    (:module "minpack"
-	    :pathname "minpack"
-	    :depends-on ("package")
-	    :default-component-class minpack-fortran-file
+	    :depends-on ("minpack/package")
 	    :components
-	    (
-	     (:file "dpmpar")
+	    ((:file "dpmpar")
 	     (:file "enorm")
 	     (:file "fdjac1" :depends-on ("dpmpar"))
 	     (:file "fdjac2" :depends-on ("dpmpar"))
@@ -73,13 +36,8 @@
 	     (:file "hybrj" :depends-on ("dogleg" "dpmpar" "enorm" "qform" "qrfac"
 						  "r1mpyq" "r1updt"))
 	     (:file "hybrj1" :depends-on ("hybrj"))
-	     ))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "minpack"))))
-    (oos 'test-op "minpack-tests-lmdif"))
-
-(defpackage minpack-tests
-  (:use #:cl))
+	     )))
+  :in-order-to ((test-op (test-op "minpack-tests-lmdif"))))
 
 (setf (logical-pathname-translations "minpack")
       (list (list "**;*.*.*"
@@ -89,54 +47,46 @@
 				   *load-pathname*))))
 
 
-(defsystem minpack-tests-lmdif
+(defsystem "minpack-tests-lmdif"
+  :class f2cl-system
+  :f2cl-options (:package "MINPACK" :keep-lisp-file t :array-slicing t :array-type :array :relaxed-array-decls nil)
   :pathname "minpack/"
   :depends-on ("minpack")
   :components
   ((:module "main"
 	    :pathname ""
 	    :components
-	    ((:file "run-minpack-tests")))
+	    ((:cl-source-file "run-minpack-tests")))
    (:module "tests"
 	    :pathname ""
-	    :default-component-class minpack-fortran-file
 	    :components
 	    ((:file "tst-lmdif"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t
-							  :package "MINPACK")))
+		    :f2cl-options (:declare-common t))
 	     (:file "tst-lmder"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t
-							  :package "MINPACK")))))))
-
+		    :f2cl-options (:declare-common t)))))
 ;; (minpack::run-minpack-tests) will run the tst-lmdif and tst-lmder
 ;; tests.  (When the STOP statement is reached, select the continue
 ;; restart to continue.)  Compare the output in tlmdif.txt to
 ;; lmdif-ref.txt and tlmder.txt to lmder-ref.txt.
-(defmethod perform ((op test-op) (c (eql (find-system "minpack-tests-lmdif"))))
-  (funcall (intern "RUN-MINPACK-TESTS" (find-package '#:minpack))))
+  :perform (test-op (o c) (symbol-call :minpack :run-minpack-tests)))
 
 
 ;; This test defines things that are incompatible with tst-lmdif and
 ;; tst-lmder.  Hence, you can't run this test with others.
 
-(defsystem minpack-tests-hybrd
+(defsystem "minpack-tests-hybrd"
+  :class f2cl-system
+  :f2cl-options (:package "MINPACK" :keep-lisp-file t :array-slicing t :array-type :array :relaxed-array-decls nil)
   :pathname "minpack/"
   :depends-on ("minpack")
   :components
   ((:module "main"
 	    :pathname ""
 	    :components
-	    ((:file "run-minpack-tests")))
+	    ((:cl-source-file "run-minpack-tests")))
    (:module "tests"
 	    :pathname ""
-	    :default-component-class minpack-fortran-file
 	    :components
 	    ((:file "tst-hybrd"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t
-							  :package "MINPACK")))))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "minpack-tests-hybrd"))))
-  (funcall (intern "RUN-MINPACK-TEST-HYBRD" (find-package '#:minpack))))
+		    :f2cl-options (:declare-common t)))))
+  :perform (test-op (o c) (symbol-call :minpack :run-minpack-test-hybrd)))

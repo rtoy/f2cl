@@ -2,51 +2,24 @@
 ;;;
 
 ;; Need f2cl to be loaded before we can even read this file.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:load-system :f2cl))
+(load-system "f2cl")
 
-(defpackage hompack-system
-  (:use #:cl #:asdf))
+(in-package :f2cl-asdf)
 
-(in-package #:hompack-system)
-
-
-(defclass hompack-fortran-file (cl-source-file)
-  ()
-  (:default-initargs :type "f"))
-
-(defun fortran-compile (op c &key (array-slicing t) (array-type :array) package declare-common)
-  (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
-		       :keep-lisp-file t
-		       :output-file (first (output-files op c))
-		       :array-slicing array-slicing
-		       :array-type array-type
-		       :package "HOMPACK"
-		       :relaxed-array-decls t
-		       :declare-common declare-common
-		       )))
-
-(defmethod perform ((op compile-op) (c hompack-fortran-file))
-  (fortran-compile op c))
-
-(defmethod perform ((op load-op) (c hompack-fortran-file))
-  (load (first (input-files op c))))
-
-(defsystem hompack
+(defsystem "hompack"
   :description "F2CL conversion of HOMPACK: Solution of non-linear systems of equations by homotopy methods."
+  :class f2cl-system
+  :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("blas-hompack")
   :components
   ((:module "package"
 	    :pathname "hompack"
 	    :components
-	    ((:file "hompack-package")))
+	    ((:cl-source-file "hompack-package")))
    (:module "hompack"
-	    :default-component-class hompack-fortran-file
 	    :depends-on ("package")
 	    :components
-	    (
-	     ;; The following are :compile-only here because HOMPACK only
+	    (;; The following are :compile-only here because HOMPACK only
 	     ;; gives skeletons for them.  We make them :compile-only so that
 	     ;; f2cl will get the function definitions so it can generate
 	     ;; calls to them appropriately.
@@ -60,7 +33,6 @@
 	     (:file "rhojs")
 	     (:file "rhoa")
 
-	     
 	     (:file "rho")
 	     (:file "rhojac" :depends-on ("hfunp"))
 
@@ -114,32 +86,20 @@
 	     (:file "tangqf" :depends-on ("rhojac" "qrfaqf" "qrslqf" "r1upqf" "fjac"))
 	     (:file "tangqs" :depends-on ("rhojs" "pcgqs" "fjac"))
 	     (:file "upqrqf" :depends-on ("r1upqf"))
-	     ))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "hompack"))))
-  (oos 'test-op "hompack-test-mainf")
-  (oos 'test-op "hompack-test-mainp")
-  (oos 'test-op "hompack-test-mains"))
+	     )))
+  :in-order-to ((test-op (test-op "hompack/test-mainf" "hompack/test-mainp" "hompack/test-mains"))))
 
 ;; Run (hompack::mainf).  Compare with hompack/ref-main.txt.
 ;;
 ;; Results are identical.
-(defsystem hompack-test-mainf
+(defsystem "hompack/test-mainf"
+  :class f2cl-system
+  :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("hompack")
-  :default-component-class hompack-fortran-file
-  :components
-  ((:module mainf
-	    :pathname "hompack"
-	    :components
-	    ((:file "mainf"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t)))))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "hompack-test-mainf"))))
-  (let ((*default-pathname-defaults*
-	 (merge-pathnames "package/hompack"
-			  (load-time-value *load-pathname*))))
-    (funcall (find-symbol "MAINF" (find-package "HOMPACK")))))
+  :components ((:file "hompack/mainf" :f2cl-options (:declare-common t)))
+  :perform (test-op (o c)
+             (let ((*default-pathname-defaults* (system-source-directory "hompack")))
+               (symbol-call :hompack :mainf))))
 
 
 ;; This wants to read from innhp.dat in the hompack directory, so you
@@ -148,36 +108,20 @@
 ;; the results since the main program doesn't.  Use something like
 ;; (close (f2cl-lib:lun->stream 6)).
 
-(defsystem hompack-test-mainp
+(defsystem "hompack/test-mainp"
+  :class f2cl-system
+  :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("hompack")
-  :components
-  ((:module mainp
-	    :pathname "hompack"
-	    :default-component-class hompack-fortran-file
-	    :components
-	    ((:file "mainp"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t)))))))
+  :components ((:file "hompack/mainp" :f2cl-options (:declare-common t)))
+  :perform (test-op (o c)
+             (let ((*default-pathname-defaults* (system-source-directory "hompack")))
+               (symbol-call :hompack :mainp))))
 
-(defmethod perform ((op test-op) (c (eql (find-system "hompack-test-mainp"))))
-  (let ((*default-pathname-defaults*
-	 (merge-pathnames (make-pathname :directory '(:relative "hompack"))
-			  (load-time-value *load-pathname*))))
-    (funcall (find-symbol "MAINP" (find-package "HOMPACK")))))
-
-(defsystem hompack-test-mains
+(defsystem "hompack/test-mains"
+  :class f2cl-system
+  :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("hompack")
-  :components
-  ((:module mains
-	    :pathname "hompack"
-	    :default-component-class hompack-fortran-file
-	    :components
-	    ((:file "mains"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t)))))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "hompack-test-mains"))))
-  (let ((*default-pathname-defaults*
-	 (merge-pathnames (make-pathname :directory '(:relative "hompack"))
-			  (load-time-value *load-pathname*))))
-    (funcall (find-symbol "MAINS" (find-package "HOMPACK")))))
+  :components ((:file "hompack/mains" :f2cl-options (:declare-common t)))
+  :perform (test-op (o c)
+             (let ((*default-pathname-defaults* (system-source-directory "hompack")))
+               (symbol-call :hompack :mains))))

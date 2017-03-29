@@ -1,40 +1,17 @@
 ;;; -*- Mode: lisp -*-
 
-(require :f2cl)
+(load-system :f2cl)
 
-(defpackage blas-complex-system
-  (:use #:cl #:asdf))
+(in-package :f2cl-asdf)
 
-(in-package #:blas-complex-system)
-
-(defclass blas-complex-fortran-file (cl-source-file)
-  ()
-  (:default-initargs :type "f"))
-
-(defun fortran-compile (op c &key (array-slicing t) (array-type :array) package declare-common)
-  (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
-		       :output-file (first (output-files op c))
-		       :array-slicing array-slicing
-		       :array-type array-type
-		       :package package
-		       :relaxed-array-decls t
-		       :declare-common declare-common
-		       )))
-
-(defmethod perform ((op compile-op) (c blas-complex-fortran-file))
-  (fortran-compile op c :package "BLAS"))
-
-(defmethod perform ((op load-op) (c blas-complex-fortran-file))
-  (load (first (input-files op c))))
-
-(defsystem blas-complex
+(defsystem "blas-complex"
   :description "BLAS routines for complex double-float  matrices"
+  :class f2cl-system
+  :f2cl-options (:package "BLAS" :array-slicing t :array-type :array :relaxed-array-decls t)
   :depends-on ("blas-real")
   :components
   ((:module "blas"
     :pathname "blas/"
-    :default-component-class blas-complex-fortran-file
     :components
     ((:file "zaxpy")
      (:file "zcopy")

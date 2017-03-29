@@ -1,55 +1,20 @@
 ;;; -*- Mode: lisp -*-
 
-(defpackage odepack-system
-  (:use #:cl #:asdf))
+(load-system "f2cl")
 
-(in-package #:odepack-system)
+(in-package :f2cl-asdf)
 
-(defclass odepack-fortran-file (cl-source-file)
-  ()
-  (:default-initargs :type "f"))
-
-(defun fortran-compile (op c &key (array-slicing t) (array-type :array) (package "ODEPACK")
-			declare-common (common-as-array t))
-  (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
-		       :output-file (first (output-files op c))
-		       :array-slicing array-slicing
-		       :array-type array-type
-		       :package package
-		       :declare-common declare-common
-		       :common-as-array common-as-array
-		       )))
-
-(defmethod perform ((op compile-op) (c odepack-fortran-file))
-  (fortran-compile op c :package "ODEPACK"))
-
-(defmethod perform ((op load-op) (c odepack-fortran-file))
-  (load (first (input-files op c))))
-
-
-;; Create a logical pathname for our files.
-(let ((base (make-pathname :directory (pathname-directory *load-pathname*))))
-  (setf (logical-pathname-translations "odepack")
-	(list (list "**;*.*.*"
-		    (merge-pathnames (make-pathname :directory '(:relative "odepack" :wild-inferiors)
-						    :name :wild :type :wild)
-				     base)))))
-
-(defsystem odepack
+(defsystem "odepack"
   :description "F2CL conversion of ODEPACK: Initial value solver for ODEs"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :pathname "odepack/"
   :components
-  ((:module "package"
-	    :pathname ""
+  ((:cl-source-file "package")
+   (:module "fortran"
 	    :components
-	    ((:file "package")))
-   (:module "odepack"
-	    :pathname ""
-	    :default-component-class odepack-fortran-file
-	    :components
-	    (
-	     (:file "adjlr"
+	    ((:file "adjlr"
 		    :depends-on ("nroc" "nsfc" "nnfc" "nnsc"))
 	     (:file "cdrv"
 		    :depends-on ("nntc"))
@@ -89,9 +54,7 @@
 		    :depends-on ("xerrwd"))
 	     (:file "diprep"
 		    :depends-on ("dprep")
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c
-							  :common-as-array t :declare-common t)))
+		    :f2cl-options (:common-as-array t :declare-common t))
 	     ;; This routine takes a slice of a double precision array and
 	     ;; passes it to dprepi as a integer array. That won't work in
 	     ;; Lisp!
@@ -101,8 +64,7 @@
 		    :depends-on ("dvnorm"))
 	     (:file "dlsoda"
 		    :depends-on ("xerrwd" "dmnorm" "dstoda")
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :common-as-array t :declare-common t)))
+		    :f2cl-options (:common-as-array t :declare-common t))
 	     (:file "dlsodar"
 		    :depends-on ("drchek"))
 	     (:file "dlsode"
@@ -115,8 +77,7 @@
 		    :depends-on ("dstodi" "dainvgs"))
 	     (:file "dlsodkr"
 		    :depends-on ("drchek" "dstoka")
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :common-as-array t :declare-common t)))
+		    :f2cl-options (:common-as-array t :declare-common t))
 	     (:file "dlsodpk"
 		    :depends-on ("dstodpk"))
 	     (:file "dlsoibt"
@@ -192,12 +153,10 @@
 	     (:file "xerrwd"
 		    :depends-on ("ixsav"))
 	     (:file "xsetf")
-	     (:file "xsetun")))))
+	     (:file "xsetun"))))
+  :in-order-to ((test-op (test-op "odepack/lsode-demo"))))
 
-(defmethod perform ((op test-op) (c (eql (find-system "odepack"))))
-    (oos 'test-op "odedemo-lsode"))
-
-(defsystem odepack-package
+(defsystem "odepack/package"
   :pathname "odepack/"
   :components
   ((:module "package"
@@ -205,10 +164,12 @@
     :components
     ((:file "package")))))
 
-(defsystem odepack-blas-util
+(defsystem "odepack/blas-util"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :pathname "odepack/fortran/"
-  :depends-on ("odepack-package")
-  :default-component-class odepack-fortran-file
+  :depends-on ("odepack/package")
   :components
   ((:module "blas"
     :pathname ""
@@ -243,18 +204,18 @@
       :depends-on ("dumsum"))
      (:file "dumsum")))))
 
-(defsystem odepack-lsode
+(defsystem "odepack/lsode"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :pathname "odepack/fortran/"
-  :depends-on ("odepack-blas-util")
+  :depends-on ("odepack/blas-util")
   :components
   ((:module "lsode"
     :pathname ""
-    :default-component-class odepack-fortran-file
     :components
     ((:file "dlsode"
-      :perform (compile-op :around (op c)
-			   (fortran-compile op c
-					    :common-as-array t :declare-common t))
+      :f2cl-options (:common-as-array t :declare-common t)
       :depends-on ("dstode"
 		   "dewset"
 		   "dvnorm"
@@ -271,13 +232,15 @@
      (:file "dcfode")
      (:file "dprepj")))))
 
-(defsystem odepack-lsoda
+(defsystem "odepack/lsoda"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :pathname "odepack/fortran"
-  :depends-on ("odepack-blas-util")
+  :depends-on ("odepack/blas-util")
   :components
   ((:module "lsoda"
     :pathname ""
-    :default-component-class odepack-fortran-file
     :components
     ((:file "dlsoda"
       :depends-on ("dstoda"
@@ -285,9 +248,7 @@
 		   "dmnorm"
 		   "dintdy"
 		   "dsolsy")
-      :perform (compile-op :around (op c)
-			   (fortran-compile op c
-					    :common-as-array t :declare-common t)))
+      :f2cl-options (:common-as-array t :declare-common t))
      (:file "dsolsy")
      (:file "dstoda"
       :depends-on ("dcfode"
@@ -303,13 +264,15 @@
      (:file "dmnorm")
      (:file "dewset")))))
 
-(defsystem odepack-lsodar
+(defsystem "odepack/lsodar"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :pathname "odepack/fortran"
-  :depends-on ("odepack-blas-util")
+  :depends-on ("odepack/blas-util")
   :components
   ((:module "lsoda"
     :pathname ""
-    :default-component-class odepack-fortran-file
     :components
     ((:file "dlsodar"
       :depends-on ("dewset"
@@ -318,9 +281,7 @@
 		   "dintdy"
 		   "dstoda"
 		   "dsolsy")
-      :perform (compile-op :around (op c)
-			   (fortran-compile op c
-					    :common-as-array t :declare-common t)))
+      :f2cl-options (:common-as-array t :declare-common t))
      (:file "dstoda"
       :depends-on ("dcfode"
 		   "dmnorm"
@@ -352,78 +313,74 @@
 ;; (opkdemo1)
 ;;
 ;; Output matches Fortran code.
-(defsystem odedemo-lsode
+(defsystem "odepack/lsode-demo"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :pathname "odepack/"
-  :depends-on ("odepack-lsode")
+  :depends-on ("odepack/lsode")
   :components
   ((:module "demo1"
-	    :default-component-class odepack-fortran-file
 	    :components
 	    ((:file "opkdemo1")
 	     (:file "f1")
 	     (:file "jac1")
 	     (:file "f2")
 	     (:file "jac2")
-	     (:file "edit2")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "odedemo-lsode"))))
-  (funcall (intern "OPKDEMO1" (find-package '#:odepack))))
+	     (:file "edit2"))))
+  :perform (test-op (o c) (symbol-call :odepack :opkdemo1)))
 
 #||
 ;; This won't work because opkdemo2 equivalences two arrays together.
 ;; f2cl doesn't know how to handle that yet.
-(defsystem odedemo-lsodes
-    :source-pathname (translate-logical-pathname "odepack:")
-    :binary-pathname (translate-logical-pathname "odepack:lib")
-    :source-extension "f"
-    :language :f2cl
-    :compiler-options (:common-as-array t)
-    :depends-on ("odepack")
-    :components
-    ((:file "opkdemo2")))
-
-
+(defsystem "odepack/lsodes-demo"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
+  :depends-on ("odepack")
+  :components ((:file "opkdemo2"))
+  :perform (test-op (o c) (symbol-call :odepack :opkdemo2)))
 ||#
 
 ;; (opkdemo3)
 ;;
 ;; Output matches Fortran code.
-(defsystem odedemo-lsoda
+(defsystem "odepack/lsoda-demo"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :pathname "odepack/"
-  :depends-on ("odepack-lsoda")
+  :depends-on ("odepack/lsoda")
   :components
   ((:module "demo3"
-	    :default-component-class odepack-fortran-file
 	    :components
 	    ((:file "opkdemo3")
 	     (:file "f1")
 	     (:file "jac1")
 	     (:file "f2")
 	     (:file "jac2")
-	     (:file "edit2")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "odedemo-lsoda"))))
-  (funcall (intern "OPKDEMO3" (find-package '#:odepack))))
+	     (:file "edit2"))))
+  :perform (test-op (o c) (symbol-call :odepack :opkdemo3)))
 
 ;; (opkdemo4)
 ;;
 ;; Output matches Fortran code.
-(defsystem odedemo-lsodar
+(defsystem "odepack/lsodar-demo"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :pathname "odepack/"
-  :depends-on ("odepack-lsodar")
+  :depends-on ("odepack/lsodar")
   :components
   ((:module "demo4"
-	    :default-component-class odepack-fortran-file
 	    :components
 	    ((:file "opkdemo4")
 	     (:file "f1")
 	     (:file "gr1")
 	     (:file "f2")
 	     (:file "jac2")
-	     (:file "gr2")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "odedemo-lsodar"))))
-  (funcall (intern "OPKDEMO4" (find-package '#:odepack))))
+	     (:file "gr2"))))
+  :perform (test-op (o c) (symbol-call :odepack :opkdemo4)))
 
 
 ;; (opkdemo5)
@@ -437,17 +394,18 @@
 ;;
 ;; The output is placed in demout in the directory where this is run.
 ;; Compare this to demo-lsodpk.out
-(defsystem odedemo-lsodpk
+(defsystem "odepack/lsodpk-demo"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :pathname "odepack/"
   :depends-on ("odepack")
   :components
   ((:module "demo5"
-	    :default-component-class odepack-fortran-file
 	    :components
 	    ((:file "opkdemo5"
-		    :depends-on ("gset" "cinit" "outweb")
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t)))
+                    :depends-on ("gset" "cinit" "outweb")
+                    :f2cl-options (:declare-common t))
 	     (:file "setpar")
 	     (:file "gset")
 	     (:file "cinit")
@@ -460,42 +418,37 @@
 	     (:file "fbg")
 	     (:file "solsbg"
 		    :depends-on ("gs"))
-	     (:file "gs")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "odedemo-lsodpk"))))
-  (format *error-output* "Running odedemo-lsodpk.  This make take some time.~%")
-  (finish-output *error-output*)
-  (funcall (intern "OPKDEMO5" (find-package '#:odepack))))
+	     (:file "gs"))))
+  :perform (test-op (o c)
+             (format! *error-output* "Running odepack/lsodpk-demo.  This make take some time.~%")
+             (symbol-call :odepack :opkdemo5)))
 
 
 ;; This seems to work.
-(defsystem odedemo-lsodkr
+(defsystem "odepack/lsodkr-demo"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :pathname "odepack/"
   :depends-on ("odepack")
-  :depends-on ("odepack")
-  :default-component-class odepack-fortran-file
-  :components
-  ((:file "opkdemo6"
-	  :perform (compile-op :around (op c)
-			       (fortran-compile op c :declare-common t)))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "odedemo-lsodkr"))))
-  (funcall (intern "OPKDEMO6" (find-package '#:odepack))))
+  :components ((:file "opkdemo6" :f2cl-options (:declare-common t)))
+  :perform (test-op (o c) (symbol-call :odepack :opkdemo6)))
 
 
 
 ;; This runs and the expected output seems ok.
-(defsystem odedemo-lsodi
+(defsystem "odepack/lsodi-demo"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :depends-on ("odepack")
   :pathname "odepack/"
   :components
   ((:module "demo7"
-	    :default-component-class odepack-fortran-file
 	    :components
 	    ((:file "opkdemo7"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t))
-		    :depends-on ("elkup"))
+                    :f2cl-options (:declare-common t)
+                    :depends-on ("elkup"))
 	     (:file "gfun")
 	     (:file "res"
 		    :depends-on ("gfun"))
@@ -503,23 +456,23 @@
 	     (:file "addafl")
 	     (:file "jacbd")
 	     (:file "jacfl")
-	     (:file "elkup")))))
+	     (:file "elkup"))))
+  :perform (test-op (o c)
+             (format! *error-output* "Running odepack/lsodi-demo.  This make take some time.~%")
+             (symbol-call :odepack :opkdemo7)))
 
-(defmethod perform ((op test-op) (c (eql (find-system "odedemo-lsodi"))))
-  (format *error-output* "Running odedemo-lsodi.  This make take some time.~%")
-  (funcall (intern "OPKDEMO7" (find-package '#:odepack))))
-
-(defsystem odedemo-lsoibt
+(defsystem "odepack/lsoibt-demo"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil)
   :depends-on ("odepack")
   :pathname "odepack/"
   :components
   ((:module "demo8"
-	    :default-component-class odepack-fortran-file
 	    :components
 	    ((:file "opkdemo8"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c :declare-common t))
-		    :depends-on ("setic"
+                    :f2cl-options (:declare-common t)
+                    :depends-on ("setic"
 				 "edit"
 				 "maxerr"))
 	     (:file "addabt")
@@ -531,25 +484,19 @@
 		    :depends-on ("subav"
 				 "gfun"))
 	     (:file "setic")
-	     (:file "subav")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "odedemo-lsoibt"))))
-  (format *error-output* "Running odedemo-lsoibt.  This make take some time.~%")
-  (funcall (intern "OPKDEMO7" (find-package '#:odepack))))
+	     (:file "subav"))))
+  :perform (test-op (o c)
+             (format! *error-output* "Running odepack/lsoibt-demo.  This make take some time.~%")
+             (symbol-call :odepack :opkdemo7)))
 
 #||
-
-
 ;; Doesn't work.  DIPREPI takes a double precision array and slices it
 ;; up and passes it to DPREPI which wants integer arrays.  That ain't
 ;; gonna work in Lisp!
-(defsystem odedemo-lsodis
-    :source-pathname (translate-logical-pathname "odepack:")
-    :binary-pathname (translate-logical-pathname "odepack:lib")
-    :source-extension "f"
-    :language :f2cl
-    :compiler-options (:common-as-array t :declare-common t)
-    :depends-on ("odepack")
-    :components
-    ((:file "opkdemo9")))
+(defsystem "odepack/lsodis-demo"
+  :class f2cl-system
+  :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
+                          :relaxed-array-decls nil :declare-common t)
+  :depends-on ("odepack")
+  :components ((:file "opkdemo9")))
 ||#

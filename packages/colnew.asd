@@ -1,51 +1,22 @@
 ;;; -*- Mode: lisp; Package: CL-USER -*-
 
 ;; Need f2cl to be loaded before we can even read this file.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:load-system :f2cl))
+(load-system :f2cl)
 
-(defpackage colnew-system
-  (:use #:cl #:asdf))
-
-(in-package #:colnew-system)
-
-
-(defclass colnew-fortran-file (cl-source-file)
-  ()
-  (:default-initargs :type "f"))
-
-(defun fortran-compile (op c &key (array-slicing t) (array-type :array) (package "COLNEW")
-			declare-common (common-as-array t))
-  (let ((file (component-pathname c)))
-    (f2cl:f2cl-compile file
-		       :keep-lisp-file t
-		       :output-file (first (output-files op c))
-		       :array-slicing array-slicing
-		       :array-type array-type
-		       :package package
-		       :declare-common declare-common
-		       :common-as-array common-as-array
-		       )))
-
-(defmethod perform ((op compile-op) (c colnew-fortran-file))
-  (fortran-compile op c :package "COLNEW"))
-
-(defmethod perform ((op load-op) (c colnew-fortran-file))
-  (load (first (input-files op c))))
-
-
+(in-package :f2cl-asdf)
 
 ;; Defsystem for colnew.
-(defsystem colnew
+(defsystem "colnew"
   :description "F2CL conversion of COLNEW: Solution of boundary-value problems for ODEs"
+  :class f2cl-system
+  :f2cl-options (:package "COLNEW" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :components
   ((:module package
 	    :pathname "colnew"
 	    :components
-	    ((:file "package")))
+	    ((:cl-source-file "package")))
    (:module "colnew"
 	    :depends-on ("package")
-	    :default-component-class colnew-fortran-file
 	    :components
 	    (
 	     ;; Linpack routines needed by colnew
@@ -61,9 +32,7 @@
 	     ;; Simple compatibility to define all of the needed
 	     ;; common blocks in one place.
 	     (:file "compat"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c
-							  :declare-common t :common-as-array t)))
+		    :f2cl-options (:declare-common t :common-as-array t))
 	     ;; COLNEW itself, broken down into one subroutine per
 	     ;; file.
 	     (:file "colnew"
@@ -102,23 +71,20 @@
 	     (:file "sbblok"
 		    :depends-on ("subfor" "subbak"))
 	     (:file "subfor")
-	     (:file "subbak")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "colnew"))))
-  (oos 'test-op "colnew-test-1")
-  (oos 'test-op "colnew-test-2")
-  (oos 'test-op "colnew-test-3"))
+	     (:file "subbak"))))
+  :in-order-to ((test-op (test-op "colnew-test-1" "colnew-test-2" "colnew-test-3"))))
 
 
 ;; Test problem 1 from TOMS 569.
 ;;
-;; Run (*main*).  Appears to work since the error tolerance is satisfied. 
-(defsystem colnew-test-1
+;; Run (*main*).  Appears to work since the error tolerance is satisfied.
+(defsystem "colnew-test-1"
+  :class f2cl-system
+  :f2cl-options (:package "COLNEW" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("colnew")
   :pathname "colnew/"
   :components
   ((:module problem-1
-	    :default-component-class colnew-fortran-file
 	    :components
 	    ((:file "prob1"
 		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "exact"))
@@ -126,53 +92,44 @@
 	     (:file "gsub")
 	     (:file "dfsub")
 	     (:file "dgsub")
-	     (:file "exact")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "colnew-test-1"))))
-  (funcall (intern "PROB1" (find-package '#:colnew))))
+	     (:file "exact"))))
+  :perform (test-op (o c) (symbol-call :colnew :prob1)))
 
 
 ;; Test problem 2 from TOMS 569.  Appears to work.
-(defsystem colnew-test-2
+(defsystem "colnew-test-2"
+  :class f2cl-system
+  :f2cl-options (:package "COLNEW" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("colnew")
   :pathname "colnew/"
   :components
   ((:module problem-2
-	    :default-component-class colnew-fortran-file
 	    :components
 	    ((:file "prob2"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c
-							  :declare-common t :common-as-array t))
+		    :f2cl-options (:declare-common t :common-as-array t)
 		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "solutn"))
 	     (:file "fsub")
 	     (:file "gsub")
 	     (:file "dfsub")
 	     (:file "dgsub")
-	     (:file "solutn")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "colnew-test-2"))))
-  (funcall (intern "PROB2" (find-package '#:colnew))))
+	     (:file "solutn"))))
+  :perform (test-op (o c) (symbol-call :colnew :prob2)))
 
 
 ;; Test problem 3 from TOMS 569.
-(defsystem colnew-test-3
+(defsystem "colnew-test-3"
+  :class f2cl-system
+  :f2cl-options (:package "COLNEW" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("colnew")
   :pathname "colnew/"
   :components
   ((:module problem-3
-	    :default-component-class colnew-fortran-file
 	    :components
-	    ((:file "prob3"
-		    :perform (compile-op :around (op c)
-					 (fortran-compile op c
-							  :declare-common t :common-as-array t))
+	    ((:file "prob3" :f2cl-options (:declare-common t :common-as-array t)
 		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "solutn"))
 	     (:file "fsub")
 	     (:file "gsub")
 	     (:file "dfsub")
 	     (:file "dgsub")
-	     (:file "solutn")))))
-
-(defmethod perform ((op test-op) (c (eql (find-system "colnew-test-3"))))
-  (funcall (intern "PROB3" (find-package '#:colnew))))
+	     (:file "solutn"))))
+  :perform (test-op (o c) (symbol-call :colnew :PROB3)))
