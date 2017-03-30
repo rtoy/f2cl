@@ -9,6 +9,7 @@
 (defsystem "hompack"
   :description "F2CL conversion of HOMPACK: Solution of non-linear systems of equations by homotopy methods."
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("blas-hompack")
   :components
@@ -94,6 +95,7 @@
 ;; Results are identical.
 (defsystem "hompack/test-mainf"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("hompack")
   :components ((:file "hompack/mainf" :f2cl-options (:declare-common t)))
@@ -110,6 +112,7 @@
 
 (defsystem "hompack/test-mainp"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("hompack")
   :components ((:file "hompack/mainp" :f2cl-options (:declare-common t)))
@@ -119,6 +122,7 @@
 
 (defsystem "hompack/test-mains"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("hompack")
   :components ((:file "hompack/mains" :f2cl-options (:declare-common t)))

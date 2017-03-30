@@ -8,6 +8,7 @@
 
 (defsystem "blas-hompack"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "BLAS" :array-slicing t :array-type :array :relaxed-array-decls nil)
   :depends-on ("blas-package")
   :pathname "blas"

@@ -9,6 +9,7 @@
 (defsystem "toms717"
   :description "F2CL conversion of TOMS 717: Max- and quasi-likelihood estimation in non-linear regression"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "TOMS717" :array-slicing t :array-type :array :keep-lisp-file t :relaxed-array-decls t)
   :pathname "toms/717/"
   :components
@@ -134,6 +135,7 @@
 
 (defsystem "toms717/tests"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "TOMS717" :array-slicing t :array-type :array :keep-lisp-file t :relaxed-array-decls t)
   :pathname "toms/"
   :depends-on ("toms717")

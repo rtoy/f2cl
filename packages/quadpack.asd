@@ -68,6 +68,7 @@
 (defsystem "quadpack"
   :description "F2CL conversion of QUADPACK: Adaptive numerical integration"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "QUADPACK" :array-slicing t :array-type :array :keep-lisp-file t)
   :depends-on ("quadpack/mach-par")
   :pathname "quadpack/"

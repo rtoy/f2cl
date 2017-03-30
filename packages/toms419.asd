@@ -9,6 +9,7 @@
 (defsystem "toms419"
   :description "F2CL conversion of TOMS 419: Zeroes of a complex polynomial"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "TOMS419" :array-slicing t :array-type :array :keep-lisp-file t :relaxed-array-decls t)
   :pathname "toms/419/"
   :components
@@ -38,6 +39,7 @@
 
 (defsystem "toms419/test"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "TOMS419" :array-slicing t :array-type :array :keep-lisp-file t :relaxed-array-decls t)
   :pathname "toms/419/"
   :depends-on ("toms419")
