@@ -9,6 +9,7 @@
 (defsystem "colnew"
   :description "F2CL conversion of COLNEW: Solution of boundary-value problems for ODEs"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "COLNEW" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :components
   ((:module package
@@ -18,8 +19,7 @@
    (:module "colnew"
 	    :depends-on ("package")
 	    :components
-	    (
-	     ;; Linpack routines needed by colnew
+	    (;; Linpack routines needed by colnew
 	     (:file "dgesl"
 		    :depends-on ("daxpy" "ddot"))
 	     (:file "dgefa"
@@ -72,14 +72,15 @@
 		    :depends-on ("subfor" "subbak"))
 	     (:file "subfor")
 	     (:file "subbak"))))
-  :in-order-to ((test-op (test-op "colnew-test-1" "colnew-test-2" "colnew-test-3"))))
+  :in-order-to ((test-op (test-op "colnew/test-1" "colnew/test-2" "colnew/test-3"))))
 
 
 ;; Test problem 1 from TOMS 569.
 ;;
 ;; Run (*main*).  Appears to work since the error tolerance is satisfied.
-(defsystem "colnew-test-1"
+(defsystem "colnew/test-1"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "COLNEW" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("colnew")
   :pathname "colnew/"
@@ -97,8 +98,9 @@
 
 
 ;; Test problem 2 from TOMS 569.  Appears to work.
-(defsystem "colnew-test-2"
+(defsystem "colnew/test-2"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "COLNEW" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("colnew")
   :pathname "colnew/"
@@ -117,8 +119,9 @@
 
 
 ;; Test problem 3 from TOMS 569.
-(defsystem "colnew-test-3"
+(defsystem "colnew/test-3"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "COLNEW" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("colnew")
   :pathname "colnew/"

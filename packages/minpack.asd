@@ -9,6 +9,7 @@
 (defsystem "minpack"
   :description "F2CL conversion of MINPACK: Solutions to non-linear equations and least-squares problems"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "MINPACK" :keep-lisp-file t :array-slicing t :array-type :array :relaxed-array-decls nil)
   :components
   ((:cl-source-file "minpack/package")
@@ -49,6 +50,7 @@
 
 (defsystem "minpack-tests-lmdif"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "MINPACK" :keep-lisp-file t :array-slicing t :array-type :array :relaxed-array-decls nil)
   :pathname "minpack/"
   :depends-on ("minpack")
@@ -76,6 +78,7 @@
 
 (defsystem "minpack-tests-hybrd"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "MINPACK" :keep-lisp-file t :array-slicing t :array-type :array :relaxed-array-decls nil)
   :pathname "minpack/"
   :depends-on ("minpack")

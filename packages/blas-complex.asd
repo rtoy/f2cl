@@ -7,6 +7,7 @@
 (defsystem "blas-complex"
   :description "BLAS routines for complex double-float  matrices"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "BLAS" :array-slicing t :array-type :array :relaxed-array-decls t)
   :depends-on ("blas-real")
   :components

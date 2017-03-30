@@ -12,6 +12,7 @@
 (defsystem "fishpack"
   :description "F2CL conversion of FISHPACK: Solution of separable elliptic PDEs"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :components
   ((:module "package"
@@ -120,6 +121,7 @@
 ;; Works
 (defsystem "fishpack-test-hwscrt"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components
@@ -132,6 +134,7 @@
 ;; Works
 (defsystem "fishpack-test-hwscyl"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components
@@ -144,6 +147,7 @@
 ;; Works
 (defsystem "fishpack-test-hwsplr"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components
@@ -156,6 +160,7 @@
 ;; Works
 (defsystem "fishpack-test-hwsssp"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components
@@ -168,6 +173,7 @@
 ;; Works
 (defsystem "fishpack-test-hwscsp"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components
@@ -180,6 +186,7 @@
 ;; Works
 (defsystem "fishpack-test-hstcrt"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components
@@ -192,6 +199,7 @@
 ;; Works
 (defsystem "fishpack-test-hstplr"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components
@@ -204,6 +212,7 @@
 ;; Works
 (defsystem "fishpack-test-hstcyl"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components
@@ -216,6 +225,7 @@
 ;; Works
 (defsystem "fishpack-test-hstssp"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components
@@ -230,6 +240,7 @@
 ;; Works
 (defsystem "fishpack-test-hstcsp"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components
@@ -242,6 +253,7 @@
 ;; Works
 (defsystem "fishpack-test-sepx4"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
   :depends-on ("fishpack")
   :components

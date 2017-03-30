@@ -9,6 +9,7 @@
 (defsystem "toms715"
   :description "F2CL conversion of TOMS 715:  Numerical Evaluation of Special Functions"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "TOMS715" :array-slicing t :array-type :array :keep-lisp-file t)
   :pathname "toms/715/"
   :components
@@ -59,6 +60,7 @@
 
 (defsystem "toms715/tests"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "TOMS715" :array-slicing t :array-type :array :keep-lisp-file t)
   :depends-on ("toms715")
   :pathname "toms/715"

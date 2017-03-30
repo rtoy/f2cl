@@ -7,6 +7,7 @@
 (defsystem "lapack/real"
   :description "LAPACK routines for real double-float matrices"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "LAPACK" :array-slicing t :array-type :array :common-as-array t :relaxed-array-decls nil)
   :depends-on ("blas-real" "lapack/package")
   :components
@@ -201,6 +202,7 @@
 (defsystem "lapack/complex"
   :description "LAPACK routines for complex double-float matrices"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "LAPACK" :array-slicing t :array-type :array :common-as-array t :relaxed-array-decls nil)
   :depends-on ("blas-complex" "lapack/real")
   :components

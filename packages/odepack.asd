@@ -7,6 +7,7 @@
 (defsystem "odepack"
   :description "F2CL conversion of ODEPACK: Initial value solver for ODEs"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :pathname "odepack/"
@@ -166,6 +167,7 @@
 
 (defsystem "odepack/blas-util"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :pathname "odepack/fortran/"
@@ -206,6 +208,7 @@
 
 (defsystem "odepack/lsode"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :pathname "odepack/fortran/"
@@ -234,6 +237,7 @@
 
 (defsystem "odepack/lsoda"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :pathname "odepack/fortran"
@@ -266,6 +270,7 @@
 
 (defsystem "odepack/lsodar"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :pathname "odepack/fortran"
@@ -315,6 +320,7 @@
 ;; Output matches Fortran code.
 (defsystem "odepack/lsode-demo"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :pathname "odepack/"
@@ -335,6 +341,7 @@
 ;; f2cl doesn't know how to handle that yet.
 (defsystem "odepack/lsodes-demo"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :depends-on ("odepack")
@@ -347,6 +354,7 @@
 ;; Output matches Fortran code.
 (defsystem "odepack/lsoda-demo"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :pathname "odepack/"
@@ -367,6 +375,7 @@
 ;; Output matches Fortran code.
 (defsystem "odepack/lsodar-demo"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :pathname "odepack/"
@@ -396,6 +405,7 @@
 ;; Compare this to demo-lsodpk.out
 (defsystem "odepack/lsodpk-demo"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :pathname "odepack/"
@@ -427,6 +437,7 @@
 ;; This seems to work.
 (defsystem "odepack/lsodkr-demo"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :pathname "odepack/"
@@ -439,6 +450,7 @@
 ;; This runs and the expected output seems ok.
 (defsystem "odepack/lsodi-demo"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :depends-on ("odepack")
@@ -463,6 +475,7 @@
 
 (defsystem "odepack/lsoibt-demo"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil)
   :depends-on ("odepack")
@@ -495,6 +508,7 @@
 ;; gonna work in Lisp!
 (defsystem "odepack/lsodis-demo"
   :class f2cl-system
+  :default-component-class :fortran-file
   :f2cl-options (:package "ODEPACK" :array-slicing t :array-type :array :common-as-array t
                           :relaxed-array-decls nil :declare-common t)
   :depends-on ("odepack")
