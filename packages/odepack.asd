@@ -219,19 +219,13 @@
     :components
     ((:file "dlsode"
       :f2cl-options (:common-as-array t :declare-common t)
-      :depends-on ("dstode"
-		   "dewset"
-		   "dvnorm"
-		   "dintdy"
-		   "dsolsy"))
+      :depends-on ("dewset" "dintdy" "dstode" "dvnorm"))
      (:file "dsolsy")
      (:file "dewset")
      (:file "dvnorm")
      (:file "dintdy")
      (:file "dstode"
-      :depends-on ("dcfode"
-		   "dvnorm"
-		   "dprepj"))
+      :depends-on ("dcfode" "dvnorm"))
      (:file "dcfode")
      (:file "dprepj")))))
 

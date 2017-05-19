@@ -16,28 +16,26 @@
    (:module "minpack"
 	    :depends-on ("minpack/package")
 	    :components
-	    ((:file "dpmpar")
+	    ((:file "dogleg" :depends-on ("dpmpar" "enorm"))
+	     (:file "dpmpar")
 	     (:file "enorm")
 	     (:file "fdjac1" :depends-on ("dpmpar"))
 	     (:file "fdjac2" :depends-on ("dpmpar"))
-	     (:file "qrsolv")
-	     (:file "lmpar" :depends-on ("dpmpar" "enorm" "qrsolv"))
-	     (:file "qrfac" :depends-on ("dpmpar" "enorm"))
-	     (:file "lmdif" :depends-on ("dpmpar" "enorm" "fdjac2" "lmpar" "qrfac"))
-	     (:file "lmdif1" :depends-on ("lmdif"))
+	     (:file "hybrd" :depends-on
+		    ("dogleg" "dpmpar" "enorm" "fdjac1" "qform" "qrfac" "r1mpyq" "r1updt"))
+	     (:file "hybrd1" :depends-on ("hybrd"))
+	     (:file "hybrj" :depends-on
+		    ("dogleg" "dpmpar" "enorm" "qform" "qrfac" "r1mpyq" "r1updt"))
+	     (:file "hybrj1" :depends-on ("hybrj"))
 	     (:file "lmder" :depends-on ("dpmpar" "enorm" "lmpar" "qrfac"))
 	     (:file "lmder1" :depends-on ("lmder"))
-	     (:file "dogleg" :depends-on ("dpmpar" "enorm"))
+	     (:file "lmdif" :depends-on ("dpmpar" "enorm" "fdjac2" "lmpar" "qrfac"))
+	     (:file "lmdif1" :depends-on ("lmdif"))
+	     (:file "lmpar" :depends-on ("dpmpar" "enorm" "qrsolv"))
 	     (:file "qform")
+	     (:file "qrfac" :depends-on ("dpmpar" "enorm")) (:file "qrsolv")
 	     (:file "r1mpyq")
-	     (:file "r1updt" :depends-on ("dpmpar"))
-	     (:file "hybrd" :depends-on ("dogleg" "dpmpar" "enorm" "fdjac1"
-						  "qform" "qrfac" "r1mpyq" "r1updt"))
-	     (:file "hybrd1" :depends-on ("hybrd"))
-	     (:file "hybrj" :depends-on ("dogleg" "dpmpar" "enorm" "qform" "qrfac"
-						  "r1mpyq" "r1updt"))
-	     (:file "hybrj1" :depends-on ("hybrj"))
-	     )))
+	     (:file "r1updt" :depends-on ("dpmpar")))))
   :in-order-to ((test-op (test-op "minpack-tests-lmdif"))))
 
 (setf (logical-pathname-translations "minpack")
@@ -48,7 +46,7 @@
 				   *load-pathname*))))
 
 
-(defsystem "minpack-tests-lmdif"
+(defsystem "minpack/test-lmdif"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "MINPACK" :keep-lisp-file t :array-slicing t :array-type :array :relaxed-array-decls nil)
@@ -76,7 +74,7 @@
 ;; This test defines things that are incompatible with tst-lmdif and
 ;; tst-lmder.  Hence, you can't run this test with others.
 
-(defsystem "minpack-tests-hybrd"
+(defsystem "minpack/test-hybrd"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "MINPACK" :keep-lisp-file t :array-slicing t :array-type :array :relaxed-array-decls nil)
