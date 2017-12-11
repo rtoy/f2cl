@@ -99,18 +99,18 @@
 	     (:file "prodp"))))
   :in-order-to ((test-op
                  (test-op
-                  "fishpack-test-hwscrt"
-                  "fishpack-test-hwscrt"
-		  "fishpack-test-hwscyl"
-		  "fishpack-test-hwsplr"
-		  "fishpack-test-hwsssp"
-		  "fishpack-test-hwscsp"
-		  "fishpack-test-hstcrt"
-		  "fishpack-test-hstplr"
-		  "fishpack-test-hstcyl"
-		  "fishpack-test-hstssp"
-		  "fishpack-test-hstcsp"
-		  "fishpack-test-sepx4"
+                  "fishpack/test-hwscrt"
+                  "fishpack/test-hwscrt"
+		  "fishpack/test-hwscyl"
+		  "fishpack/test-hwsplr"
+		  "fishpack/test-hwsssp"
+		  "fishpack/test-hwscsp"
+		  "fishpack/test-hstcrt"
+		  "fishpack/test-hstplr"
+		  "fishpack/test-hstcyl"
+		  "fishpack/test-hstssp"
+		  "fishpack/test-hstcsp"
+		  "fishpack/test-sepx4"
 		  ))))
 
 ;; Some tests of Fishpack.
@@ -119,7 +119,7 @@
 ;; Data 7600, but they should be close.
 
 ;; Works
-(defsystem "fishpack-test-hwscrt"
+(defsystem "fishpack/test-hwscrt"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
@@ -132,7 +132,7 @@
   :perform (test-op (o c) (symbol-call :fishpack :thwscrt)))
 
 ;; Works
-(defsystem "fishpack-test-hwscyl"
+(defsystem "fishpack/test-hwscyl"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
@@ -145,7 +145,7 @@
   :perform (test-op (o c) (symbol-call :fishpack :thwscyl)))
 
 ;; Works
-(defsystem "fishpack-test-hwsplr"
+(defsystem "fishpack/test-hwsplr"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
@@ -158,7 +158,7 @@
   :perform (test-op (o c) (symbol-call :fishpack :thwsplr)))
 
 ;; Works
-(defsystem "fishpack-test-hwsssp"
+(defsystem "fishpack/test-hwsssp"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
@@ -171,7 +171,7 @@
   :perform (test-op (o c) (symbol-call :fishpack :thwsssp)))
 
 ;; Works
-(defsystem "fishpack-test-hwscsp"
+(defsystem "fishpack/test-hwscsp"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
@@ -184,7 +184,7 @@
   :perform (test-op (o c) (symbol-call :fishpack :thwscsp)))
 
 ;; Works
-(defsystem "fishpack-test-hstcrt"
+(defsystem "fishpack/test-hstcrt"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
@@ -197,7 +197,7 @@
   :perform (test-op (o c) (symbol-call :fishpack :thstcrt)))
 
 ;; Works
-(defsystem "fishpack-test-hstplr"
+(defsystem "fishpack/test-hstplr"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
@@ -210,7 +210,7 @@
   :perform (test-op (o c) (symbol-call :fishpack :thstplr)))
 
 ;; Works
-(defsystem "fishpack-test-hstcyl"
+(defsystem "fishpack/test-hstcyl"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
@@ -223,7 +223,7 @@
   :perform (test-op (o c) (symbol-call :fishpack :thstcyl)))
 
 ;; Works
-(defsystem "fishpack-test-hstssp"
+(defsystem "fishpack/test-hstssp"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
@@ -234,11 +234,11 @@
 	    :components
 	    ((:file "tsthstssp")))))
 
-(defmethod perform ((op test-op) (c (eql (find-system "fishpack-test-hstssp"))))
+(defmethod perform ((op test-op) (c (eql (find-system "fishpack/test-hstssp"))))
   (funcall (find-symbol "THSTSSP" (find-package '#:fishpack))))
 
 ;; Works
-(defsystem "fishpack-test-hstcsp"
+(defsystem "fishpack/test-hstcsp"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
@@ -251,7 +251,7 @@
   :perform (test-op (o c) (symbol-call :fishpack :thstcsp)))
 
 ;; Works
-(defsystem "fishpack-test-sepx4"
+(defsystem "fishpack/test-sepx4"
   :class f2cl-system
   :default-component-class :fortran-file
   :f2cl-options (:package "FISHPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t)
