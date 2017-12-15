@@ -428,7 +428,6 @@
              (symbol-call :odepack :opkdemo5)))
 
 
-;; This seems to work.
 (defsystem "odepack/lsodkr-demo"
   :class f2cl-system
   :default-component-class :fortran-file
@@ -436,7 +435,7 @@
                           :relaxed-array-decls nil)
   :pathname "odepack/"
   :depends-on ("odepack")
-  :components ((:file "opkdemo6" :f2cl-options (:declare-common t)))
+  :components ((:file "fortran/opkdemo6" :f2cl-options (:declare-common t)))
   :perform (test-op (o c) (symbol-call :odepack :opkdemo6)))
 
 
