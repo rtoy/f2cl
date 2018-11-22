@@ -101,70 +101,69 @@ These are the options available to `f2cl:f2cl` and `f2cl:f2cl-compile`
 	Variables in DATA statements are automatically SAVE'd. Default
 	= T.
 
-:RELAXED-ARRAY-DECLS    
+* `:RELAXED-ARRAY-DECLS`      
 	Declarations of array sizes are relaxed in formal
         parameters to functions. That is, any array
         length declarations (except lower limits) are
         ignored if possible, like old Fortran used
         to. Default = T.
 
-:COERCE-ASSIGNS
-	If T or :ALWAYS, all assignment statements automatically
+* `:COERCE-ASSIGNS`  
+	If `T` or `:ALWAYS`, all assignment statements automatically
         coerce the RHS to the appropriate type for the assignment.  If
-        NIL or :NEVER, coercion never happens.  If :AS-NEEDED, f2cl
+        `NIL` or `:NEVER`, coercion never happens.  If `:AS-NEEDED`, f2cl
         applies coercion if it thinks it is needed.  Default =
-        :AS-NEEDED.
+        `:AS-NEEDED`.
 
-:EXTENSION               
+* `:EXTENSION`                 
 	The extension to use for the output file, if needed.  Defaults
-        to *DEFAULT-LISP-EXTENSION* or "lisp".
+        to `*DEFAULT-LISP-EXTENSION*` or "lisp".
 
-:KEEP-TEMP-FILE
-	If T, the temporary file is not deleted.  This is mostly for
-	debugging f2cl. Default = NIL.
+* `:KEEP-TEMP-FILE`
+	If `T`, the temporary file is not deleted.  This is mostly for
+	debugging f2cl. Default = `NIL`.
 
-:ARRAY-TYPE
-	The type of array f2cl should use.  Should be :simple-array or
-        :array.  For some compilers, there can be significant speed up
+* `:ARRAY-TYPE`  
+	The type of array f2cl should use.  Should be `:simple-array` or
+        `:array`.  For some compilers, there can be significant speed up
         if the array can be declared as simple-arrays.  But this is
         incompatible with array-slicing, so care must be used if you
-        choose :simple-array. Default = :array.
+        choose `:simple-array`. Default = `:array.`
 
-:ARRAY-SLICING
-	When non-NIL, f2cl assumes that, whenever we do an array
+* `:ARRAY-SLICING`  
+	When non-`NIL`, f2cl assumes that, whenever we do an array
         reference in a call to a subroutine or function, we are really
         passing a subarray to the routine instead of just the single
         value, unless f2cl knows the function takes a scalar arg that
-        is not modified.  Default = T.
+        is not modified.  Default = `T`.
 
-:PACKAGE
+* `:PACKAGE`  
 	A string or symbol specifying what package the resulting code
-        should be in. (Basically puts a (in-package <p>) at the top.)
-        Default is COMMON-LISP-USER.
+        should be in. (Basically puts a `(in-package <p>)` at the top.)
+        Default is "COMMON-LISP-USER".
 
-:DECLAIM
-	Declaim compilation options (Basically puts a (declaim
-        <declaim>) at the top.)  Default is none.
+* `:DECLAIM` 
+	Declaim compilation options (Basically puts a `(declaim <declaim>)` at the top.)  Default is none.
 
-:DECLARE-COMMON
-	When non-NIL, any structures definitions for common blocks are
+* `:DECLARE-COMMON`  
+	When non-`NIL`, any structures definitions for common blocks are
         defined when converting this file. Otherwise, the structures
         for the common blocks are expected to be defined elsewhere.
         This should be used only once for one subprogram that will be
         used to define the common block.  See below for more
-        information. Default is NIL.
+        information. Default is `NIL`.
 
-:FLOAT-FORMAT            
+* `:FLOAT-FORMAT`              
 	Float format to use when printing the result.  Default is
-        *READ-DEFAULT-FLOAT-FORMAT*
+        `*READ-DEFAULT-FLOAT-FORMAT*`
 
-:COMMON-AS-ARRAY
+* `:COMMON-AS-ARRAY`  
 	Instead of defining a common block as a structure with the
 	same slot names as variables in the common block, the common
 	block is defined as a set of arrays.  The actual common block
 	variables are defined as offsets into these arrays.  For more
 	information see below.  This mimics the memory layout of how
-	Fortran treats common blocks.  Default = NIL.
+	Fortran treats common blocks.  Default = `NIL`.
 
 Using Converted Code
 --------------------
