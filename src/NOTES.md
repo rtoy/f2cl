@@ -6,44 +6,44 @@ Mar 2013
 Some updates needed to when trying to update to LaPACK 3.4.2 in
 maxima.
 
-o Did not handle the declaration correctly:
-
+* Did not handle the declaration correctly:
+```
      character name*(*)
-
-  This was declaring name to be an array of strings, but it's really
-  just a string of unknown length.
-o Added new (Fortran 95) intrinsic LEN_TRIM.  This was needed by the
+```
+	This was declaring `name` to be an array of strings, but it's really
+	just a string of unknown length.
+* Added new (Fortran 95) intrinsic `LEN_TRIM`.  This was needed by the
   new version of lapack.
-o Try to be more careful about declaring things that were declared as
+* Try to be more careful about declaring things that were declared as
   instrinsics.  
-  - We no longer create a dummy variable named foo$ when foo is
+  - We no longer create a dummy variable named `foo$` when `foo` is
     declared as a intrinsic.
   - We also try not to get confused when a variable is declared with
     the same name as an intrinsic.  The variable takes precedence. 
 
 May 2012
 --------
-o Ecl has a interesting feature in its compiler where the type of a
+* Ecl has a interesting feature in its compiler where the type of a
   literal string is a simple-array with the smallest character type
   that will hold every character in the string.  This behavior clashed
   with f2cl's desire to declare everything as (simple-array
   character).  F2cl has been updated so that strings are declared as
-  strings instead of simple-arrayy of characters.
+  strings instead of simple-array of characters.
 
-  This showed up in compiling maxima.
+	This showed up in compiling maxima.
 
 Oct 2010
 --------
-o Added MAKE-DEPENDENCIES to create a list of dependencies that could
+* Added MAKE-DEPENDENCIES to create a list of dependencies that could
   be used with mk-defsys.  See the docstring for caveats.
-o Handle IMPLICIT DOUBLE PRECISION
+* Handle IMPLICIT DOUBLE PRECISION
 
 Feb 2010
 --------
-o Add :PROMOTE-TO-DOUBLE option which promotes all single precision
+* Add :PROMOTE-TO-DOUBLE option which promotes all single precision
   variables to double precision.
 
-o Some old-style Fortran code passes arrays of different types to
+* Some old-style Fortran code passes arrays of different types to
   routines expecting a different type.  For example, passing a COMPLEX
   array to a routine expecting a REAL array.  This works in Fortran,
   but not in Lisp.  To solve this, f2cl will now create a new array of
@@ -55,39 +55,39 @@ o Some old-style Fortran code passes arrays of different types to
 
 Apr 2009
 --------
-o Bind *READ-DEFAULT-FLOAT-FORMAT* to 'SINGLE-FLOAT when reading the
+* Bind *READ-DEFAULT-FLOAT-FORMAT* to 'SINGLE-FLOAT when reading the
   Fortran source because Fortran numbers are single precision unless
   there's an exponent marker.
 
 Jan 2009
 --------
-o IMPLICIT REAL*8 was not properly handled and treated everything
+* IMPLICIT REAL*8 was not properly handled and treated everything
   incorrectly as single-float.
-o The handling of ENTRY functions sometimes left undefined variables
+* The handling of ENTRY functions sometimes left undefined variables
   in the generated code.  This is fixed now.
-o Implied-do loops with a step value did not correctly handle the
+* Implied-do loops with a step value did not correctly handle the
   step, treating the step as a function call.
-o FORMAT statements like 100(/8F12.6) would end up printing up to 100
+* FORMAT statements like 100(/8F12.6) would end up printing up to 100
   newlines even when there were only a few arguments to be printed.
   This bug is fixed and processing stops when we run out of arguments
   to print.
-o DFLOAT function added to the list of instrinsics.
-o Cleaned out old, unused stuff from macros.l.
-o Added *STOP-SIGNALS-ERROR-P* to control whether STOP should signal a
+* DFLOAT function added to the list of instrinsics.
+* Cleaned out old, unused stuff from macros.l.
+* Added *STOP-SIGNALS-ERROR-P* to control whether STOP should signal a
   continuable error or not.
-o The DEFPARAMETER's for common blocks are now top-level forms as they
+* The DEFPARAMETER's for common blocks are now top-level forms as they
   should be to get the desired compile-time side effects.
-o Implied-do loops with a step are now handled correctly.
-o Parsing of D format descriptors was incorrect.  The repetition
+* Implied-do loops with a step are now handled correctly.
+* Parsing of D format descriptors was incorrect.  The repetition
   factor was being returned as NIL, but it should have defaulted to
   one.
-o Fix bug in handling of SAVE variables when the variable name is the
+* Fix bug in handling of SAVE variables when the variable name is the
   same as an intrinsic function.  This was causing the variable to be
   declared and initialized incorrectly sometimes.
  
 August 2008
 ------------
-o Added :common-block-file option to F2CL and F2CL-COMPILE.  When set,
+* Added :common-block-file option to F2CL and F2CL-COMPILE.  When set,
   and when common blocks are to be declared, each common block is
   written to a separate file whose extension is "cmn and whose name is
   the name of the common block.
@@ -98,15 +98,15 @@ o Added :common-block-file option to F2CL and F2CL-COMPILE.  When set,
 
 Mar 2008
 ------------
-o F2CL was missing variables first used in PRINT or WRITE statements
+* F2CL was missing variables first used in PRINT or WRITE statements
   and hence didn't declare them.  We now check for new variables in
   PRINT and WRITE statements.  Undoubtedly there are other places
   where we are missing the check.
-o F2CL was incorrectly parsing Hollerith strings followed by an edit
+* F2CL was incorrectly parsing Hollerith strings followed by an edit
   descriptor without an intervening comma.  The edit descriptor was
   incorrectly discarded.  This should be fixed now.
 
-o Ran the following tests successfully:
+* Ran the following tests successfully:
   - quadpack
   - toms 419
   - toms 715
@@ -127,7 +127,7 @@ o Ran the following tests successfully:
       ex-dembo4, ex-dembo7, ex-maratos, ex-paviani2, ex-undefexa,
       ex-weaponas 
 
-o Support the following types of implied-do loops in DATA statements.
+* Support the following types of implied-do loops in DATA statements.
   These are from hs109.f and tp383mod.f:
 
       DATA X/NX*0.0D0/
@@ -136,29 +136,29 @@ o Support the following types of implied-do loops in DATA statements.
   These changes allow us to compile hs109.f and tp383mod.f
   successfully.  The tests pass too.
 
-o The test programs in the various add-on packages now save their
+* The test programs in the various add-on packages now save their
   outputs.  The outputs have been generated using Sun Studio 11
   Fortran on an UltraSparc.  This makes it a little easier to compare
   against the Lisp output since both Sun Fortran and f2cl use a D
   exponent marker in most of the same places.
-o Added Fortran tests for quadpack, just so we can compare them with
+* Added Fortran tests for quadpack, just so we can compare them with
   the tests for the translated version.
-o Lazily initialize *lun-hash* hash-table entries for units 5, 6, and
+* Lazily initialize *lun-hash* hash-table entries for units 5, 6, and
   t.  Works around an issue found in maxima with clisp.  The
   hash-table contained closed streams for some reason.
 
 Feb 2008
 ------------
-o I'm not good with keeping version numbers, so add an RCS Id string
+* I'm not good with keeping version numbers, so add an RCS Id string
   to each file in a defparameter.  Add new function to list the values
   of these parameters.  And finally use that in the generated output
   so we know exactly what version was used to generate the output.
-o Cleaned up the MERGE-DATA-AND-SAVE-INITS.  Handles strings now, and
+* Cleaned up the MERGE-DATA-AND-SAVE-INITS.  Handles strings now, and
   no longer checks to see if the number of initial values fills the
   array.  The array is initialized anyway, and 0 (of the appropriate
   type) is used as the filler.  (Arrays of strings get a string of
   spaces).
-o Many of the included packages have been rerun with these changes:
+* Many of the included packages have been rerun with these changes:
   - quadpack
   - toms 419
   - toms 715
@@ -171,36 +171,36 @@ o Many of the included packages have been rerun with these changes:
     + lsode, lsoda, lsodpk
 Sep 2007
 ------------
-o Extended DO loops were causing extra labels in the Lisp code, which
+* Extended DO loops were causing extra labels in the Lisp code, which
   causes errors when compiling the Lisp code.
-o DATA statements weren't handling repetitions correctly when
+* DATA statements weren't handling repetitions correctly when
   processing the initializers for an array.
-o The initializer for strings in a common block was done incorrectly.
+* The initializer for strings in a common block was done incorrectly.
   This may been some more work.
-o Initialization of strings was wrong because we tried to coerce 0 to
+* Initialization of strings was wrong because we tried to coerce 0 to
   a character.  We really wanted a space.
-o The options in an OPEN statement weren't being parsed correctly.
+* The options in an OPEN statement weren't being parsed correctly.
   Some of the option values can be an expression.
-o The preprocessor can now recognize INCLUDE statements.  This is an
+* The preprocessor can now recognize INCLUDE statements.  This is an
   extension in some Fortran's.  (Should we add yet another option to
   control this?)  Nested include's are supported.
-o Some issues with handling of the last line of the input file are
+* Some issues with handling of the last line of the input file are
   fixed.  (Exposed by the INCLUDE support.)
-o Initialization of some arrays via DATA statements were done
+* Initialization of some arrays via DATA statements were done
   incorrectly because the initializers aren't necessarily constants. 
-o Was not correctly handling atoms when executing format statements. 
-o Better printing, especially for list-directed output.
-o Unused Fortran PARAMETER values and unused symbol macros (for common
+* Was not correctly handling atoms when executing format statements. 
+* Better printing, especially for list-directed output.
+* Unused Fortran PARAMETER values and unused symbol macros (for common
   block variables) are removed from the generated code to reduce
   warnings from Lisp compilers.
-o Implied do loops over multidimensional arrays are supported.
-o Nested implied do loops are supported.
-o DONLP2 package added.  Many tests are included, and most of them
+* Implied do loops over multidimensional arrays are supported.
+* Nested implied do loops are supported.
+* DONLP2 package added.  Many tests are included, and most of them
   match the Fortran results.
 
 May 04, 2007
 ------------
-o F2CL was getting confused with functions declared as external that
+* F2CL was getting confused with functions declared as external that
   also happened to be named the same as some f2cl-lib functions like
   zsqrt.  F2CL would compile the code usig f2cl-lib:zsqrt instead of
   zsqrt, and this is wrong.  zsqrt should have been used.
@@ -212,7 +212,7 @@ o F2CL was getting confused with functions declared as external that
 
 Nov 28, 2006
 ------------
-o F2CL will now save relevant function information in the generated
+* F2CL will now save relevant function information in the generated
   lisp file.  The information is loaded only if the f2cl package
   already exists.  
 
@@ -223,35 +223,35 @@ o F2CL will now save relevant function information in the generated
 
 Nov 24, 2006
 ------------
-o Added all of BLAS to the BLAS package.
-o Added LAPACK package containing just parts of LAPACK.
-o Fixed an issue where DATA statements for logical arrays were not
+* Added all of BLAS to the BLAS package.
+* Added LAPACK package containing just parts of LAPACK.
+* Fixed an issue where DATA statements for logical arrays were not
   getting used.
 
 May 03, 2006
 ------------
-o f2cl tries to declare the variables in parameter statements more
+* f2cl tries to declare the variables in parameter statements more
   carefully, since the value of a parameter cannot change.
-o f2cl tries to make sure scalars initialized in data statements are
+* f2cl tries to make sure scalars initialized in data statements are
   actually initialized with the correct value instead setting the
   value later.
-o In many cases, f2cl will no longer generate an FSET; instead plain
+* In many cases, f2cl will no longer generate an FSET; instead plain
   SETF will be done, because it does the right thing anyway.
-o Some clean up of the various packages have been done, and they have
+* Some clean up of the various packages have been done, and they have
   been tested.
-o f2cl should handle formats like "1P,E15.8", which is the same as
+* f2cl should handle formats like "1P,E15.8", which is the same as
   "1PE15.8". 
 
 Apr 28, 2006
 ------------
-o Oops.  Assignment of a complex result to a real variable was not
+* Oops.  Assignment of a complex result to a real variable was not
   taking the real part.
-o Add type-derivation for ABS so we don't have calls to coerce
+* Add type-derivation for ABS so we don't have calls to coerce
   wherever we use ABS.
 
 Apr 27, 2006
 ------------
-o F2CL was not properly parsing Fortran complex numbers of the form
+* F2CL was not properly parsing Fortran complex numbers of the form
   (<re>, <im>).  This was ok if <re> was a positive number, but it was
   majorly broken if <re> was negative.  I've changed the parser to
   handle this better, but it may have broken parsing
@@ -259,37 +259,37 @@ o F2CL was not properly parsing Fortran complex numbers of the form
   just fine. (Had to change dqawse.f because F2CL doesn't like logical
   operators with the leading dot on a separate line from the rest of
   the operator name.)
-o Added a few more intrinsic functions and implementations:  dcmplx,
+* Added a few more intrinsic functions and implementations:  dcmplx,
   dimag, zsqrt. 
-o I think I got rid of the spurious ABS$ variable that always occurred
+* I think I got rid of the spurious ABS$ variable that always occurred
   whenever the ABS function was used.
 
 Apr 26, 2006
 ------------
-o Add support for DO WHILE statements.  This is an extension to
+* Add support for DO WHILE statements.  This is an extension to
   Fortran.  
 
 Jan 30, 2006
 ------------
-o Add support for multidimensional initializers, when the number of
+* Add support for multidimensional initializers, when the number of
   initializers matches the whole array.
-o Revert the change for spaces around logical operations (Jan 4.)
+* Revert the change for spaces around logical operations (Jan 4.)
 
 Jan 8, 2006
 -----------
-o We were stupidly not recognizing FORMAT statements if the FORMAT
+* We were stupidly not recognizing FORMAT statements if the FORMAT
   statement were indented.  This should be fixed now.
-o We were not correctly handling multidimensional character arrays
+* We were not correctly handling multidimensional character arrays
   because were not converting them to 1-D arrays.
-o Initializers for multidimensional arrays were getting dropped.
-o Added TOMS 717 as a test package.  Many of the issues we've found
+* Initializers for multidimensional arrays were getting dropped.
+* Added TOMS 717 as a test package.  Many of the issues we've found
   and fixed were discovered when converting TOMS 717.  Besides, TOMS
   717 sounds like a really interesting and useful package.
-o F2CL currently gets confused if a string contains a double-quote
+* F2CL currently gets confused if a string contains a double-quote
   character.  The work-around is to remove the double-quote
   character.  Strictly speaking, I don't think a double-quote is a
   valid Fortran 77 character.
-o TOMS 717 also illustrates that we should handle equivalences of
+* TOMS 717 also illustrates that we should handle equivalences of
   arrays.  But how?  An easy way would be to make one array displaced
   to another.  But for that to work, we need to make the shorter array
   displaced to the longer.  This works if the dimensions are numbers,
@@ -297,10 +297,10 @@ o TOMS 717 also illustrates that we should handle equivalences of
 
 Jan 4, 2006
 -----------
-o Add some support for parsing logical operations that have spaces
+* Add some support for parsing logical operations that have spaces
   around the dots and the operation, like ". AND   ."
 
-o We were not correctly processing initialization of string arrays in
+* We were not correctly processing initialization of string arrays in
   data statements.  This was noted in Bug 1396221 "f2cl fails on
   TOMS-717 translation".  I think this is fixed now.
 
@@ -309,9 +309,9 @@ Jul 16, 2005
 
 Lots of little fixes:
 
-o F2cl erroneously initialized and declared ARRAY-SLICE as a variable,
+* F2cl erroneously initialized and declared ARRAY-SLICE as a variable,
   along with the type associated with ARRAY-SLICE.
-o F2cl was not entering entry point functions into the function database.
+* F2cl was not entering entry point functions into the function database.
 
 Also, hompack now compiles and passes the 3 test programs.  Yay!  The
 mainp test, however needs some hand modification to work because it
@@ -709,7 +709,7 @@ Richard Fateman used f2cl to compile the mpfun package.  It failed.
 Some of the key changes needed to make this work, but I don't know if
 mpfun works or not yet.
 
-o mpfun has a block data subprogram.  We now handle this now by
+* mpfun has a block data subprogram.  We now handle this now by
   cheating.  We rewrite the block data statement into a subroutine
   statement for a routine named /blockdata/.  This seems to work,
   after getting symbol-macrolets into the initialization part of the
@@ -719,15 +719,15 @@ o mpfun has a block data subprogram.  We now handle this now by
   subprogram at least once.  Should we do this automatically for the
   user?  If so, how?
 
-o Fixed some number parsing bugs that mpfun exposed.  (PARSE-NUMBER is
+* Fixed some number parsing bugs that mpfun exposed.  (PARSE-NUMBER is
   such a mess!)
 
 Other changes:
 
-o The temp file prep.tmp is now computed from the input file name and
+* The temp file prep.tmp is now computed from the input file name and
   is given the same name with a new extension of "p" (for
   preprocess).  (Hmm, should it be "tmp" instead?)
-o Fixed some more bugs.  See logs for details.
+* Fixed some more bugs.  See logs for details.
 
 Jan 13, 2002
 ------------
@@ -746,12 +746,12 @@ See the change logs for other changes.
 Sep 9, 2001
 -----------
 
-o Fixed a bug that caused 
+* Fixed a bug that caused 
       y = 1.5d0 - exp(x) * top
   to be incorrectly preprocessed as
       y = 1.5d0 - e xp(x) * top
 
-o Handle Hollerith strings in FORMAT statements by converting the
+* Handle Hollerith strings in FORMAT statements by converting the
   Hollerith strings into real strings during preprocessing by looking
   at FORMAT statements.  FIND-QUOTE needs some work to handle
   Fortran-style quoting better.  This should work much better than
@@ -777,10 +777,10 @@ Some fixes to handling of format statements.  I think we do a much
 better job now.
 
 Some bugs were fixed:
-o Function calls need array slicing applied.
-o The Fortran D format was converted to Lisp ~D, when it should have
+* Function calls need array slicing applied.
+* The Fortran D format was converted to Lisp ~D, when it should have
   been ~E.
-o Statement functions should coerce the result to the right type.
+* Statement functions should coerce the result to the right type.
 
 Added the MINPACK package, which highlighted some of the bugs above.
 (Cool!)  Note:  the MINPACK package appears to have some lines that
