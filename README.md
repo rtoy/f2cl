@@ -182,53 +182,56 @@ For a more detailed list of issues and notes, see src/NOTES.
 We highlight just a few issues here.
 
 * Block data statements.
-    In Fortran, block data statments are used to initialize common
-    blocks.  Since Fortran executables are loaded and run just once,
-    this is not a problem.  However, in Lisp, this might not be true,
-    and you may want to run the main program many times.  Thus, it is
-    up to you to run the block data initializer at the right time, as
-    needed.  f2cl cannot know when and where to call the initializer.
+	In Fortran, block data statments are used to initialize common
+	blocks.  Since Fortran executables are loaded and run just once,
+	this is not a problem.  However, in Lisp, this might not be true,
+	and you may want to run the main program many times.  Thus, it is
+	up to you to run the block data initializer at the right time, as
+	needed.  f2cl cannot know when and where to call the initializer.
 
 * Common blocks.  
-    F2cl converts common blocks to structures.  However, common blocks
-    may be referenced in several different files, so the user must
-    tell f2cl when to define the structure.  Use the :declare-common
-    parameter to tell f2cl to define the structure. This should be
-    done exactly once for each common block that is defined.  This
-    should also be done for the first file that is compiled and
-    loaded, so that subsequent files know about the definition.
+	F2cl converts common blocks to structures.  However, common blocks
+	may be referenced in several different files, so the user must
+	tell f2cl when to define the structure.  Use the :declare-common
+	parameter to tell f2cl to define the structure. This should be
+	done exactly once for each common block that is defined.  This
+	should also be done for the first file that is compiled and
+	loaded, so that subsequent files know about the definition.
 
-    In addition, there is another option, :common-as-array.  This
-    changes how f2cl handles common blocks.   A rather common use of
-    common blocks has the same common block using different variable
-    names.  For example, one routine might have
+	In addition, there is another option, :common-as-array.  This
+	changes how f2cl handles common blocks.   A rather common use of
+	common blocks has the same common block using different variable
+	names.  For example, one routine might have
 ```
         COMMON /foo/ a(10), b, i(4)
 ```
-    and another might say
+
+	and another might say
+
 ```
         COMMON /foo/ b(9), c, d, j(2), k(2)
 ```
-    In Fortran, this is perfectly acceptable.  Normally, f2cl expects
-    all common blocks to use the same variable names, and then f2cl
-    creates a structure for the common block using the variable names
-    as the names of the slots.  However, for a case like the above,
-    f2cl gets confused.  Hence, :common-as-array.  We treat the common
-    block as an array of memory.  So this gets converted into a
-    structure somewhat like
+
+	In Fortran, this is perfectly acceptable.  Normally, f2cl expects
+	all common blocks to use the same variable names, and then f2cl
+	creates a structure for the common block using the variable names
+	as the names of the slots.  However, for a case like the above,
+	f2cl gets confused.  Hence, :common-as-array.  We treat the common
+	block as an array of memory.  So this gets converted into a
+	structure somewhat like
 ```
         (defstruct foo
           (part-0 (make-array 11 :element-type 'real))
           (part-1 (make-array 4 :element-type 'integer4)))
 ```
-    (In a more general case, we group all contiguous variables of the
-    same type into one array.  f2cl and Lisp cannot handle the case
-    where a real and integer value are allocated to the same piece of
-    memory.)
+	(In a more general case, we group all contiguous variables of the
+	same type into one array.  f2cl and Lisp cannot handle the case
+	where a real and integer value are allocated to the same piece of
+	memory.)
 
-    Then in the individual routines, symbol-macrolets are used to
-    create accessors for the various definitions.  Hence, for the
-    second version, we would do something like
+	Then in the individual routines, symbol-macrolets are used to
+	create accessors for the various definitions.  Hence, for the
+	second version, we would do something like
 ```
           (symbol-macrolet 
             (b (make-array 9 :displaced-to 
@@ -244,29 +247,29 @@ We highlight just a few issues here.
                            :displaced-offset 2))
             ...)
 ```
-    Thus, we access the right parts of the common block, independent
-    of the name.  Note that this has a performance impact since we
-    used displaced arrays.
+	Thus, we access the right parts of the common block, independent
+	of the name.  Note that this has a performance impact since we
+	used displaced arrays.
   
 
 
 * Conversion order.
-    While not necessary, f2cl can do a significantly better job in
-    generating code if the functions are compiled in the correct
-    order.  This means any function, F, that is called by another
-    function, G,  should compiled first.  In this way, f2cl can
-    determine the calling conventions for F, and generate the
-    appropriate call for F in G.  This is important if F takes an
-    array argument and G passes a slice of an array to F, or
-    conversely if F takes a simple variable, and G calls F with an
-    array reference.  
+	While not necessary, f2cl can do a significantly better job in
+	generating code if the functions are compiled in the correct
+	order.  This means any function, F, that is called by another
+	function, G,  should compiled first.  In this way, f2cl can
+	determine the calling conventions for F, and generate the
+	appropriate call for F in G.  This is important if F takes an
+	array argument and G passes a slice of an array to F, or
+	conversely if F takes a simple variable, and G calls F with an
+	array reference.  
 
-    If this is not done, the user may have to modify either the
-    Fortran code or the resulting Lisp code to pass arguments
-    correctly.  
+	If this is not done, the user may have to modify either the
+	Fortran code or the resulting Lisp code to pass arguments
+	correctly.  
 
-    F2cl cannot always determine whether a slice of an array should be
-    used or just the single element.
+	F2cl cannot always determine whether a slice of an array should be
+	used or just the single element.
 
 See also the file src/NOTES which contains a change log.  But there
 are also various notes about about restrictions and enhancements on
