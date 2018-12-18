@@ -178,7 +178,7 @@ For a more detailed list of issues and notes, see src/NOTES.
 
 We highlight just a few issues here.
 
-## Block data statements.
+## Block data statements
 
 In Fortran, block data statments are used to initialize common
 blocks.  Since Fortran executables are loaded and run just once,
@@ -187,7 +187,7 @@ and you may want to run the main program many times.  Thus, it is
 up to you to run the block data initializer at the right time, as
 needed.  f2cl cannot know when and where to call the initializer.
 
-## Common blocks.  
+## Common blocks  
 F2cl converts common blocks to structures.  However, common blocks
 may be referenced in several different files, so the user must
 tell f2cl when to define the structure.  Use the :declare-common
@@ -251,7 +251,7 @@ used displaced arrays.
   
 
 
-## Conversion order.
+## Conversion order
 While not necessary, f2cl can do a significantly better job in
 generating code if the functions are compiled in the correct
 order.  This means any function, F, that is called by another
