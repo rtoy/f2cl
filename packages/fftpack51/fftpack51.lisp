@@ -80,10 +80,11 @@
 	 (nhalf (floor (/ n 2)))
 	 (out (make-array (+ 1 nhalf) :element-type '(complex single-float))))
     (setf (aref out 0) (complex (aref x 0) 0.0))
-    (loop for j from 1 to (1- nhalf)
+    (loop for j from 1 to (if (evenp n) (1- nhalf) nhalf)
+	  for k from 1 by 2
 	  do
-	     (setf (aref out j) (complex (* 0.5 (aref x (1- (* 2 j))))
-					 (* 0.5 (aref x (* 2 j))))))
+	     (setf (aref out j) (complex (* 0.5 (aref x k))
+					 (* 0.5 (aref x (1+ k))))))
     (when (evenp n)
       (setf (aref out nhalf)
 	    (complex (aref x (1- n)) 0.0)))
