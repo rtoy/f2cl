@@ -16,16 +16,15 @@
   :description "F2CL conversion of FFTPACK5."
   :class f2cl-system
   :default-component-class :fortran-file
-  :f2cl-options (:array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
+  :f2cl-options (:package "FFTPACK5" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :components
-  (#+nil
-   (:module "package"
-    :pathname "fftpack5"
+  ((:module "package"
+    :pathname "fftpack51"
     :components
-    ((:cl-source-file "fftpack5")))
+    ((:cl-source-file "fftpack51")))
    (:module "fftpack51"
     :pathname "fftpack51/src"
-    ;;:depends-on ("package")
+    :depends-on ("package")
     :components
     (
      ;;(:file "c1f2kb")
