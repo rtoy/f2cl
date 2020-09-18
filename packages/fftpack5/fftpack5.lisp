@@ -1,5 +1,7 @@
 (defpackage :fftpack5
-  (:use :common-lisp))
+  (:use :common-lisp)
+  (:export "RFFT"
+	   "INVERSE-RFFT"))
 
 (in-package :fftpack5)
 
@@ -55,6 +57,26 @@
 	    (complex (aref x (1- n)) 0.0)))
     out))
 
+(defun convert-inverse-rfft (x n)
+  "Convert the complex-valued input, X, (that was produced by rfft)
+  into the form needed by rfft1b.  The length of the transform, N, is
+  needed because it cannot be uniquely determined from the length of
+  X."
+  (declare (type (simple-array (complex single-float) (*)) x))
+  (let ((res (make-array n :element-type 'single-float)))
+    (setf (aref res 0) (realpart (aref x 0)))
+    (loop for j from 1 below (length x)
+	  for k from 1 by 2
+	  do
+	     (let ((z (aref x j)))
+	       ;; Put back the factor of 2 that we removed in rfft but
+	       ;; is needed by rfft1b.
+	       (setf (aref res k) (* 2 (realpart z)))
+	       (setf (aref res (1+ k)) (* 2 (imagpart z)))))
+    (when (evenp n)
+      (setf (aref res (1- n)) (realpart (aref x (1- (length x))))))
+    res))
+
 (defun rfft (x)
   "Compute the real FFT of X.
 
@@ -82,26 +104,6 @@
 	;; space for x, wsave, and the work array.
 	(error "rfft1f failed with code ~A" ier))
       (convert-rfft x))))
-
-(defun convert-inverse-rfft (x n)
-  "Convert the complex-valued input, X, (that was produced by rfft)
-  into the form needed by rfft1b.  The length of the transform, N, is
-  needed because it cannot be uniquely determined from the length of
-  X."
-  (declare (type (simple-array (complex single-float) (*)) x))
-  (let ((res (make-array n :element-type 'single-float)))
-    (setf (aref res 0) (realpart (aref x 0)))
-    (loop for j from 1 below (length x)
-	  for k from 1 by 2
-	  do
-	     (let ((z (aref x j)))
-	       ;; Put back the factor of 2 that we removed in rfft but
-	       ;; is needed by rfft1b.
-	       (setf (aref res k) (* 2 (realpart z)))
-	       (setf (aref res (1+ k)) (* 2 (imagpart z)))))
-    (when (evenp n)
-      (setf (aref res (1- n)) (realpart (aref x (1- (length x))))))
-    res))
 
 (defun inverse-rfft (x n)
   "Compute the inverse real FFT of X. N is the length of the transform
