@@ -111,6 +111,15 @@
 
    See RFFT for the definition of the FFT used in these routines."
   (declare (type (simple-array (complex single-float) (*)) x))
+
+  ;; Check to see if N is consistent with the length of X.  However,
+  ;; this isn't foolproof.  For a real FFT of length 5, the FFT array
+  ;; has length 3.  But a real FFT of length 4 also has an array
+  ;; length of 3.
+  (unless (= (length x) (1+ (floor n 2)))
+    (error "Length of X (~A) is not compatible with N (~D)"
+	   (length x) n))
+
   (let* ((inv (convert-inverse-rfft x n))
 	 (work (make-array n :element-type 'single-float))
 	 (wsave (get-wsave-entry n))
