@@ -82,7 +82,7 @@
 
    Let N be the length of X.  The FFT is:
 
-    Y[n] = 1/N*sum(x[k] * exp(2*%i*%pi*k*n/N), n, 0, N-1)
+    Y[n] = 1/N*sum(x[k] * exp(2*%i*%pi*k*n/N), k, 0, N-1)
   
    for n = 0, 1,...,floor(N/2)+1
 
