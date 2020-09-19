@@ -18,13 +18,13 @@ C
 C
       IF (LENC .LT. INC*(N-1) + 1) THEN
         IER = 1
-        CALL XERFFT ('CFFT1F ', 6)
-      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))) + 4) THEN
+        CALL XERFFT ('CFFT1F ', 4)
+      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))/LOG(2.)) + 4) THEN
         IER = 2
-        CALL XERFFT ('CFFT1F ', 8)
+        CALL XERFFT ('CFFT1F ', 6)
       ELSEIF (LENWRK .LT. 2*N) THEN
         IER = 3
-        CALL XERFFT ('CFFTMF ', 10)
+        CALL XERFFT ('CFFT1F ', 8)
       ENDIF
 C
       IF (N .EQ. 1) RETURN

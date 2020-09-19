@@ -44,7 +44,7 @@ c         write(*,*) wa(iw),wa(iw+1)
    65    CALL C1F5KF (IDO,L1,NA,CH,2,C,INC2,WA(IW))
          GO TO 120
    56    CALL C1FGKF (IDO,IP,L1,LID,NA,C,C,INC2,CH,CH,
-     1     1,WA(IW))
+     1     2,WA(IW))
          GO TO 120
    66    CALL C1FGKF (IDO,IP,L1,LID,NA,CH,CH,2,C,C,
      1     INC2,WA(IW))

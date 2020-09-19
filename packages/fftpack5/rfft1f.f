@@ -18,7 +18,7 @@ C
       IF (LENR .LT. INC*(N-1) + 1) THEN
         IER = 1
         CALL XERFFT ('RFFT1F ', 6)
-      ELSEIF (LENSAV .LT. N + INT(LOG(REAL(N))) +4) THEN
+      ELSEIF (LENSAV .LT. N + INT(LOG(REAL(N))/LOG(2.)) +4) THEN
         IER = 2
         CALL XERFFT ('RFFT1F ', 8)
       ELSEIF (LENWRK .LT. N) THEN

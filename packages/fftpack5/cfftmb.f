@@ -20,7 +20,7 @@ C
       IF (LENC .LT. (LOT-1)*JUMP + INC*(N-1) + 1) THEN
         IER = 1
         CALL XERFFT ('CFFTMB ', 6)
-      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))) + 4) THEN
+      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))/LOG(2.)) + 4) THEN
         IER = 2
         CALL XERFFT ('CFFTMB ', 8)
       ELSEIF (LENWRK .LT. 2*LOT*N) THEN

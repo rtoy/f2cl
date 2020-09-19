@@ -18,7 +18,7 @@ C
       IF (LENX .LT. INC*(N-1) + 1) THEN
         IER = 1
         CALL XERFFT ('SINQ1B', 6)
-      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))) +4) THEN
+      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))/LOG(2.)) +4) THEN
         IER = 2
         CALL XERFFT ('SINQ1B', 8)
       ELSEIF (LENWRK .LT. N) THEN
@@ -27,7 +27,6 @@ C
       ENDIF
 C
       IF (N .GT. 1) GO TO 101
-      X(1,1) = 4.*X(1,1)
       RETURN
   101 NS2 = N/2
       DO 102 K=2,N,2

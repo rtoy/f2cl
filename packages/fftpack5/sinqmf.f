@@ -20,7 +20,7 @@ C
         IER = 1
         CALL XERFFT ('SINQMF', 6)
         GO TO 300
-      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))) +4) THEN
+      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))/LOG(2.)) +4) THEN
         IER = 2
         CALL XERFFT ('SINQMF', 8)
         GO TO 300

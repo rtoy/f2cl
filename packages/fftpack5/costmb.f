@@ -20,7 +20,7 @@ C
         IER = 1
         CALL XERFFT ('COSTMB', 6)
         GO TO 100
-      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))) +4) THEN
+      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))/LOG(2.)) +4) THEN
         IER = 2
         CALL XERFFT ('COSTMB', 8)
         GO TO 100

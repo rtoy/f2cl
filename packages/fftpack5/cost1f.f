@@ -18,7 +18,7 @@ C
         IER = 1
         CALL XERFFT ('COST1F', 6)
         GO TO 100
-      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))) +4) THEN
+      ELSEIF (LENSAV .LT. 2*N + INT(LOG(REAL(N))/LOG(2.)) +4) THEN
         IER = 2
         CALL XERFFT ('COST1F', 8)
         GO TO 100
@@ -27,6 +27,8 @@ C
         CALL XERFFT ('COST1F', 10)
         GO TO 100
       ENDIF
+C
+      IF (N .EQ. 1) RETURN
 C
       CALL COSTF1(N,INC,X,WSAVE,WORK,IER1)
       IF (IER1 .NE. 0) THEN
