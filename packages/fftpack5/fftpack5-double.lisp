@@ -251,3 +251,53 @@
 	;; allocated the correct size of the arrays.
 	(error "rfft1b failed with code ~A" ier))
       x)))
+
+(defun test-cfft (n &key verbose)
+  (let* ((x (make-array n :element-type '(complex double-float))))
+    (loop for k from 0 below n
+	  do
+	     (setf (aref x k) (complex (+ k 1) 0d0)))
+    (let* ((xfrm (cfft x))
+	   (xfrm-len (length xfrm))
+	   (expected (make-array xfrm-len :element-type '(complex double-float)))
+	   (noise-pwr 0d0)
+	   (signal-pwr 0d0))
+      (declare (double-float noise-pwr signal-pwr))
+
+      (setf (aref expected 0) (complex (* 0.5d0 (+ n 1)) 0d0))
+      (loop for k from 1 below xfrm-len
+	    with omega = (coerce (/ pi n) 'double-float)
+	    do
+	       (setf (aref expected k)
+		     (complex -0.5d0 (/ 0.5d0 (tan (* omega k))))))
+      (when verbose
+	(format t "Forward transform; actual vs expected~%")
+	(loop for k from 0 below xfrm-len
+	      do
+		 (format t "~4d: ~A ~A~%" k (aref xfrm k) (aref expected k))))
+      (incf noise-pwr (expt (abs (- (aref xfrm 0) (* 0.5 (+ n 1)))) 2))
+      (incf signal-pwr (expt (* 0.5 (+ n 1)) 2))
+      (loop for k from 1 below (length xfrm)
+	    do
+	       (incf noise-pwr (expt (abs (- (aref xfrm k)
+					     (aref expected k)))
+				     2))
+	       (incf signal-pwr (expt (abs (aref expected k)) 2)))
+      (let ((inv (inverse-cfft xfrm))
+	    (inv-noise-pwr 0.0)
+	    (inv-signal-pwr 0.0))
+	(when verbose
+	  (format t "Inverse transform; actual vs expected~%")
+	  (loop for k from 0 below n
+		do
+		   (format t "~4d: ~A ~A~%" k (aref inv k) (+ k 1))))
+	(loop for k from 0 below n
+	      do
+		 (incf inv-noise-pwr (expt (abs (- (aref inv k) (+ k 1))) 2))
+		 (incf inv-signal-pwr (expt (coerce (+ k 1) 'double-float) 2)))
+	(flet ((db (s n)
+		 (if (zerop n)
+		     1000d0
+		     (* 10 (log (/ s n) 10)))))
+	  (values (db signal-pwr noise-pwr) (db inv-signal-pwr inv-noise-pwr) noise-pwr signal-pwr inv-noise-pwr inv-signal-pwr))))))
+  
