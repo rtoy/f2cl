@@ -7,9 +7,16 @@
 
 (defvar *wsave-cache*
   (make-hash-table)
-  "Cache for different wsave tables.  The key is the FFT size; the
-  value is a the wsave table needed by the FFT routines.")
+  "Cache for different wsave tables for single-precision.  The key is
+  the FFT size; the value is a the wsave table needed by the FFT
+  routines.")
 
+(defvar *wsave-cache-double*
+  (make-hash-table)
+  "Cache for different wsave tables for double-precision FFTs.  The
+  key is the FFT size; the value is a the wsave table needed by the
+  FFT routines.")
+  
 (defun get-wsave-entry (n)
   "Get the wsave array and it's length that is needed for computing
   the (forward and inverse) FFTs.  The value is cached, so if it's the
@@ -154,12 +161,12 @@
 	   (signal-pwr 0d0))
       (declare (double-float noise-pwr signal-pwr))
 
-      (setf (aref expected 0) (complex (* 0.5 (+ n 1)) 0.0))
+      (setf (aref expected 0) (complex (* 0.5d0 (+ n 1)) 0d0))
       (loop for k from 1 below xfrm-len
 	    with omega = (coerce (/ pi n) 'double-float)
 	    do
 	       (setf (aref expected k)
-		     (complex -0.5 (/ -0.5 (tan (* omega k))))))
+		     (complex -0.5d0 (/ -0.5d0 (tan (* omega k))))))
       (when verbose
 	(format t "Forward transform; actual vs expected~%")
 	(loop for k from 0 below xfrm-len
@@ -190,4 +197,57 @@
 		     1000d0
 		     (* 10 (log (/ s n) 10)))))
 	  (values (db signal-pwr noise-pwr) (db inv-signal-pwr inv-noise-pwr) noise-pwr signal-pwr inv-noise-pwr inv-signal-pwr))))))
-	    
+
+
+(defun get-double-wsave-entry (n)
+  "Get the wsave array and it's length that is needed for computing
+  the (forward and inverse) FFTs.  The value is cached, so if it's the
+  cache, return it.  Otherwise compute a new value and save it in the
+  cache."
+  (let ((entry (gethash n *wsave-cache-double*)))
+    (if entry
+	entry
+	(let* ((lensav (+ (* 2 n) 4 (floor (log n 2))))
+	       (wsave (make-array lensav :element-type 'double-float)))
+	  (multiple-value-bind (ignore-0 ignore-1 ignore-2 ier)
+	      (cfft1i n wsave lensav 0)
+	    (declare (ignore ignore-0 ignore-1 ignore-2))
+	    (unless (zerop ier)
+	      ;; This shouldn't really ever happen.
+	      (error "lensav is not big enough"))
+	    (setf (gethash n *wsave-cache-double*) wsave)
+	    wsave)))))
+
+(defun cfft (x)
+  (declare (type (simple-array (complex double-float) (*)) x))
+  (let* ((n (length x))
+	 (lenwrk (* 2 n))
+	 (work (make-array lenwrk :element-type 'double-float))
+	 (wsave (get-double-wsave-entry n))
+	 (lensav (length wsave)))
+    (let ((ier
+	    (nth-value 8
+		       (cfft1f n 1 x n wsave lensav work lenwrk 0))))
+      (unless (zerop ier)
+	;; This should never happen because we always allocate enough
+	;; space for x, wsave, and the work array.
+	(error "rfft1f failed with code ~A" ier))
+      x)))
+
+(defun inverse-cfft (x)
+  (declare (type (simple-array (complex double-float) (*)) x))
+
+  (let* ((n (length x))
+	 (lenwrk (* 2 n))
+	 (work (make-array lenwrk :element-type 'double-float))
+	 (wsave (get-double-wsave-entry n))
+	 (lensav (length wsave)))
+    (let* ((ier
+	     (progn
+	       (nth-value 8
+			  (cfft1b n 1 x n wsave lensav work lenwrk 0)))))
+      (unless (zerop ier)
+	;; This should never happen because we should have always
+	;; allocated the correct size of the arrays.
+	(error "rfft1b failed with code ~A" ier))
+      x)))
