@@ -93,10 +93,8 @@
   
    for n = 0, 1,...,floor(N/2)+1
 
-   NOTE: This differs from the typical engineering definition of the
-   forward FFT, where the transfrom is often not normalized by the
-   length and the argument to exp has a negative sign.  This is
-   generally considered the inverse FFT in engineering"
+   WARNING: This definition differs from the formula used for CFFT
+   which uses exp(-2*%pi*%i*k*n/N)!"
 
   (declare (type (simple-array double-float (*)) x))
   (let* ((n (length x))
@@ -219,6 +217,17 @@
 	    wsave)))))
 
 (defun cfft (x)
+  "Compute the FFT of a complex array X
+
+   Let N be the length of  X.  The FFT is:
+
+     Y[n] = 1/N*sum(x[k] * exp(-2*%pi*%i*n*k/N), k = 0, N-1)
+
+   for n = 0, 1,...,N -1
+
+   WARNING: This definition differs from RFFT which has
+   exp(+2*%pi*%i*n*k/N)"
+
   (declare (type (simple-array (complex double-float) (*)) x))
   (let* ((n (length x))
 	 (lenwrk (* 2 n))
@@ -254,6 +263,12 @@
 
 (defun test-cfft (n &key verbose)
   (let* ((x (make-array n :element-type '(complex double-float))))
+    ;; The test signal is a simple ramp: 1, 2, 3,..., N.
+    ;;
+    ;; The analytical FFT for this is:
+    ;;
+    ;; X[0] = (N+1)/2
+    ;; X[n] = -1/2 + %i*cot(%pi*n/N)/2
     (loop for k from 0 below n
 	  do
 	     (setf (aref x k) (complex (+ k 1) 0d0)))
