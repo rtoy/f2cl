@@ -3190,7 +3190,7 @@
 ;; DEST can be any arbitrary expression, so we need to parse it. 
 (defun parse_format_dest (dest)
   (cond ((null (rest dest))
-	 (if (eq (first dest) '*) t (first dest)))
+	 (if (eq (first dest) '*) t (check-reserved-lisp-names (first dest))))
 	(t
 	 (id-expression dest))))
 
