@@ -808,7 +808,14 @@
 	(if (find-if #'(lambda (k)
 			 (if (atom k)
 			     (eq keyname k)
-			     (member keyname k)))
+			     ;; A parameter value can be an arbitrary
+			     ;; expression and we need to look through
+			     ;; it to see if it uses any of the other
+			     ;; parameters.  I'm lazy, so just flatten
+			     ;; the list representing the expression
+			     ;; and look in the result to see if it
+			     ;; uses KEYNAME.
+			     (member keyname (flatten-list k))))
 		     keys :key #'second)
 	    (push key used-keys)
 	    (when (find-sym keyname code)
