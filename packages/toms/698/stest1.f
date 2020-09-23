@@ -1,0 +1,53 @@
+C
+C   STEST1 is a simple test driver for SCUHRE.
+C
+C   Output produced on a SUN 3/50.
+c
+C       SCUHRE TEST RESULTS
+C
+C    FTEST CALLS = 3549, IFAIL =  0
+C   N   ESTIMATED ERROR    INTEGRAL
+C   1     0.00000013     0.13850819
+C   2     0.00000015     0.06369469
+C   3     0.00000875     0.05861748
+C   4     0.00000020     0.05407035
+C   5     0.00000020     0.05005614
+C   6     0.00000009     0.04654606
+C
+      PROGRAM STEST1
+      EXTERNAL FTEST
+      INTEGER KEY, N, NF, NDIM, MINCLS, MAXCLS, IFAIL, NEVAL, NW
+      PARAMETER (NDIM = 5, NW = 5000, NF = NDIM+1)
+      REAL A(NDIM), B(NDIM), WRKSTR(NW)
+      REAL ABSEST(NF), FINEST(NF), ABSREQ, RELREQ
+      DO 10 N = 1,NDIM
+         A(N) = 0
+         B(N) = 1
+   10 CONTINUE
+      MINCLS = 0
+      MAXCLS = 10000
+      KEY = 0
+      ABSREQ = 0
+      RELREQ = 1E-3
+      CALL SCUHRE(NDIM, NF, A, B, MINCLS, MAXCLS, FTEST, ABSREQ, RELREQ,
+     * KEY, NW, 0, FINEST, ABSEST, NEVAL, IFAIL, WRKSTR)
+      PRINT 9999, NEVAL, IFAIL
+ 9999 FORMAT (8X, 'SCUHRE TEST RESULTS', //'     FTEST CALLS = ', I4,
+     * ', IFAIL = ', I2, /'    N   ESTIMATED ERROR   INTEGRAL')
+      DO 20 N = 1,NF
+         PRINT 9998, N, ABSEST(N), FINEST(N)
+ 9998    FORMAT (3X, I2, 2F15.8)
+   20 CONTINUE
+      END
+      SUBROUTINE FTEST(NDIM, Z, NFUN, F)
+      INTEGER N, NDIM, NFUN
+      REAL Z(NDIM), F(NFUN), SUM
+      SUM = 0
+      DO 10 N = 1,NDIM
+         SUM = SUM + N*Z(N)**2
+   10 CONTINUE
+      F(1) = EXP(-SUM/2)
+      DO 20 N = 1,NDIM
+         F(N+1) = Z(N)*F(1)
+   20 CONTINUE
+      END

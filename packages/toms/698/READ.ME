@@ -1,0 +1,28 @@
+C      ALGORITHM 698 , COLLECTED ALGORITHMS FROM ACM.
+C      THIS WORK PUBLISHED IN TRANSACTIONS ON MATHEMATICAL SOFTWARE,
+C      VOL. 17, NO. 4, DECEMBER, 1991, PP. 452-456.
+C
+C     This file summarizes the DOUBLE PRECISION routines
+C     in this directory. SINGLE PRECISION names are obtained
+C     by replacing the leading D with S in all names.
+C
+C     DTEST1   Simple test driver for DCUHRE.
+C              Sample output from a SUN 3/50 is included.
+C     DTEST2   More detailed test driver for DCUHRE.
+C              Sample output from a SUN 3/50 is included.
+C     DCUHRE   Main Integrator.DCUHRE calls DCHHRE and DADHRE.
+C     DCHHRE   Checks the input to DCUHRE.
+C     DADHRE   The adaptive integration routine.
+C              DADHRE calls DTRHRE, DINHRE and DRLHRE.
+C     DTRHRE   Maintaines the heap of subtriangles.
+C     DINHRE   Computes weights and abscissas of the integration
+C              rule. DINHRE calls D132RE, D112RE, D09HRE and D07HRE.
+C     D132RE   Computes weights and abscissas for a 2-dimensional
+C              rule of degree 13.
+C     D113RE   Computes weights and abscissas for a 3-dimensional
+C              rule of degree 11.
+C     D09HRE   Computes weights and abscissas for a degree 9 rule.
+C     D07HRE   Computes weights and abscissas for a degree 7 rule.
+C     DRLHRE   Computes estimates of integral and error over
+C              subtriangles.
+C     DFSHRE   Computes fully symmetric sums of function evaluations.
