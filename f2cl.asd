@@ -3,6 +3,7 @@
 
 (defsystem "f2cl"
   :description "F2CL:  Fortran to Lisp converter"
+  :defsystem-depends-on ("f2cl-asdf")
   :components
   ((:module "src"
 	    :serial t
