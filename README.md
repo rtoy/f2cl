@@ -10,11 +10,18 @@ If this has been extracted as a part of CLOCC, the way to build f2cl
 is to simply run "make system" from a shell, as is usual with CLOCC
 packages.
 
-A second method is to use defsystem from CLOCC.  Then load
+A second method is to use defsystem (from CLOCC).  Then load
 `f2cl.system`, and then finally run `(mk:oos "f2cl" :compile)`.  
 
 A third method is to use asdf.  You can load `f2cl.asd` and run
-`(asdf:oos 'asdf:load-op :f2cl)`.
+`(asdf:oos 'asdf:load-op :f2cl)`.  (Asdf may not be able to find
+`f2cl.asd`.  In this case, you need to tell asdf where to find it.
+The old-style is to do something like
+```
+(push "path-to-directory" asdf:*central-registry*)
+```
+where "path-to-directory" is the path to the directory containing
+"f2cl.asd". 
 
 Finally, a fourth method, if you have none of the above, is to
 manually run everything as follows:
@@ -22,27 +29,27 @@ manually run everything as follows:
 1. Start your favorite Common Lisp implementation use the function
    `compile-file` to compile each of the source files:
 
-		f2cl0.l
-		f2cl1.l
-		f2cl2.l
-		f2cl3.l
-		f2cl4.l
-		f2cl5.l
-		f2cl6.l
-		f2cl7.l
-		macros.l
+		f2cl-package.lisp
+		f2cl1.lisp
+		f2cl2.lisp
+		f2cl3.lisp
+		f2cl4.lisp
+		f2cl5.lisp
+		f2cl6.lisp
+		f2cl7.lisp
+		f2cl-lib.lisp
 
 2. Load up all of the files
 
-        (load "f2cl0.l")
-        (load "f2cl1.l")
-        (load "f2cl2.l")
-        (load "f2cl3.l")
-        (load "f2cl4.l")
-        (load "f2cl5.l")
-        (load "f2cl6.l")
-        (load "f2cl7.l")
-	    (load "macros.l")
+        (load "f2cl-package.lisp")
+        (load "f2cl1.lisp")
+        (load "f2cl2.lisp")
+        (load "f2cl3.lisp")
+        (load "f2cl4.lisp")
+        (load "f2cl5.lisp")
+        (load "f2cl6.lisp")
+        (load "f2cl7.lisp")
+	    (load "f2cl-lib.lisp")
 
    to load all the compiled files.
 
