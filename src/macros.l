@@ -9,8 +9,7 @@
   "$Id: macros.l,v 1409c1352feb 2013/03/24 20:44:50 toy $")
 
 (eval-when
-    #+gcl (compile load eval)
-    #-gcl (:compile-toplevel :load-toplevel :execute)
+    (:compile-toplevel :load-toplevel :execute)
     (proclaim '(special *verbose*)))
 ;;----------------------------------------------------------------------------
 (defvar *check-array-bounds* nil
@@ -32,10 +31,10 @@ is not included")
 ;; If you change this, you may need to change some of the macros
 ;; below, such as INT and AINT!
 
-#+(or cmu scl sbcl)
+#+(or cmu scl sbcl ecl)
 (deftype integer4 (&optional (low #x-80000000) (high #x7fffffff))
   `(integer ,low ,high))
-#-(or cmu scl sbcl)
+#-(or cmu scl sbcl ecl)
 (deftype integer4 (&optional low high)
   (declare (ignore low high))
   'fixnum)
@@ -340,8 +339,7 @@ is not included")
 
 ;; macro for a lisp equivalent of Fortran assigned GOTOs
 (eval-when
-    #+gcl (compile load eval)
-    #-gcl (:load-toplevel :compile-toplevel :execute)
+    (:load-toplevel :compile-toplevel :execute)
 (defun make-label (n) 
   (read-from-string (concatenate 'string (symbol-name :label) (princ-to-string n))))
 
@@ -693,19 +691,19 @@ is not included")
 ;; Should we make these macros that expand directly to the appropriate
 ;; max?
 (defun max0 (x y &rest z)
-  #-gcl(declare (integer x y))
+  (declare (integer x y))
   (apply #'max x y z))
 (defun amax1 (x y &rest z)
-  #-gcl(declare (single-float x y))
+  (declare (single-float x y))
   (apply #'max x y z))
 (defun dmax1 (x y &rest z)
-  #-gcl(declare (double-float x y))
+  (declare (double-float x y))
   (apply #'max x y z))
 (defun max1 (x y &rest z)
-  #-gcl(declare (single-float x y))
+  (declare (single-float x y))
   (int (apply #'max x y z)))
 (defun amax0 (x y &rest z)
-  #-gcl(declare (type integer4 x y))
+  (declare (type integer4 x y))
   (float (apply #'max x y z) 1f0))
 
 (defun min0 (x y &rest z)
@@ -918,9 +916,9 @@ is not included")
 (defun datan (x)
   (declare (type double-float x))
   (atan x))
-;; atan2 is the generic name which takes any kind of float arg.
+;; atan2 is the Fortran77 generic name, so it can take any float arg.
 (defun atan2 (y x)
-  (declare (type float x y))
+  (declare (type float y x))
   (atan y x))
 (defun datan2 (y x)
   (declare (type double-float x y))
@@ -973,12 +971,7 @@ is not included")
    
 ;; Map Fortran logical unit numbers to Lisp streams
 
-#-gcl
 (defparameter *lun-hash*
-  (make-hash-table))
-
-#+gcl
-(defvar *lun-hash*
   (make-hash-table))
 
 (defun lun->stream (lun &optional readp)
@@ -1077,9 +1070,6 @@ causing all pending operations to be flushed"
 	(declare (ignorable ,result))
 	,(if err `(unless ,result (go ,(f2cl-lib::make-label err))))
 	,(if iostat `(setf ,iostat (if ,result 0 1))))))
-
-#-gcl
-(declaim (ftype (function (t) stream) lun->stream))
 
 (defmacro fformat (dest-lun format-cilist &rest args)
   (let ((stream (gensym)))
@@ -1372,10 +1362,10 @@ causing all pending operations to be flushed"
   (ecase i
     (1 least-positive-normalized-double-float)
     (2 most-positive-double-float)
-    (3 #-(or gcl ecl) double-float-epsilon
-       #+(or gcl ecl) (scale-float (float #X10000000000001 1d0) -105))
-    (4 (scale-float #-(or gcl ecl) double-float-epsilon
-		    #+(or gcl ecl) (scale-float (float #X10000000000001 1d0) -105)
+    (3 #-ecl double-float-epsilon
+       #+ecl (scale-float (float #X10000000000001 1d0) -105))
+    (4 (scale-float #-ecl double-float-epsilon
+		    #+ecl (scale-float (float #X10000000000001 1d0) -105)
 		    1))
     (5 (log (float (float-radix 1d0) 1d0) 10d0))))
 
