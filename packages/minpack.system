@@ -1,99 +1,25 @@
 ;;; -*- Mode: lisp -*-
 ;;;
-;;;
-;;; $Id$
-;;; $Log$
-;;; Revision 1.15  2010/02/23 01:00:42  rtoy
-;;; Perhaps this is a bug in defsystem for Allegro, but set the source
-;;; extension for each module.  For some reason Allegro expects the
-;;; extension to be "l".
-;;;
-;;; Revision 1.14  2008/02/28 20:01:06  rtoy
-;;; Oops. tst-hybrd has its own defsystem.
-;;;
-;;; Revision 1.13  2008/02/25 17:11:43  rtoy
-;;; Updates to make hybrd test work.  The Lisp translation works.
-;;;
-;;; minpack.system:
-;;; o Cleanup definition of logical pathname
-;;; o Add some comments
-;;; o Add new defsystem to compile hybrd test.  This test defines some
-;;;   functions and structures that are incompatible with lmdif test.
-;;;
-;;; minpack/Makefile
-;;; o tst-hybrd uses a different input file.
-;;;
-;;; minpack/hybrd-ref.txt
-;;; o Update with correct values.
-;;;
-;;; minpack/run-minpack-tests.lisp:
-;;; o Add new function to run the hybrd test.  (Should add hybrj test
-;;;   too.)
-;;;
-;;; Revision 1.12  2008/02/22 18:51:35  rtoy
-;;; Add tst-hybrd.
-;;;
-;;; Revision 1.11  2006/05/02 22:02:20  rtoy
-;;; Fix typo in source-pathname for minpack-tests.
-;;;
-;;; Revision 1.10  2006/04/28 01:12:58  rtoy
-;;; Use *load-pathname to construct the source path (f2cl.system) or a
-;;; logical pathname to use in the defsystems so that each defsystem can
-;;; find its own files.
-;;;
-;;; Revision 1.9  2002/09/13 17:50:18  rtoy
-;;; From Douglas Crosher:
-;;;
-;;; o Make this work with lower-case Lisps
-;;; o Fix a few typos
-;;; o Make a safer fortran reader.
-;;;
-;;; Revision 1.8  2002/07/02 22:14:09  rtoy
-;;; o Add component for run-minpack-tests
-;;; o The tests are in the MINPACK package, not MINPACK-TESTS package.
-;;;
-;;; Revision 1.7  2002/07/02 21:32:36  rtoy
-;;; Add dependency to minpack.lisp to define the package.
-;;;
-;;; Revision 1.6  2002/07/02 12:31:35  rtoy
-;;; o Put the code in the MINPACK package.
-;;; o Add defsystem for the tests.
-;;;
-;;; Revision 1.5  2002/01/08 04:03:09  rtoy
-;;; Fix some typos and replace a file that we deleted.
-;;;
-;;; Revision 1.4  2002/01/08 03:29:09  rtoy
-;;; o Correct and change the compiler options.  We need array-slicing.
-;;; o Add some more routines.
-;;;
-;;; Revision 1.3  2002/01/07 18:13:53  rtoy
-;;; Set better compiler options for building minpack.
-;;;
-;;; Revision 1.2  2000/08/30 17:02:38  rtoy
-;;; Add some more of the MINPACK files.
-;;;
-;;; Revision 1.1  2000/08/29 16:10:01  rtoy
-;;; Initial rev.
-;;;
-;;; Revision 1.1  2000/07/21 22:13:48  rtoy
-;;; Initial version.
-;;;
-;; Convert a Fortran file to Lisp and compile the Lisp file.
+;;; Defsystem for compiling Minpack.
 
-;; Create minpack logical host
-(setf (logical-pathname-translations "minpack")
-      (list (list "**;*.*.*"
-		  (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
-						  :directory '(:relative "minpack" :wild-inferiors)
-						  :name :wild :type :wild)
-				   *load-pathname*))))
+;; This is where the minpack source files are located.  This value
+;; assumes the directory structure is
+;;
+;;   <path>
+;;     minpack.system
+;;     minpack/
+;;       <minpack files>
+(defparameter *minpack-root*
+  (make-pathname :directory
+                 (pathname-directory
+                  (merge-pathnames #P"minpack/" *load-truename*))))
 
 (mk:define-language :f2cl
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
 (mk:defsystem minpack
-    :source-pathname "minpack:"
+    :source-pathname *minpack-root*
     :components
     ((:file "minpack"
 	    :source-extension "lisp"
@@ -139,7 +65,7 @@
 ;; restart to continue.)  Compare the output in tlmdif.txt to
 ;; lmdif-ref.txt and tlmder.txt to lmder-ref.txt.
 (mk:defsystem minpack-tests
-    :source-pathname "minpack:"
+    :source-pathname *minpack-root*
     :components
     ((:module "main"
 	      :source-pathname ""
@@ -167,7 +93,7 @@
 ;; tst-lmder.  Hence, you can't run this test with others.
 
 (mk:defsystem minpack-test-hybrd
-    :source-pathname "minpack:"
+    :source-pathname *minpack-root*
     :components
     ((:module "main"
 	      :source-pathname ""
@@ -189,3 +115,53 @@
 				 :declare-common t)
 	      :components
 	       (:file "tst-hybrd"))))
+
+;;; System to convert the Fortran code to Lisp
+
+(mk:define-language :f2cl-lisp
+    :compiler #'f2cl:f2cl
+    :loader #'identity
+    :source-extension "f"
+    :binary-extension "lisp")
+
+(mk:defsystem minpack-lisp
+    :source-pathname *minpack-root*
+    :components
+    ((:file "minpack"
+	    :source-extension "lisp"
+	    :language :lisp)
+     (:module "minpack"
+	      :source-pathname ""
+	      :source-extension "f"
+              :binary-pathname "lib/"
+	      :package :minpack
+	      :language :f2cl-lisp
+	      :compiler-options (:include-comments t
+				 :relaxed-array-decls nil
+				 :array-type :array
+				 :array-slicing t
+				 :package :minpack)
+	      :components
+	      (
+	       (:file "dpmpar")
+	       (:file "enorm")
+	       (:file "fdjac1" :depends-on ("dpmpar"))
+	       (:file "fdjac2" :depends-on ("dpmpar"))
+	       (:file "qrsolv")
+	       (:file "lmpar" :depends-on ("dpmpar" "enorm" "qrsolv"))
+	       (:file "qrfac" :depends-on ("dpmpar" "enorm"))
+	       (:file "lmdif" :depends-on ("dpmpar" "enorm" "fdjac2" "lmpar" "qrfac"))
+	       (:file "lmdif1" :depends-on ("lmdif"))
+	       (:file "lmder" :depends-on ("dpmpar" "enorm" "lmpar" "qrfac"))
+	       (:file "lmder1" :depends-on ("lmder"))
+	       (:file "dogleg" :depends-on ("dpmpar" "enorm"))
+	       (:file "qform")
+	       (:file "r1mpyq")
+	       (:file "r1updt" :depends-on ("dpmpar"))
+	       (:file "hybrd" :depends-on ("dogleg" "dpmpar" "enorm" "fdjac1"
+					   "qform" "qrfac" "r1mpyq" "r1updt"))
+	       (:file "hybrd1" :depends-on ("hybrd"))
+	       (:file "hybrj" :depends-on ("dogleg" "dpmpar" "enorm" "qform" "qrfac"
+						    "r1mpyq" "r1updt"))
+	       (:file "hybrj1" :depends-on ("hybrj"))
+	       ))))
