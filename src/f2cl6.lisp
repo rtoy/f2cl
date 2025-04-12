@@ -28,7 +28,7 @@
 (eval-when (compile load eval) (proclaim '(special *verbose* *comments*)))
 
 (defparameter *f2cl6-version*
-  "$Id: f2cl6.l,v 1d5cbacbb977 2008/08/24 00:56:27 rtoy $")
+  "$Id$")
 
 ;--------------------------------------------------------------------------  
 ; global stream input for parse-number:
@@ -657,7 +657,7 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1d5cbacbb977 2008/08/24 00:56:27 rtoy $
+;;; $Id$
 ;;; $Log$
 ;;; Revision 1.48  2008/08/24 00:56:27  rtoy
 ;;; For ecl, set *default-pathname-defaults* using the current working

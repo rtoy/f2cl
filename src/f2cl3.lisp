@@ -25,7 +25,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl3-version*
-  "$Id: f2cl3.l,v 96616d88fb7e 2008/02/22 22:19:34 rtoy $")
+  "$Id$")
 
 ;(declare (localf atomcar atomcdr))
 
@@ -163,7 +163,7 @@
 ;;;------------------------------------------------------------------------------
 ;;; end of f2cl3.l
 ;;;
-;;; $Id: f2cl3.l,v 96616d88fb7e 2008/02/22 22:19:34 rtoy $
+;;; $Id$
 ;;; $Log$
 ;;; Revision 1.6  2008/02/22 22:19:33  rtoy
 ;;; Use RCS Id as version.

@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Id: macros.l,v 1409c1352feb 2013/03/24 20:44:50 toy $")
+  "$Id$")
 
 (eval-when
     (:compile-toplevel :load-toplevel :execute)
@@ -1556,7 +1556,7 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1409c1352feb 2013/03/24 20:44:50 toy $
+;;; $Id$
 ;;; $Log$
 ;;; Revision 1.117  2011/02/28 22:21:07  rtoy
 ;;; When opening an old file, we should set :if-exists to :overwrite to
