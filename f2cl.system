@@ -7,21 +7,26 @@
   (merge-pathnames (make-pathname :directory '(#-gcl :relative "src"))
 		   (make-pathname :directory (pathname-directory #-gcl *load-pathname*
 								 #+gcl sys:*load-pathname*)))
-    :depends-on nil
+  :depends-on nil
+  :components
+  ((:module pkg
+    :source-pathname ""
     :components
-    ((:module src
-	      :source-pathname ""
-	      :binary-pathname ""
-	      :components
-	      (
-	       (:file "f2cl-package")
-	       (:file "f2cl1")
-	       (:file "f2cl2")
-	       (:file "f2cl3")
-	       (:file "f2cl4")
-	       (:file "f2cl5")
-	       (:file "f2cl6")
-	       (:file "f2cl7")
-	       #+cmu(:file "f2cl8")
-	       (:file "f2cl-lib"
-                      :depends-on ("f2cl-package"))))))
+    ((:file "f2cl-package")
+     (:file "f2cl-lib-package")))
+   (:module src
+    :source-pathname ""
+    :binary-pathname ""
+    :depends-on (pkg)
+    :components
+    (
+     (:file "f2cl-lib")
+     (:file "f2cl1")
+     (:file "f2cl2")
+     (:file "f2cl3")
+     (:file "f2cl4")
+     (:file "f2cl5")
+     (:file "f2cl6")
+     (:file "f2cl7")
+     #+cmu(:file "f2cl8")
+     (:file "f2cl-lib")))))

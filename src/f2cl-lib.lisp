@@ -1262,7 +1262,13 @@ causing all pending operations to be flushed"
 	   (arg-list
 	    (apply #'append
 		   (map 'list #'(lambda (x)
-				  (cond ((numberp x)
+                                  ;; For maxima, use BIGFLOAT:NUMBERP
+                                  ;; instead of CL:NUMBERP.
+				  (cond #+#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
+                                        ((bigfloat:numberp x)
+                                         (list x))
+                                        #-#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
+                                        ((numberp x)
 					 (list x))
 					((stringp x)
 					 (list x))
