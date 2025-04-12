@@ -1,0 +1,4 @@
+# .gitattributes
+# Map file extensions to git filters
+
+*.lisp filter=rcs-keywords

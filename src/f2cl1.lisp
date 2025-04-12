@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 95098eb54f13 2013/04/01 00:45:16 toy $")
+  "$Id$")
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
@@ -3394,7 +3394,7 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 95098eb54f13 2013/04/01 00:45:16 toy $
+;;; $Id$
 ;;; $Log$
 ;;; Revision 1.222  2010/10/08 03:05:30  rtoy
 ;;; src/f2cl1.l:

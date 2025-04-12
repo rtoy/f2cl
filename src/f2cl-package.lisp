@@ -67,7 +67,7 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1409c1352feb 2013/03/24 20:44:50 toy $
+;;; $Id$
 ;;; $Log$
 ;;; Revision 1.25  2010/02/23 00:59:12  rtoy
 ;;; Support the Fortran capability of passing an array of one type

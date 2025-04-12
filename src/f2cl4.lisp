@@ -14,7 +14,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl4-version*
-  "$Id: f2cl4.l,v 96616d88fb7e 2008/02/22 22:19:34 rtoy $")
+  "$Id$")
 
 (defun memberq (x l) (member x l :test #'eq))
 
@@ -114,7 +114,7 @@
 ;;;------------------------------------------------------------------------------
 ;;; end of f2cl4.l
 ;;;
-;;; $Id: f2cl4.l,v 96616d88fb7e 2008/02/22 22:19:34 rtoy $
+;;; $Id$
 ;;; $Log$
 ;;; Revision 1.7  2008/02/22 22:19:34  rtoy
 ;;; Use RCS Id as version.

@@ -22,7 +22,7 @@
 	      *functions-used*)))
 
 (defparameter *f2cl2-version*
-  "$Id: f2cl2.l,v 95098eb54f13 2013/04/01 00:45:16 toy $")
+  "$Id$")
 
 ;-----------------------------------------------------------------------------
 ; subst-splice substitutes the list b for the atom a in the list c via splicing
@@ -478,7 +478,7 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 95098eb54f13 2013/04/01 00:45:16 toy $
+;;; $Id$
 ;;; $Log$
 ;;; Revision 1.37  2008/02/22 22:19:33  rtoy
 ;;; Use RCS Id as version.
