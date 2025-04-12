@@ -9,6 +9,7 @@
 	    :serial t
 	    :components
 	    ((:file "f2cl-package")
+             (:file "f2cl-lib-package")
 	     (:file "f2cl1")
 	     (:file "f2cl2")
 	     (:file "f2cl3")
