@@ -1,0 +1,6 @@
+# Ignore fasls
+/src/*.sse2f
+/src/f2cl-lib.err
+/src/f2cl1.err
+/src/f2cl2.err
+/src/f2cl5.err
