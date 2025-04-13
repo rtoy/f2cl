@@ -4,3 +4,11 @@
 /src/f2cl1.err
 /src/f2cl2.err
 /src/f2cl5.err
+# Ignore generated lisp files in odepack
+/packages/odepack/demo1/opkdemo1.lisp
+/packages/odepack/demo1/edit2.lisp
+/packages/odepack/demo1/f1.lisp
+/packages/odepack/demo1/f2.lisp
+/packages/odepack/demo1/jac1.lisp
+/packages/odepack/demo1/jac2.lisp
+/packages/odepack/lib/
