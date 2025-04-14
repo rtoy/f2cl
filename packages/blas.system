@@ -49,6 +49,7 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
+#+nil
 (setf (logical-pathname-translations "blas")
       (list (list "**;*.*.*"
 		  (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
@@ -56,14 +57,32 @@
 						  :name :wild :type :wild)
 				   *load-pathname*))))
 
+;; This is where the odepack source files are located.  This value
+;; assumes the directory structure is
+;;
+;;   <path>
+;;     blas.system
+;;     blas/
+;;       <files>
+;;
+(defvar *blas-root*
+  (make-pathname :directory
+                 (pathname-directory
+                  (merge-pathnames #P"blas/" *load-truename*))))
+
+;; Where the output fasls (or lisp files) should go.
+(defvar *blas-fasl*
+  (merge-pathnames "lib/" *blas-root*))
 
 (mk:defsystem blas-package
-  :source-pathname (pathname "blas:")
+  :source-pathname *blas-root*
+  :binary-pathname *blas-fasl*
   :components
   ((:file "blas-package")))
 
 (mk:defsystem blas-hompack
-  :source-pathname (pathname "blas:")
+  :source-pathname *blas-root*
+  :binary-pathname *blas-fasl*
   :source-extension "f"
   :language :f2cl
   :depends-on ("blas-package")
@@ -83,7 +102,8 @@
    (:file "idamax")))
 
 (mk:defsystem blas-real
-  :source-pathname (pathname "blas:")
+  :source-pathname *blas-root*
+  :binary-pathname *blas-fasl*
   :source-extension "f"
   :depends-on ("blas-hompack")
   :language :f2cl
@@ -155,7 +175,8 @@
    (:file "xerbla")))
    
 (mk:defsystem blas-complex
-  :source-pathname (pathname "blas:")
+  :source-pathname *blas-root*
+  :binary-pathname *blas-fasl*
   :source-extension "f"
   :depends-on ("blas-real")
   :language :f2cl
@@ -203,6 +224,6 @@
    (:file "ztrsv")))
 
 (mk:defsystem blas
-  :source-pathname (pathname "blas:")
+  :source-pathname *blas-root*
   :source-extension "f"
   :depends-on ("blas-package" "blas-real" "blas-complex"))

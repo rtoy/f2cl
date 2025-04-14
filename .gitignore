@@ -12,3 +12,6 @@
 /packages/odepack/demo1/jac1.lisp
 /packages/odepack/demo1/jac2.lisp
 /packages/odepack/lib/
+# Ignore generated files in blas
+/packages/blas/*.lisp
+/packages/blas/lib/
