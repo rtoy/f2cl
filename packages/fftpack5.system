@@ -2,10 +2,9 @@
 
 (setf (logical-pathname-translations "fftpack5")
       (list (list "**;*.*.*"
-		  (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
-						  :directory '(:relative "fftpack5" :wild-inferiors)
+		  (merge-pathnames (make-pathname :directory '(:relative "fftpack5" :wild-inferiors)
 						  :name :wild :type :wild)
-				   *load-pathname*))))
+				   *load-truename*))))
 
 (defun fftpack-compile (input-file &rest all-keys)
   (apply #'f2cl:f2cl-compile input-file :package :fftpack5 all-keys))
