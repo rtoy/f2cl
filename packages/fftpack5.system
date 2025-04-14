@@ -29,6 +29,7 @@
 	    :source-extension "lisp"
 	    :language :lisp)
      (:module "fortran"
+      :binary-pathname "fftpack5:fortran;fasl;"
 	      :source-extension "f"
 	      :language :f2cl
 	      :components
@@ -215,6 +216,7 @@
 	    :source-extension "lisp"
 	    :language :lisp)
      (:module "fortran"
+      :binary-pathname "fftpack5:fortran;fasl;"
 	      :source-extension "f"
 	      :language :f2cl-double
 	      :components
