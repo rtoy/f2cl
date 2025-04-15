@@ -52,10 +52,10 @@
 
 (setf (logical-pathname-translations "hompack")
       (list (list "**;*.*.*"
-		  (merge-pathnames (make-pathname :host (pathname-host *load-pathname*)
+		  (merge-pathnames (make-pathname :host (pathname-host *load-truename*)
 						  :directory '(:relative "hompack" :wild-inferiors)
 						  :name :wild :type :wild)
-				   *load-pathname*))))
+				   *load-truename*))))
 
 ;; Don't know why defsystem doesn't complain, but you need to load up
 ;; blas.system and build blas-hompack first.  Otherwise, it loads up
@@ -161,9 +161,9 @@
 
 ;; This wants to read from innhp.dat in the hompack directory, so you
 ;; have to be in that directory when running this test.  The output is
-;; placed in OUTHP.DAT.  You may need to close the output file to see
-;; the results since the main program doesn't.  Use something like
-;; (close (f2cl-lib:lun->stream 6)).
+;; placed in OUTHP.DAT (upper case!).  You may need to close the
+;; output file to see the results since the main program doesn't.  Use
+;; something like (close (f2cl-lib::lun->stream 6)).
 
 (mk:defsystem hompack-test-mainp
     :source-pathname (pathname "hompack:")
@@ -177,7 +177,7 @@
      ))
 
 (mk:defsystem hompack-test-mains
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
+    :source-pathname "hompack:"
     :source-extension "f"
     :language :f2cl
     :depends-on ("hompack")
