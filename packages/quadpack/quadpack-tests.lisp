@@ -30,7 +30,7 @@
 
 ;;(declaim (optimize (speed 3)))
 
-(in-package #:quadpack)
+;;(in-package #:quadpack)
 
 (declaim (inline square))
 
