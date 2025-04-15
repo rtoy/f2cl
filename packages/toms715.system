@@ -38,8 +38,8 @@
 (defparameter *toms715-root*
   (merge-pathnames
    #P"toms/715"
-   (make-pathname :host (pathname-host *load-pathname*)
-		  :directory (pathname-directory *load-pathname*))))
+   (make-pathname :host (pathname-host *load-truename*)
+		  :directory (pathname-directory *load-truename*))))
 
 (mk:define-language :f2cl
     :compiler #'f2cl:f2cl-compile
@@ -50,7 +50,7 @@
 ;;   Non-x86 systems or x86 systems using SSE2 for floats can probably
 ;;   compile and run the Fortran version without problems.
 (mk:defsystem machar
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :source-pathname (make-pathname :directory (pathname-directory *load-truename*))
   :source-extension "lisp"
   :components
   ((:file "machar")))
