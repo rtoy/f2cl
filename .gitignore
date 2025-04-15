@@ -20,3 +20,8 @@
 /packages/hompack/fortran/*.sse2f
 /packages/hompack/fortran/*.err
 /packages/hompack/fortran/*.lisp
+# Ignore generated files in quadpack
+/packages/quadpack/quadpack-tests.sse2f
+/packages/quadpack/Fortran/*.lisp
+/packages/i1mach.sse2f
+/packages/quadpack/Fortran/lib/
