@@ -85,7 +85,7 @@
 
 ;; Defsystem for quadpack.
 (mk:defsystem quadpack
-    :source-pathname (merge-pathnames "quadpack/Fortran"
+    :source-pathname (merge-pathnames "quadpack/fortran"
 				      *quadpack-root*)
     :depends-on ("mach-par")
     :components
@@ -230,7 +230,7 @@
     :binary-extension "lisp")
 
 (mk:defsystem quadpack-lisp
-    :source-pathname (merge-pathnames "quadpack/Fortran"
+    :source-pathname (merge-pathnames "quadpack/fortran"
 				      *quadpack-root*)
     :depends-on ("mach-par")
     :compiler-options (:array-slicing nil
