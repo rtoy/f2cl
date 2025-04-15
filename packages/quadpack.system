@@ -270,7 +270,12 @@
                (:file "xerctl")
                (:file "xersav")
                (:file "fdump")
-               (:file "xermsg")
+               (:file "xermsg"
+                      :depends-on ("xerprn" "xersve" "xerhlt" "xercnt"))
+               (:file "xerprn")
+               (:file "xersve")
+               (:file "xerhlt")
+               (:file "xercnt")
                
 	       ;; Core integration routines
 	       (:file "dqk15")
