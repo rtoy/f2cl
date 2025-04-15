@@ -114,6 +114,12 @@
                (:file "xerctl")
                (:file "xersav")
                (:file "fdump")
+               (:file "xermsg"
+                      :depends-on ("xerprn" "xersve" "xerhlt" "xercnt"))
+               (:file "xerprn")
+               (:file "xersve")
+               (:file "xerhlt")
+               (:file "xercnt")
 	       
 	       ;; Core integration routines
 	       (:file "dqk15")
@@ -150,7 +156,7 @@
 				   "dqk15i"
 				   "dqpsrt"))
 	       (:file "dqagp"
-		      :depends-on ("dqagpe")
+		      :depends-on ("dqagpe" "xermsg")
 		      :compiler-options (:array-slicing nil :array-type :array
 					 :float-format double-float
 					 #|:package :slatec|#))
@@ -264,6 +270,7 @@
                (:file "xerctl")
                (:file "xersav")
                (:file "fdump")
+               (:file "xermsg")
                
 	       ;; Core integration routines
 	       (:file "dqk15")
@@ -300,7 +307,7 @@
 				   "dqk15i"
 				   "dqpsrt"))
 	       (:file "dqagp"
-		      :depends-on ("dqagpe")
+		      :depends-on ("dqagpe" "xermsg")
 		      :compiler-options (:array-slicing t :array-type :array
 					 :float-format double-float
 					 :package :slatec))
