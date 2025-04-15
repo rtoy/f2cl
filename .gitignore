@@ -15,3 +15,8 @@
 # Ignore generated files in blas
 /packages/blas/*.lisp
 /packages/blas/lib/
+# Ignore generated files in hompack
+/packages/hompack/hompack-package.sse2f
+/packages/hompack/fortran/*.sse2f
+/packages/hompack/fortran/*.err
+/packages/hompack/fortran/*.lisp
