@@ -69,11 +69,13 @@
     ((:file "hompack-package")))
 
 (mk:defsystem hompack
-    :source-pathname (pathname "hompack:")
-    :source-extension "f"
-    :language :f2cl
-    :depends-on ("hompack-package" "blas-hompack")
-    :compiler-options (:package "HOMPACK")
+  :source-pathname (pathname "hompack:")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("hompack-package" "blas-hompack")
+  :compiler-options (:package "HOMPACK")
+  :components
+  ((:module "fortran"
     :components
     (
      ;; The following are :compile-only here because HOMPACK only
@@ -143,21 +145,23 @@
      (:file "tangqf" :depends-on ("rhojac" "qrfaqf" "qrslqf" "r1upqf" "fjac"))
      (:file "tangqs" :depends-on ("rhojs" "pcgqs" "fjac"))
      (:file "upqrqf" :depends-on ("r1upqf"))
-     ))
+     ))))
 
 ;; Run (hompack::mainf).  Compare with hompack/ref-main.txt.
 ;;
 ;; Results are identical.
 (mk:defsystem hompack-test-mainf
-    :source-pathname (pathname "hompack:")
-    :source-extension "f"
-    :language :f2cl
-    :depends-on ("hompack")
+  :source-pathname (pathname "hompack:")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("hompack")
+  :components
+  ((:module "fortran"
     :components
     (
      (:file "mainf" :compiler-options (:declare-common t
 				       :package "HOMPACK"))
-     ))
+     ))))
 
 ;; This wants to read from innhp.dat in the hompack directory, so you
 ;; have to be in that directory when running this test.  The output is
@@ -166,23 +170,27 @@
 ;; something like (close (f2cl-lib::lun->stream 6)).
 
 (mk:defsystem hompack-test-mainp
-    :source-pathname (pathname "hompack:")
-    :source-extension "f"
-    :language :f2cl
-    :depends-on ("hompack")
+  :source-pathname (pathname "hompack:")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("hompack")
+  :components
+  ((:module "fortran"
     :components
     (
      (:file "mainp" :compiler-options (:declare-common t
 				       :package "HOMPACK"))
-     ))
+     ))))
 
 (mk:defsystem hompack-test-mains
-    :source-pathname "hompack:"
-    :source-extension "f"
-    :language :f2cl
-    :depends-on ("hompack")
+  :source-pathname "hompack:"
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("hompack")
+  :components
+  ((:module "fortran"
     :components
     (
      (:file "mains" :compiler-options (:declare-common t
 				       :package "HOMPACK"))
-     ))
+     ))))
