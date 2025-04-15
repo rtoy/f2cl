@@ -104,9 +104,9 @@
 	       (:file "dqwgtc")
 	       (:file "dgtsl")
 	       (:file "xerror"
-                      :depends-on ("xerrwv"))
+                :depends-on ("xerrwv"))
                (:file "xerrwv"
-                      :depends-on ("j4save" "xerprt" "xerabt" "xgetua" "xerctl" "fdump" "xersav"))
+                :depends-on ("j4save" "xerprt" "xerabt" "xgetua" "xerctl" "fdump" "xersav"))
                (:file "j4save")
                (:file "xerprt")
                (:file "xerabt")
@@ -253,8 +253,18 @@
 	       (:file "dqwgts")
 	       (:file "dqwgtc")
 	       (:file "dgtsl")
-	       (:file "xerror")
-	       
+	       (:file "xerror"
+                :depends-on ("xerrwv"))
+               (:file "xerrwv"
+                :depends-on ("j4save" "xerprt" "xerabt" "xgetua" "xerctl" "fdump" "xersav"))
+               (:file "j4save")
+               (:file "xerprt")
+               (:file "xerabt")
+               (:file "xgetua")
+               (:file "xerctl")
+               (:file "xersav")
+               (:file "fdump")
+               
 	       ;; Core integration routines
 	       (:file "dqk15")
 	       (:file "dqk31")
