@@ -89,3 +89,24 @@
 	  (setf irnd 2))))
     (values ibeta it irnd ngrd machep negep iexp minexp 
                         maxexp eps epsneg xmin xmax)))
+
+(in-package #-gcl #:cl-user #+gcl "CL-USER")
+#+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))
+(eval-when (:load-toplevel :compile-toplevel :execute)
+  (setf (gethash 'fortran-to-lisp::machar
+                 fortran-to-lisp::*f2cl-function-info*)
+          (fortran-to-lisp::make-f2cl-finfo
+           :arg-types '((fortran-to-lisp::integer4) (fortran-to-lisp::integer4)
+                        (fortran-to-lisp::integer4) (fortran-to-lisp::integer4)
+                        (fortran-to-lisp::integer4) (fortran-to-lisp::integer4)
+                        (fortran-to-lisp::integer4) (fortran-to-lisp::integer4)
+                        (fortran-to-lisp::integer4) (double-float)
+                        (double-float) (double-float) (double-float))
+           :return-values '(fortran-to-lisp::ibeta fortran-to-lisp::it
+                            fortran-to-lisp::irnd fortran-to-lisp::ngrd
+                            fortran-to-lisp::machep fortran-to-lisp::negep
+                            fortran-to-lisp::iexp fortran-to-lisp::minexp
+                            fortran-to-lisp::maxexp fortran-to-lisp::eps
+                            fortran-to-lisp::epsneg fortran-to-lisp::xmin
+                            fortran-to-lisp::xmax)
+           :calls 'nil)))
