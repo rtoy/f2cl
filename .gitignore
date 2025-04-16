@@ -25,3 +25,6 @@
 /packages/quadpack/fortran/*.lisp
 /packages/i1mach.sse2f
 /packages/quadpack/fortran/lib/
+# Ignore generated stuff from toms715
+/packages/machar.sse2f
+/packages/toms/715/fasl/
