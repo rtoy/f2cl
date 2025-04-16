@@ -136,6 +136,7 @@
    (:file "i7shft")
    ))
 
+#+nil
 (mk:defsystem toms717-tests
   :source-pathname *toms717-root*
   :binary-pathname *toms717-fasl*
@@ -199,4 +200,99 @@
      ;;(:file "mlmnp")
      ;;(:file "mlmnpb")
      ))))
+
+(mk:defsystem toms717-tests
+  :source-pathname *toms717-root*
+  :binary-pathname *toms717-fasl*
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("toms717")
+  :compiler-options (:keep-lisp-file nil)
+  :components
+  ((:module "madsen-common"
+    :source-pathname ""
+    :binary-pathname ""
+    :language :f2cl
+    :components
+    (
+     (:file "madrj")
+     (:file "rhols")))
+   ;; This test appears to work and matches madsen.sgi,
+   ;; more or less.  Run (madsen).
+   (:module "madsen"
+    :source-pathname ""
+    :binary-pathname ""
+    :depends-on ("madsen-common")
+    :language :f2cl
+    :components
+    ((:file "madsen")))
+
+    ;; This test appears to work and matches madsenb.sgi,
+    ;; more or less.  Run (madsenb)
+   (:module "madsenb"
+    :source-pathname ""
+    :binary-pathname ""
+    :depends-on ("madsen-common")
+    :language :f2cl
+    :components
+    ((:file "madsenb")))
+
+   ;; The following tests don't work with f2cl for the following reasons:
+   ;;
+   ;; o dpmain uses an equivalence of 2 arrays (of the
+   ;;   same type).  This isn't supported by f2cl.
+   ;; o mlmnp uses an implied-do loop in a read statement,
+   ;;   which isn't supported.
+   ;; o mlmnpb uses an implied-do loop in a read statement,
+   ;;   which isn't supported.
+   #+nil
+   (:module "pmain"
+    :source-pathname ""
+    :binary-pathname ""
+    :language :f2cl
+    :components
+    (
+     ;;(:file "dpmain")
+
+     ;; dpmain.f split into 1 file per function.
+     (:file "pmain")
+     (:file "brj")
+     (:file "brj1")
+     (:file "chkder")
+     (:file "rpoil0")
+     (:file "devian")
+     (:file "dzero")
+     (:file "invcn"
+      :compiler-options (:declare-common t))
+     (:file "cnerr")
+     (:file "louchk")
+     (:file "pnorms")
+     (:file "poisx0")
+     (:file "poix0")
+     (:file "pregrh")
+     (:file "pregrv")
+     (:file "prgrh1")
+     (:file "rhpoil"
+      :compiler-options (:declare-common t))
+     (:file "lpn")))
+
+   ;; This doesn't work because mlmnp.f eqiuvalences two arrays (RHOI and UI) of
+   ;; different types (double precision and integer).
+   #+nil
+   (:module "mlmnp"
+    :source-pathname ""
+    :binary-pathname ""
+    :language :f2cl
+    :components
+    ((:file "mlmnp")))
+
+   ;; This doesn't work because mlmnp.f eqiuvalences two arrays (RHOI and UI) of
+   ;; different types (double precision and integer).
+   (:module "mlmnpb"
+    :source-pathname ""
+    :binary-pathname ""
+    :language :f2cl
+    :components
+    ((:file "mlmnpb")))
+   ))
 
