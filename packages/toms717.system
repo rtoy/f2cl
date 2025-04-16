@@ -7,14 +7,19 @@
 
 (defparameter *toms717-root*
   (merge-pathnames
-   #P"toms/717"
-   (make-pathname :host (pathname-host *load-pathname*)
-		  :directory (pathname-directory *load-pathname*))))
+   #P"toms/717/"
+   (make-pathname :host (pathname-host *load-truename*)
+		  :directory (pathname-directory *load-truename*))))
+
+(defparameter *toms717-fasl*
+  (merge-pathnames #P"fasl/" *toms717-root*))
 
 (mk:defsystem toms717
   :source-pathname *toms717-root*
+  :binary-pathname *toms717-fasl*
     :source-extension "f"
     :language :f2cl
+    :compiler-options (:keep-lisp-file nil)
     :components
     ((:module "717"
 	      :source-pathname ""
@@ -138,9 +143,11 @@
 
 (mk:defsystem toms717-tests
   :source-pathname *toms717-root*
+  :binary-pathname *toms717-fasl*
     :source-extension "f"
     :language :f2cl
     :depends-on ("toms717")
+    :compiler-options (:keep-lisp-file nil)
     :components
     ((:module "tests"
 	      :source-pathname ""
