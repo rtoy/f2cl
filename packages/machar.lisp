@@ -57,7 +57,6 @@
 	(irnd 5)
 	(ngrd 0)
 	(machep (1- (float-digits 1d0)))
-	(negeps (- (float-digits 1d0)))
 	(iexp 11)
 	(minexp -1022)
 	(maxexp 1024)
