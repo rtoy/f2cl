@@ -56,36 +56,19 @@
 	;; IEEE style rounding assumed, with partial underflow
 	(irnd 5)
 	(ngrd 0)
-	(machep (1- (float-digits 1d0)))
+	(machep (- 1 (float-digits 1d0)))
+        (negep (- (float-digits 1d0)))
 	(iexp 11)
 	(minexp -1022)
 	(maxexp 1024)
-	(eps double-float-epsilon)
-	(epsneg double-float-negative-epsilon)
+        ;; Make eps mostly match machar.f value of
+        ;; 2.2204460492503131E-016
+	(eps (* 2 double-float-epsilon))
+        ;; Make epsneg mostly match machar.f value of
+        ;; 1.1102230246251565E-016
+	(epsneg (* 2 double-float-negative-epsilon))
 	(xmin least-positive-normalized-double-float)
 	(xmax most-positive-double-float))
-    ;; Determine irnd
-    (setf irnd 0)
-    (let ((a 1d0)
-	  (temp 0d0)
-	  (temp1 0d0)
-	  (tempa 0d0)
-	  (beta (float ibeta 1d0)))
-      (loop
-	 (setf a (+ a a))
-	 (setf temp (+ a 1d0))
-	 (setf temp1 (- temp a))
-	 (unless (zerop (- temp1 1d0))
-	   (return)))
-      (let* ((betah (/ beta 2))
-	     (temp (+ a betah)))
-	(when (not (zerop (- temp a)))
-	  (setf irnd 1))
-	(setf tempa (+ a beta))
-	(setf temp (+ tempa betah))
-	(when (and (zerop irnd)
-		   (not (zerop (- temp tempa))))
-	  (setf irnd 2))))
     (values ibeta it irnd ngrd machep negep iexp minexp 
                         maxexp eps epsneg xmin xmax)))
 
