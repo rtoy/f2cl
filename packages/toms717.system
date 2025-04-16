@@ -214,8 +214,7 @@
     :binary-pathname ""
     :language :f2cl
     :components
-    (
-     (:file "madrj")
+    ((:file "madrj")
      (:file "rhols")))
    ;; This test appears to work and matches madsen.sgi,
    ;; more or less.  Run (madsen).
@@ -288,6 +287,7 @@
 
    ;; This doesn't work because mlmnp.f eqiuvalences two arrays (RHOI and UI) of
    ;; different types (double precision and integer).
+   #+nl
    (:module "mlmnpb"
     :source-pathname ""
     :binary-pathname ""
