@@ -3,7 +3,7 @@
 
 (defparameter *toms715-root*
   (merge-pathnames
-   #P"toms/715"
+   #P"toms"
    (make-pathname :host (pathname-host *load-truename*)
 		  :directory (pathname-directory *load-truename*))))
 
@@ -28,7 +28,6 @@
     :depends-on ("machar")
     :components
     ((:module "715"
-	      :source-pathname ""
 	      :binary-pathname ""
 	      :components
 	      (
@@ -81,8 +80,7 @@
     :language :f2cl
     :depends-on ("toms715")
     :components
-    ((:module "tests"
-	      :source-pathname ""
+    ((:module "715"
 	      :binary-pathname ""
 	      :source-extension "f"
 	      :language :f2cl
