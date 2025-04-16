@@ -1,39 +1,5 @@
 ;;; -*- Mode: lisp -*-
 ;;;
-;;;
-;;; $Id$
-;;; $Log$
-;;; Revision 1.8  2008/09/15 02:27:34  rtoy
-;;; Instead of compiling and using the Fortran version of machar, use the
-;;; Lisp version.  Some x86 systems can't run machar correctly, due to the
-;;; 80-bit floats used internally, even though double-floats are used.
-;;;
-;;; Revision 1.7  2008/08/25 16:54:08  rtoy
-;;; o Get rid of the logical pathname translations.
-;;; o Define *TOMS715-ROOT* to hold the directory containing
-;;;   the source code for TOMS 715.
-;;;
-;;; Revision 1.6  2008/02/26 18:43:52  rtoy
-;;; Clean up logical pathname.
-;;;
-;;; Revision 1.5  2006/04/28 01:12:58  rtoy
-;;; Use *load-pathname to construct the source path (f2cl.system) or a
-;;; logical pathname to use in the defsystems so that each defsystem can
-;;; find its own files.
-;;;
-;;; Revision 1.4  2002/01/13 16:29:52  rtoy
-;;; Some of the dependencies were wrong.
-;;;
-;;; Revision 1.3  2000/08/18 17:55:07  rtoy
-;;; Use the right package for f2cl-compile.
-;;;
-;;; Revision 1.2  2000/08/07 17:02:29  rtoy
-;;; Comment out unused functions, make it more palatable to Clisp logical
-;;; pathnames, add some dependencies.
-;;;
-;;; Revision 1.1  2000/07/21 22:13:48  rtoy
-;;; Initial version.
-;;;
 
 (defparameter *toms715-root*
   (merge-pathnames
