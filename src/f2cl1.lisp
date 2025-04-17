@@ -1173,7 +1173,13 @@ correctly"
        (setf fun (fixup-f2cl-lib fun (cons (cadr fort-fun) *external-function-names*)))
 
        (special-print fun outport)
-       (format outport "~2&(in-package #-gcl #:cl-user #+gcl \"CL-USER\")~%#+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))~%")
+       ;; Dump out the function info this function.  We need to be in
+       ;; the CL-USER package.
+       (format outport "~2&(in-package #:cl-user)~%")
+       ;; Only load the function info if the F2CL package exists.
+       (format outport "#+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))~%")
+       ;; Write out the sexp that sets up the function info database
+       ;; for this function.
        (let* ((*package* (find-package '#:cl-user))
 	      (fname (second fort-fun))
 	      (info (gethash fname *f2cl-function-info*)))
