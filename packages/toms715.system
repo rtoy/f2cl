@@ -14,10 +14,14 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
-;;   On some (all?) x86 systems, machar doesn't correctly compute the
-;;   desired values.  This is due to the 80-bit floats on x86.
-;;   Non-x86 systems or x86 systems using SSE2 for floats can probably
-;;   compile and run the Fortran version without problems.
+;; On some (all?) x86 systems, machar doesn't correctly compute the
+;; desired values.  This is due to the 80-bit floats on x86.
+;; Non-x86 systems or x86 systems using SSE2 for floats can probably
+;; compile and run the Fortran version without problems.
+;;
+;; For Lisps that use sse2, we don't need this lisp version anymore.
+;; We can compile machar.f and produce the same results as Fortran.
+#+(or)
 (mk:defsystem machar
   :source-pathname (make-pathname :directory (pathname-directory *load-truename*))
   :source-extension "lisp"
@@ -29,11 +33,11 @@
     :binary-pathname *toms715-fasl*
     :source-extension "f"
     :language :f2cl
-    :depends-on ("machar")
+    ;; Uncomment this and the machar system above if you need the lisp
+    ;; version of machar :depends-on ("machar")
     :compiler-options (:keep-lisp-file nil)
     :components
     (
-     (:file "machar")
      (:file "anorm")
      (:file "besei0" :depends-on ("calci0"))
      (:file "besei1" :depends-on ("calci1"))
@@ -85,8 +89,17 @@
     :depends-on ("toms715")
     :compiler-options (:keep-lisp-file nil)
     :components
+  ((:module "machar"
+    :source-pathname ""
+    :components
     (
-     (:file "algtst")
+     #+(and)
+     (:file "machar")))
+   (:module "test-progs"
+    :source-pathname ""
+    :depends-on ("machar")
+    :components
+    ((:file "algtst")
      (:file "anrtst")
      (:file "dawtst")
      (:file "eitest")
@@ -105,5 +118,5 @@
      (:file "rytest")
      (:file "y0test")
      (:file "y1test")
-     ))
+     ))))
 
