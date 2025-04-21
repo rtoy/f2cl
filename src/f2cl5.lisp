@@ -1297,6 +1297,28 @@
 		     (ignorable ,@(mapcar #'car keys)))))
     code-key-params-decls))
 
+;; Find ITEM in TREE using TEST.  This is like FIND, except we search
+;; in a tree instead of a list.  Returns the subtree where ITEM was
+;; found.
+(defun find-in-tree (item tree &key (test #'eql))
+  (labels ((find-in-tree-aux (tree)
+             (cond ((funcall test item tree)
+                    (return-from find-in-tree tree))
+                   ((consp tree)
+                    (find-in-tree-aux (car tree))
+                    (find-in-tree-aux (cdr tree))))))
+    (find-in-tree-aux tree)))
+
+;; Find all the symbols in ARGLIST that cannot be found in the tree
+;; PROG-BIT.  The list of symbols not found is returned or NIL if
+;; every symbol in ARGLIST can be found in PROG-BIT.
+(defun find-unused-args (arglist prog-bit)
+  (let (unused)
+    (dolist (v arglist)
+      (unless (find-in-tree v prog-bit)
+        (push v unused)))
+    unused))
+
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
 		   local-vbles vble-decls body common-blocks
@@ -1311,7 +1333,8 @@
 	 	   code-key-params-decls
 		   all-decls
 		   #+nil additional-args
-		   entry-points equivalences)
+		   entry-points equivalences
+         unused-arg-names)
 
      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
 	   arglist (caddr fort-fun)
@@ -2078,6 +2101,15 @@
 	   ;;(format t "new-prog-bit = ~A~%" prog-bit)
 		 
 	 ))
+
+     (setf unused-arg-names (find-unused-args arglist prog-bit))
+     ;;(format t "Unused args: ~A~%" unused-arg-names)
+
+     ;; Add a declaration to ignore all the symbols in the ARGLIST
+     ;; that weren't used in any way in the function.
+     (when unused-arg-names
+       (push `(declare (ignore ,@unused-arg-names))
+             formal-arg-decls))
 
      ;; We need to handle BLOCK DATA subprograms differently from
      ;; normal subprograms.  (BLOCK DATA subprograms always start with
