@@ -1300,10 +1300,18 @@
 ;; Find ITEM in TREE using TEST.  This is like FIND, except we search
 ;; in a tree instead of a list.  Returns the subtree where ITEM was
 ;; found.
-(defun find-in-tree (item tree &key (test #'eql))
+(defun find-in-tree (item tree &key (test #'eql) (fref-special nil))
   (labels ((find-in-tree-aux (tree)
              (cond ((funcall test item tree)
                     (return-from find-in-tree tree))
+                   ((and fref-special
+                         (consp tree)
+                         (eq 'fref (car tree)))
+                    ;; For fref,
+                    ;;(format t "tree = ~A~%" tree)
+                    (find-in-tree item (second tree))
+                    (find-in-tree item (third tree))
+                    (find-in-tree item (fifth tree)))
                    ((consp tree)
                     (find-in-tree-aux (car tree))
                     (find-in-tree-aux (cdr tree))))))
@@ -1312,10 +1320,10 @@
 ;; Find all the symbols in ARGLIST that cannot be found in the tree
 ;; PROG-BIT.  The list of symbols not found is returned or NIL if
 ;; every symbol in ARGLIST can be found in PROG-BIT.
-(defun find-unused-args (arglist prog-bit)
+(defun find-unused-args (arglist prog-bit &key fref-special)
   (let (unused)
     (dolist (v arglist)
-      (unless (find-in-tree v prog-bit)
+      (unless (find-in-tree v prog-bit :fref-special fref-special)
         (push v unused)))
     unused))
 
@@ -2101,8 +2109,7 @@
 	   ;;(format t "new-prog-bit = ~A~%" prog-bit)
 		 
 	 ))
-
-     (setf unused-arg-names (find-unused-args arglist prog-bit))
+     (setf unused-arg-names (find-unused-args arglist prog-bit :fref-special t))
      ;;(format t "Unused args: ~A~%" unused-arg-names)
 
      ;; Add a declaration to ignore all the symbols in the ARGLIST
@@ -2110,6 +2117,12 @@
      (when unused-arg-names
        (push `(declare (ignore ,@unused-arg-names))
              formal-arg-decls))
+
+     (let ((unused (find-in-tree *declared_vbles* defun-bit :fref-special t)))
+       (format t "find-in-tree-fref ~A: ~A~%" *declared_vbles* unused)
+       (when unused
+         (push `(declare (ignore ,@unused))
+               formal-arg-decls)))
 
      ;; We need to handle BLOCK DATA subprograms differently from
      ;; normal subprograms.  (BLOCK DATA subprograms always start with
