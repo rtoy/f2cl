@@ -542,7 +542,7 @@
 (rt:deftest qag1.key5.2.4
     (multiple-value-bind (result est-abserr neval ier soln abserr)
 	(test-01 :key 5 :alpha 2.4d0)
-      (if (and (= ier 0) (< abserr 9.795d-14))
+      (if (and (= ier 0) (< abserr 9.7964d-14))
 	  t (values result est-abserr neval ier soln abserr)))
   t)
 

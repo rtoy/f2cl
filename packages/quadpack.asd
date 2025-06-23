@@ -73,7 +73,7 @@
   :depends-on ("quadpack/mach-par")
   :pathname "quadpack/"
   :components
-  ((:module "Fortran"
+  ((:module "fortran"
 	    :components
 	    (;; Support
 	     (:file "dqwgtf")
