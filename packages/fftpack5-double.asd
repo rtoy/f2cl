@@ -23,6 +23,7 @@
     :components
     ((:cl-source-file "fftpack5-double")))
    (:module "fftpack5"
+    :pathname "fftpack5/fortran/"
     :depends-on ("package")
     :components
     ((:file "c1f2kb")

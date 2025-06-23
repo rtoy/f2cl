@@ -20,6 +20,7 @@
 	    :components
 	    ((:cl-source-file "package")))
    (:module "fishpack"
+            :pathname "fishpack/fortran/"
 	    :components
 	    ((:file "pimach")
 	     (:file "merge")
