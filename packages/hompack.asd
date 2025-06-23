@@ -18,7 +18,9 @@
 	    :components
 	    ((:cl-source-file "hompack-package")))
    (:module "hompack"
+            :pathname "hompack/fortran"
 	    :depends-on ("package")
+            :pathname "fortran"
 	    :components
 	    (;; The following are :compile-only here because HOMPACK only
 	     ;; gives skeletons for them.  We make them :compile-only so that
@@ -98,7 +100,11 @@
   :default-component-class :fortran-file
   :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("hompack")
-  :components ((:file "hompack/mainf" :f2cl-options (:declare-common t)))
+  :components
+  ((:module "hompack"
+    :components
+    ((:file "fortran/mainf" :f2cl-options (:declare-common t
+                                           :package "HOMPACK")))))
   :perform (test-op (o c)
              (let ((*default-pathname-defaults* (system-source-directory "hompack")))
                (symbol-call :hompack :mainf))))
@@ -115,7 +121,10 @@
   :default-component-class :fortran-file
   :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("hompack")
-  :components ((:file "hompack/mainp" :f2cl-options (:declare-common t)))
+  :components
+  ((:module "hompack"
+    :components
+    ((:file "fortran/mainp" :f2cl-options (:declare-common t)))))
   :perform (test-op (o c)
              (let ((*default-pathname-defaults* (system-source-directory "hompack")))
                (symbol-call :hompack :mainp))))
@@ -125,7 +134,10 @@
   :default-component-class :fortran-file
   :f2cl-options (:package "HOMPACK" :array-slicing t :array-type :array :common-as-array t :keep-lisp-file t :relaxed-array-decls t)
   :depends-on ("hompack")
-  :components ((:file "hompack/mains" :f2cl-options (:declare-common t)))
+  :components
+  ((:module "hompack"
+    :components
+    ((:file "fortran/mains" :f2cl-options (:declare-common t)))))
   :perform (test-op (o c)
              (let ((*default-pathname-defaults* (system-source-directory "hompack")))
                (symbol-call :hompack :mains))))
