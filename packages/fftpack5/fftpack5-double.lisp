@@ -1,9 +1,4 @@
-(defpackage :fftpack5
-  (:use :common-lisp)
-  (:export "RFFT"
-	   "INVERSE-RFFT"))
-
-(in-package :fftpack5)
+(in-package :fftpack5-double/tests)
 
 (defvar *wsave-cache*
   (make-hash-table)
@@ -28,7 +23,7 @@
 	(let* ((lensav (+ n 4 (floor (log n 2))))
 	       (wsave (make-array lensav :element-type 'double-float)))
 	  (multiple-value-bind (ignore-0 ignore-1 ignore-2 ier)
-	      (rfft1i n wsave lensav 0)
+	      (fftpack5::rfft1i n wsave lensav 0)
 	    (declare (ignore ignore-0 ignore-1 ignore-2))
 	    (unless (zerop ier)
 	      ;; This shouldn't really ever happen.
@@ -103,7 +98,7 @@
 	 (lensav (length wsave)))
     (let ((ier
 	    (nth-value 8
-		       (rfft1f n 1 x n wsave lensav work n 0))))
+		       (fftpack5::rfft1f n 1 x n wsave lensav work n 0))))
       (unless (zerop ier)
 	;; This should never happen because we always allocate enough
 	;; space for x, wsave, and the work array.
@@ -132,7 +127,7 @@
     (let* ((ier
 	     (progn
 	       (nth-value 8
-			  (rfft1b n 1 inv n wsave lensav work n 0)))))
+			  (fftpack5::rfft1b n 1 inv n wsave lensav work n 0)))))
       (unless (zerop ier)
 	;; This should never happen because we should have always
 	;; allocated the correct size of the arrays.
@@ -208,7 +203,7 @@
 	(let* ((lensav (+ (* 2 n) 4 (floor (log n 2))))
 	       (wsave (make-array lensav :element-type 'double-float)))
 	  (multiple-value-bind (ignore-0 ignore-1 ignore-2 ier)
-	      (cfft1i n wsave lensav 0)
+	      (fftpack5::cfft1i n wsave lensav 0)
 	    (declare (ignore ignore-0 ignore-1 ignore-2))
 	    (unless (zerop ier)
 	      ;; This shouldn't really ever happen.
@@ -236,7 +231,7 @@
 	 (lensav (length wsave)))
     (let ((ier
 	    (nth-value 8
-		       (cfft1f n 1 x n wsave lensav work lenwrk 0))))
+		       (fftpack5::cfft1f n 1 x n wsave lensav work lenwrk 0))))
       (unless (zerop ier)
 	;; This should never happen because we always allocate enough
 	;; space for x, wsave, and the work array.
@@ -254,7 +249,7 @@
     (let* ((ier
 	     (progn
 	       (nth-value 8
-			  (cfft1b n 1 x n wsave lensav work lenwrk 0)))))
+			  (fftpack5::cfft1b n 1 x n wsave lensav work lenwrk 0)))))
       (unless (zerop ier)
 	;; This should never happen because we should have always
 	;; allocated the correct size of the arrays.
@@ -315,4 +310,40 @@
 		     1000d0
 		     (* 10 (log (/ s n) 10)))))
 	  (values (db signal-pwr noise-pwr) (db inv-signal-pwr inv-noise-pwr) noise-pwr signal-pwr inv-noise-pwr inv-signal-pwr))))))
-  
+
+(rt:deftest rfft.128
+  (multiple-value-bind (db db-inv noise-pwr signal-pwr inv-noise-pwr inv-signal-pwr)
+      (test-rfft 128)
+    (values (or (>= db 321.994) db)
+            (or (>= db-inv 318.119) db-inv)
+            (or (<= noise-pwr 3.0594d-29) noise-pwr)
+            (or (>= signal-pwr 4843) signal-pwr)))
+  t t t t)
+
+(rt:deftest cfft.128
+  (multiple-value-bind (db db-inv noise-pwr signal-pwr inv-noise-pwr inv-signal-pwr)
+      (test-cfft 128)
+    (values (or (>= db 304.066) db)
+            (or (>= db-inv 317.232) db-inv)
+            (or (<= noise-pwr 2.1664d-27) noise-pwr)
+            (or (>= signal-pwr 5525) signal-pwr)))
+  t t t t)
+
+(rt:deftest rfft.96
+  (multiple-value-bind (db db-inv noise-pwr signal-pwr inv-noise-pwr inv-signal-pwr)
+      (test-rfft 96)
+    (values (or (>= db 315.670) db)
+            (or (>= db-inv 310.524) db-inv)
+            (or (<= noise-pwr 7.4155d-29) noise-pwr)
+            (or (>= signal-pwr 2736) signal-pwr)))
+  t t t t)
+
+(rt:deftest cfft.96
+  (multiple-value-bind (db db-inv noise-pwr signal-pwr inv-noise-pwr inv-signal-pwr)
+      (test-cfft 96)
+    (values (or (>= db 291.022) db)
+            (or (>= db-inv 313.868) db-inv)
+            (or (<= noise-pwr 2.4659d-26) noise-pwr)
+            (or (>= signal-pwr 3120) signal-pwr)))
+  t t t t)
+
