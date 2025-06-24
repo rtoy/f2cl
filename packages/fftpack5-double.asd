@@ -207,3 +207,17 @@
      (:file "xercon")
      (:file "xerfft")
      ))))
+
+(defpackage :fftpack5-double/tests
+  (:use :cl :fftpack5))
+
+(defsystem "fftpack5-double/tests"
+  :depends-on ("fftpack5-double" "rt")
+  :components
+  ((:module "fftpack5"
+    :components
+    ((:file "fftpack5-double"))))
+  :perform
+  (test-op (o c)
+    (or (symbol-call :rt :do-tests)
+        (error "TEST-OP failed for fftpack5-double/tests"))))
