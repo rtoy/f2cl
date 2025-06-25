@@ -16,7 +16,7 @@
 	    :pathname "colnew"
 	    :components
 	    ((:cl-source-file "package")))
-   (:module "colnew"
+   (:module "colnew/fortran"
 	    :depends-on ("package")
 	    :components
 	    (;; Linpack routines needed by colnew
@@ -85,7 +85,7 @@
   :depends-on ("colnew")
   :pathname "colnew/"
   :components
-  ((:module problem-1
+  ((:module "fortran/problem-1"
 	    :components
 	    ((:file "prob1"
 		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "exact"))
@@ -105,7 +105,7 @@
   :depends-on ("colnew")
   :pathname "colnew/"
   :components
-  ((:module problem-2
+  ((:module "fortran/problem-2"
 	    :components
 	    ((:file "prob2"
 		    :f2cl-options (:declare-common t :common-as-array t)
@@ -126,7 +126,7 @@
   :depends-on ("colnew")
   :pathname "colnew/"
   :components
-  ((:module problem-3
+  ((:module "fortran/problem-3"
 	    :components
 	    ((:file "prob3" :f2cl-options (:declare-common t :common-as-array t)
 		    :depends-on ("fsub" "dfsub" "gsub" "dgsub" "solutn"))

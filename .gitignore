@@ -37,3 +37,17 @@
 /packages/fishpack/fortran/*.err
 /packages/fishpack/fortran/*.lisp
 /packages/fishpack/fortran/*.sse2f
+# Ignore generated stuff from colnew
+/packages/colnew/fortran/*.lisp
+/packages/colnew/fortran/*.o
+/packages/colnew/fortran/libcolnew.a
+/packages/colnew/fortran/problem-1/prob1
+/packages/colnew/fortran/problem-1/*.lisp
+/packages/colnew/fortran/problem-1/*.o
+/packages/colnew/fortran/problem-2/prob2
+/packages/colnew/fortran/problem-2/*.lisp
+/packages/colnew/fortran/problem-2/*.o
+/packages/colnew/fortran/problem-3/prob3
+/packages/colnew/fortran/problem-3/*.lisp
+/packages/colnew/fortran/problem-3/*.o
+
