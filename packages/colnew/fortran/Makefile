@@ -30,7 +30,7 @@ SRC = approx.f \
 	vwblok.f
 
 libcolnew.a : $(SRC:f=o)
-	$(AR) $(ARFLAGS) -cr $@ $^
+	$(AR) $(ARFLAGS) -c $@ $^
 
 prob1 : libcolnew.a
 	cd problem-1; $(MAKE)

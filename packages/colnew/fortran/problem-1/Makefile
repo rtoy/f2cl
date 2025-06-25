@@ -8,7 +8,7 @@ SRC = dfsub.f \
 	prob1.f
 
 prob1 : $(SRC:f=o)
-	$(F77) -o prob1 $^ ../libcolnew.a
+	$(FC) -o prob1 $^ ../libcolnew.a
 
 clean : 
 	$(RM) *.o

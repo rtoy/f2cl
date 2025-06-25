@@ -9,7 +9,7 @@ SRC = \
 	solutn.f
 
 prob3 : $(SRC:f=o)
-	$(F77) -o prob3 $^ ../libcolnew.a
+	$(FC) -o prob3 $^ ../libcolnew.a
 
 clean : 
 	$(RM) *.o

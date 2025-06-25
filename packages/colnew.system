@@ -12,14 +12,15 @@
     :source-extension "f")
 
 (defparameter *colnew-root*
-  (make-pathname :host (pathname-host *load-pathname*)
-		 :directory (pathname-directory *load-pathname*)))
+  (make-pathname :directory (pathname-directory *load-truename*)))
 
 ;; Defsystem for colnew.
 (mk:defsystem colnew
-  :source-pathname *colnew-root*
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "colnew"))
+				    *colnew-root*)
   :components
   ((:module colnew
+            :source-pathname "fortran/"
 	    :source-extension "f"
 	    :language :f2cl
 	    :compiler-options (:common-as-array t)
@@ -88,6 +89,7 @@
   :depends-on ("colnew")
   :components
   ((:module problem-1
+            :source-pathname "fortran/problem-1/"
 	    :source-extension "f"
 	    :language :f2cl
 	    :compiler-options (:common-as-array t)
@@ -107,6 +109,7 @@
   :depends-on ("colnew")
   :components
   ((:module problem-2
+            :source-pathname "fortran/problem-2/"
 	    :source-extension "f"
 	    :language :f2cl
 	    :components
@@ -127,6 +130,7 @@
   :depends-on ("colnew")
   :components
   ((:module problem-3
+            :source-pathname "fortran/problem-3/"
 	    :source-extension "f"
 	    :language :f2cl
 	    :components
@@ -150,10 +154,11 @@
 
 (mk:defsystem colnew-lisp
   :source-pathname *colnew-root*
+  :binary-pathname (merge-pathnames "colnew/lib/" *colnew-root*)
   :components
   ((:module colnew
+            :source-pathname "colnew/fortran/"
 	    :source-extension "f"
-	    :binary-pathname "colnew/lib/"
 	    :language :f2cl-lisp
 	    :compiler-options (:common-as-array t :package :colnew)
 	    :compile-only t
@@ -214,8 +219,8 @@
 	     (:file "subfor")
 	     (:file "subbak")))
    (:module problem-1
+            :source-pathname "colnew/fortran/problem-1/"
 	    :source-extension "f"
-	    :source-pathname "colnew/problem-1"
 	    :language :f2cl-lisp
 	    :compiler-options (:common-as-array t :package :colnew)
 	    :compile-only t
@@ -229,8 +234,8 @@
 	     (:file "dgsub")
 	     (:file "exact")))
    (:module problem-2
+            :source-pathname "colnew/fortran/problem-2/"
 	    :source-extension "f"
-	    :source-pathname "colnew/problem-2"
 	    :language :f2cl-lisp
 	    :compiler-options (:common-as-array t :package :colnew)
 	    :compile-only t
@@ -245,8 +250,9 @@
 	     (:file "dgsub")
 	     (:file "solutn")))
    (:module problem-3
+            :source-pathname "colnew/fortran/problem-3/"
+            ;;:binary-pathname (merge-pathnames "colnew/lib/problem-3/" *colnew-root*)
 	    :source-extension "f"
-	    :source-pathname "colnew/problem-3"
 	    :language :f2cl-lisp
 	    :compiler-options (:common-as-array t :package :colnew)
 	    :compile-only t
