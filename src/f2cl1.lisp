@@ -120,6 +120,7 @@
 	      *subprog_common_vars*  *common_array_dims*
 	      *format_stmts* *current_label*
 	      *subprog-stmt-fns* *subprog_stmt_fns_bodies* *prune_labels*
+              *prune-unused-vars*
 	      *auto-save-data*
 	      *functions-used*
 	      *vble-declaration-done*
@@ -272,6 +273,7 @@ correctly"
 
 	     output-file
 	     prune-labels
+             prune-unused-vars
 	     include-comments
 	     (auto-save t)
 	     (relaxed-array-decls t)
@@ -362,6 +364,7 @@ correctly"
     (warn ":array-slicing is T, so specified :array-type of :simple-array is overridden"))
   (let ((*verbose* verbose)
 	(*prune_labels* prune-labels)
+        (*prune-unused-vars* prune-unused-vars)
 	(*comments* include-comments)
 	(*auto-save-data* auto-save)
 	(*common-block-initialized* nil)
@@ -411,7 +414,8 @@ correctly"
 				  (:array-type ',array-type)
 				  (:array-slicing ,array-slicing)
 				  (:declare-common ,declare-common)
-				  (:float-format ,float-format)))
+				  (:float-format ,float-format)
+                                  (:prune-unused-vars ,prune-unused-vars)))
       (unless keep-temp-file
 	(delete-file processed-file))
       (values output-file))))
