@@ -1128,7 +1128,10 @@
 			  (dolist (i inits)
 			    (destructuring-bind (fset (fref var indices limits) val)
 				i
-			      (declare (ignore fset fref var))
+			      (declare (ignore fset fref))
+                              (unless (typep val type)
+                                (error "Cannot initialize ~A(~{~A~^, ~}) to `~A': not of type ~A~%"
+                                       var indices val type))
 			      (setf (aref init (col-major-index indices limits))
 				    val)))
 			  (push (list (car item)
