@@ -1224,6 +1224,73 @@
 	     (values (append (nreverse new-saves)
 			     (nreverse array-element-inits))
 		     (nreverse new-data)))))))
+;;; --- EQUIVALENCE: array <-> array support -----------------------------
+;;;
+;;; The pre-existing handler in verify-and-generate-equivalences only
+;;; handles scalar<->scalar and scalar<->array-element by emitting a
+;;; symbol-macrolet.  That can't extend to array<->array because uses
+;;; of an aliased array appear inside (fref ALIAS ...) forms where a
+;;; bare-symbol macrolet on ALIAS never fires.  Instead we record each
+;;; alias in *equivalence-aliases* and rewrite fref forms during the
+;;; final pass to redirect them to the canonical backing array, using
+;;; the offset slot fref already accepts.
+
+(defun fref-form-p (x) (and (consp x) (eq (car x) 'fref)))
+(defun fref-array-name (form) (second form))
+(defun fref-indices    (form) (third form))
+(defun fref-bounds     (form) (fourth form))
+(defun fref-offset     (form) (fifth form))
+
+(defun constant-index-list-p (idx) (every #'integerp idx))
+
+;;; Folds at translation time what fref's col-major-index would
+;;; compute at runtime, given that the inputs are constants.
+(defun column-major-linear-offset (indices bounds)
+  "Return the zero-based column-major position of INDICES in BOUNDS."
+  (let ((idx 0) (stride 1))
+    (loop for (lo hi) in bounds
+          for i in indices
+          do (incf idx (* stride (- i lo)))
+             (setf stride (* stride (1+ (- hi lo)))))
+    idx))
+
+(defun array-total-size-from-bounds (bounds)
+  "Return total element count for the array described by BOUNDS."
+  (reduce #'* bounds :key (lambda (b) (1+ (- (second b) (first b))))))
+
+;;; *common_array_dims* is stored as a flat list of alternating
+;;; name and bounds entries: (NAME-1 BOUNDS-1 NAME-2 BOUNDS-2 ...),
+;;; not an alist.  Use GETF-style traversal, not ASSOC.
+(defun lookup-array-bounds (name)
+  "Return the declared bounds list for array NAME, or NIL."
+  (or (loop for decl in *explicit_vble_decls*
+            for hit = (assoc name (cdr decl))
+            when (and hit (consp (cdr hit))) return (cdr hit))
+      (loop for (n b) on *common_array_dims* by #'cddr
+            when (eq n name) return b)))
+
+;;; Tie-breaking: larger total size wins; on a tie, lower rank wins
+;;; (simpler index arithmetic at alias use sites); on a further tie,
+;;; lexicographic name order for determinism across runs.
+(defun choose-canonical (a-name a-bnds b-name b-bnds)
+  "Return canonical and alias names/bounds for an EQUIVALENCE pair."
+  (let ((a-size (array-total-size-from-bounds a-bnds))
+        (b-size (array-total-size-from-bounds b-bnds))
+        (a-rank (length a-bnds))
+        (b-rank (length b-bnds)))
+    (cond ((> a-size b-size)                (values a-name a-bnds b-name b-bnds))
+          ((< a-size b-size)                (values b-name b-bnds a-name a-bnds))
+          ((< a-rank b-rank)                (values a-name a-bnds b-name b-bnds))
+          ((> a-rank b-rank)                (values b-name b-bnds a-name a-bnds))
+          ((string< (symbol-name a-name)
+                    (symbol-name b-name))   (values a-name a-bnds b-name b-bnds))
+          (t                                (values b-name b-bnds a-name a-bnds)))))
+
+(defun compute-alias-offset (canon-anchor canon-bnds alias-anchor alias-bnds)
+  "Return the element offset of ALIAS-ANCHOR relative to CANON-ANCHOR."
+  (- (column-major-linear-offset canon-anchor canon-bnds)
+     (column-major-linear-offset alias-anchor alias-bnds)))
+
 
 (defun verify-and-generate-equivalences ()
   ;; Look over equivalences and see if we can handle them.  Right now,
@@ -1276,6 +1343,52 @@
 	       (verify-types (second (first equiv)) (second equiv))
 	       (push `(,(second equiv) ,(gen-fref (first equiv))) res)
 	       (push (second equiv) simple))
+		      ((and (fref-form-p (first  equiv))
+			    (fref-form-p (second equiv))
+			    (constant-index-list-p (fref-indices (first  equiv)))
+			    (constant-index-list-p (fref-indices (second equiv))))
+		       ;; (array-elt, array-elt): the array<->array case.
+		       ;; Pick canonical, record the alias with its constant
+		       ;; element offset, and suppress the alias's own
+		       ;; allocation by adding it to SIMPLE.
+		       (let* ((a-name (fref-array-name (first  equiv)))
+			      (b-name (fref-array-name (second equiv)))
+			      (a-type (lookup-vble-type a-name))
+			      (b-type (lookup-vble-type b-name))
+			      (a-bnds (lookup-array-bounds a-name))
+			      (b-bnds (lookup-array-bounds b-name)))
+			 (unless (eq a-type b-type)
+			   (error "f2cl cannot equivalence arrays of different types: ~A (~A) and ~A (~A)"
+				  a-name a-type b-name b-type))
+			 (unless (and a-bnds b-bnds)
+			   (error "f2cl: missing dimensions for EQUIVALENCE of ~A and ~A"
+				  a-name b-name))
+			 (multiple-value-bind (canon-name canon-bnds alias-name alias-bnds)
+			     (choose-canonical a-name a-bnds b-name b-bnds)
+			   (when (assoc alias-name *equivalence-aliases*)
+			     (error "f2cl: ~A appears in multiple equivalence groups; ~
+                                     chained EQUIVALENCE not yet supported"
+				    alias-name))
+			   (let* ((canon-anchor (fref-indices
+						 (if (eq canon-name a-name)
+						     (first equiv) (second equiv))))
+				  (alias-anchor (fref-indices
+						 (if (eq alias-name a-name)
+						     (first equiv) (second equiv))))
+				  (offset (compute-alias-offset canon-anchor canon-bnds
+								alias-anchor alias-bnds)))
+			     ;; Sanity: alias footprint must lie within canonical.
+			     (let ((alias-size (array-total-size-from-bounds alias-bnds))
+				   (canon-size (array-total-size-from-bounds canon-bnds)))
+			       (unless (and (>= offset 0)
+					    (<= (+ offset alias-size) canon-size))
+				 (error "f2cl: EQUIVALENCE alias ~A extends outside canonical ~A"
+					alias-name canon-name)))
+			     (push (list alias-name canon-name offset alias-bnds a-type)
+				   *equivalence-aliases*)
+			     ;; Strip the alias's own make-array from prog
+			     ;; bindings via the existing SIMPLE channel.
+			     (push alias-name simple)))))
 	      (t
 	       (format t "~S~%" (first equiv))
 	       (format t "~S~%" (second equiv))
@@ -1283,6 +1396,38 @@
 		      (first equiv) (second equiv)))))
       (values (nreverse res) (nreverse simple)))))
 
+;;; Walks FORM structurally: fref forms are rewritten in place,
+;;; their indices are recursively walked so nested alias references
+;;; compose, atoms pass through, and other conses are recursed into.
+(defun rewrite-aliased-frefs (form)
+  "Redirect fref accesses for any name listed in *EQUIVALENCE-ALIASES*."
+  (cond ((atom form) form)
+	((fref-form-p form)
+	 (let* ((name (fref-array-name form))
+		(entry (assoc name *equivalence-aliases*))
+		(walked-idx (mapcar #'rewrite-aliased-frefs (fref-indices form))))
+	   (if entry
+	       (destructuring-bind (alias canon offset alias-bnds type) entry
+		 (declare (ignore alias type))
+		 `(fref ,canon ,walked-idx ,alias-bnds ,offset))
+	       (let ((existing-off (fref-offset form)))
+		 (if existing-off
+		     `(fref ,name ,walked-idx ,(fref-bounds form) ,existing-off)
+		     `(fref ,name ,walked-idx ,(fref-bounds form)))))))
+	(t (cons (rewrite-aliased-frefs (car form))
+		 (rewrite-aliased-frefs (cdr form))))))
+
+;;; Returns NIL when VAR-NAME is not an alias, leaving the existing
+;;; data-statement code path to emit a normal make-array.
+;; (defun redirect-data-init-for-alias (var-name init-values)
+;;   "Return setf forms initializing alias VAR-NAME's slice of canonical storage."
+;;   (let ((entry (assoc var-name *equivalence-aliases*)))
+;;     (when entry
+;;       (destructuring-bind (alias canon offset alias-bnds type) entry
+;; 	(declare (ignore alias alias-bnds type))
+;; 	(loop for value in init-values
+;; 	      for k from 0
+;; 
 (defun get-var-types (arglist &key declare-vars)
   "Compute the types of each variable in ARGLIST and also an
   appropriate declaration for each variable, if DECLARE-VARS is
@@ -2296,6 +2441,9 @@
 	       ;;(format t "fixed = ~A~%" fixed)
 	       (setf prog-bit `(prog ,fixed ,@(cddr prog-bit))))
 	     
+	     (when *equivalence-aliases*
+	       (setf prog-bit (rewrite-aliased-frefs prog-bit)))
+
 	     (setf prog-bit `(symbol-macrolet ,equiv
 			       ,prog-bit))))
 

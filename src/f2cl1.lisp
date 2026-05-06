@@ -191,6 +191,17 @@ incorrect, so use caution.")
   "List of equivalenced variables.  Each entry of the list is a list
   consisting of the equivalenced variables.")
 
+;;; Each entry in *EQUIVALENCE-ALIASES* has the form
+;;;
+;;;   (alias-name canonical-name element-offset alias-bounds alias-type)
+;;;
+;;; ELEMENT-OFFSET is the constant column-major linear offset added to
+;;; any access through ALIAS-NAME so it lands at the correct cell of
+;;; CANONICAL-NAME.  ALIAS-BOUNDS is the bounds list as declared for
+;;; the alias.  ALIAS-TYPE is its element type.
+(defvar *equivalence-aliases* nil
+  "Alist mapping aliased array names to canonical-storage info.")
+
 (defvar *copy-array-parameter* nil
   "If non-NIL, array arguments are copied if the actual array element
   type is not the same type as the declared array element type.  This
@@ -378,6 +389,7 @@ correctly"
 	(*assigned-variables* nil)
 	(*entry-points* nil)
 	(*equivalenced-vars* nil)
+        (*equivalence-aliases* nil)
 	(*float-format* float-format)
 	(*common-blocks-as-arrays* common-as-array)
 	(*common-block-file* common-block-file)
@@ -1114,6 +1126,7 @@ correctly"
 	*subprog-arglist* *data-init* *functions-used* *vble-declaration-done*
 	*parsing-lhs*
 	*equivalenced-vars*
+        *equivalenced-aliases*
 	*common_array_dims*
 	*non-intrinsic-function-names*)
 
