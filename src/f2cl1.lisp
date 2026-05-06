@@ -1837,11 +1837,15 @@ correctly"
 		      (t
 		       x))))
 	   (mapc #'(lambda (y)
-		     (push `(,(car (convert-data-type (car y)))
-			     ,@(list-split '|,|
-					   (remove '- (car (last y)))))
-			   *implicit_vble_decls*))
-		 (list-split '|,| (cdr decls))))))
+                     (let* ((converted (convert-data-type (car y)))
+                            (type-name (if (consp converted)
+                                           (car converted)
+                                           converted)))
+		       (push `(,type-name
+			       ,@(list-split '|,|
+					     (remove '- (car (last y)))))
+			     *implicit_vble_decls*)))
+		   (list-split '|,| (cdr decls))))))
   nil)
 
 
