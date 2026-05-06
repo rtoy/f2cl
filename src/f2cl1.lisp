@@ -3402,13 +3402,34 @@ loop2
       (write-char #\space stream)
        (pprint-newline :linear stream))))
 
+(defun pprint-implied-do-collect (stream form &rest noise)
+  (declare (ignore noise))
+  ;; Print f2cl-implied-do-collect like a with- macro:
+  ;;
+  ;; (f2cl-lib:f2cl-implied-do-collect (var start end step)
+  ;;   body-form-1
+  ;;   body-form-2
+  ;;   ...)
+  (pprint-logical-block (stream form :prefix "(" :suffix ")")
+    (write (pprint-pop) :stream stream)              ; macro name
+    (write-char #\space stream)
+    (pprint-newline :miser stream)
+    (write (pprint-pop) :stream stream)              ; (var start end step)
+    (pprint-indent :block 1 stream)
+    (loop
+       (pprint-exit-if-list-exhausted)
+       (pprint-newline :mandatory stream)
+       (write (pprint-pop) :stream stream))))
+
 #-gcl
 (progn
   (set-pprint-dispatch '(cons (member f2cl-lib:fdo)) #'pprint-fdo 0 *f2cl-pprint-dispatch*)
   (set-pprint-dispatch '(cons (member f2cl-lib:with-array-data))
 		       #'pprint-with-array-data 0 *f2cl-pprint-dispatch*)
   (set-pprint-dispatch '(cons (member f2cl-lib:with-multi-array-data))
-		       #'pprint-with-multi-array-data 0 *f2cl-pprint-dispatch*))
+		       #'pprint-with-multi-array-data 0 *f2cl-pprint-dispatch*)
+  (set-pprint-dispatch '(cons (member f2cl-lib:implied-do-collect))
+                       #'pprint-implied-do-collect 0 *f2cl-pprint-dispatch*))
 
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l

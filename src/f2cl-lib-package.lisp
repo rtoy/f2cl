@@ -29,6 +29,7 @@
    #:fformat
    #:data-implied-do
    #:int-add #:int-sub #:int-mul
+   #:implied-do-collect
    ;; Utilities
    #:array-slice #:array-initialize
    #:f2cl-copy-seq
