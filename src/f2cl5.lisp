@@ -1224,16 +1224,18 @@
 	     (values (append (nreverse new-saves)
 			     (nreverse array-element-inits))
 		     (nreverse new-data)))))))
-;;; --- EQUIVALENCE: array <-> array support -----------------------------
+;;; --- EQUIVALENCE: unified backing-array implementation -----------------
 ;;;
-;;; The pre-existing handler in verify-and-generate-equivalences only
-;;; handles scalar<->scalar and scalar<->array-element by emitting a
-;;; symbol-macrolet.  That can't extend to array<->array because uses
-;;; of an aliased array appear inside (fref ALIAS ...) forms where a
-;;; bare-symbol macrolet on ALIAS never fires.  Instead we record each
-;;; alias in *equivalence-aliases* and rewrite fref forms during the
-;;; final pass to redirect them to the canonical backing array, using
-;;; the offset slot fref already accepts.
+;;; Every EQUIVALENCE statement constrains two named storage regions
+;;; (arrays or scalars) to overlap at given anchor positions.  We
+;;; treat each connected component of the constraint graph as one
+;;; group, allocate a single synthetic backing array sized to the
+;;; union of all member footprints, and make every named member an
+;;; alias into the synthetic with a non-negative element offset.
+;;;
+;;; Names recorded in *equivalence-aliases* are then handled in two
+;;; ways at use sites: array references inside (fref NAME ...) forms
+;;; are rewritten by REWRITE-ALIASED-FREFS to redirect to the
 
 (defun fref-form-p (x)
   (and (consp x)
@@ -1277,142 +1279,207 @@
       (loop for (n b) on *common_array_dims* by #'cddr
             when (eq n name) return b)))
 
-;;; Tie-breaking: larger total size wins; on a tie, lower rank wins
-;;; (simpler index arithmetic at alias use sites); on a further tie,
-;;; lexicographic name order for determinism across runs.
-(defun choose-canonical (a-name a-bnds b-name b-bnds)
-  "Return canonical and alias names/bounds for an EQUIVALENCE pair."
-  (let ((a-size (array-total-size-from-bounds a-bnds))
-        (b-size (array-total-size-from-bounds b-bnds))
-        (a-rank (length a-bnds))
-        (b-rank (length b-bnds)))
-    (cond ((> a-size b-size)
-           (values a-name a-bnds b-name b-bnds))
-          ((< a-size b-size)
-           (values b-name b-bnds a-name a-bnds))
-          ((< a-rank b-rank)
-           (values a-name a-bnds b-name b-bnds))
-          ((> a-rank b-rank)
-           (values b-name b-bnds a-name a-bnds))
-          ((string< (symbol-name a-name)
-                    (symbol-name b-name))
-           (values a-name a-bnds b-name b-bnds))
-          (t
-           (values b-name b-bnds a-name a-bnds)))))
+;;; Reduce an EQUIVALENCE pair to a uniform shape for the solver.
+;;; Each side becomes (NAME ANCHOR BOUNDS), where ANCHOR is the
+;;; constant column-major linear position the source pinned, and
+;;; BOUNDS is the array's declared bounds (NIL when the side is
+;;; written as a bare symbol, even if NAME happens to be an array;
+;;; that matches Fortran's interpretation of EQUIVALENCE (X, Y(I))
+;;; as referring to X's first element).
+(defun equiv-side-info (side)
+  "Return (NAME ANCHOR BOUNDS) for one side of an EQUIVALENCE pair."
+  (cond ((symbolp side)
+         (list side 0 nil))
+        ((fref-form-p side)
+         (let* ((name (fref-array-name side))
+                (idx  (fref-indices side))
+                (bnds (lookup-array-bounds name)))
+           (unless bnds
+             (error "f2cl: missing dimensions for ~A in EQUIVALENCE" name))
+           (unless (every #'integerp idx)
+             (error "f2cl: non-constant index in EQUIVALENCE for ~A" name))
+           (list name (column-major-linear-offset idx bnds) bnds)))
+        (t
+         (error "f2cl: cannot interpret EQUIVALENCE side ~S" side))))
 
-(defun compute-alias-offset (canon-anchor canon-bnds alias-anchor alias-bnds)
-  "Return the element offset of ALIAS-ANCHOR relative to CANON-ANCHOR."
-  (- (column-major-linear-offset canon-anchor canon-bnds)
-     (column-major-linear-offset alias-anchor alias-bnds)))
+;;; The "footprint size" is how many cells a name occupies: 1 for a
+;;; scalar, the array's total size otherwise.
+(defun member-footprint-size (bounds)
+  (if bounds (array-total-size-from-bounds bounds) 1))
 
+;;; Initial-element value matching the convention used elsewhere in
+;;; f2cl when allocating arrays of a given element type.
+(defun zero-of-element-type (type)
+  (if (subtypep type 'character) #\Space (coerce 0 type)))
 
-(defun verify-and-generate-equivalences ()
-  ;; Look over equivalences and see if we can handle them.  Right now,
-  ;; we can only handle equivalences of the form (array, simple) or
-  ;; (simple, array), and they must have the same type.
-  ;;
-  ;; So, if we have something like (x, y(4)), we can use a
-  ;; symbol-macrolet to make x equivalent to y(4).
-  (flet ((verify-types (array b)
-	   #+nil
-	   (progn
-	     (format t "Type of array: ~A = ~A (~A)~%" array (lookup-vble-type array)
-		     (vble-is-array-p array))
-	     (format t "Type of a: ~A = ~A~%" b (lookup-vble-type b))
-	     (format t "explicit-vars = ~A~%" *explicit_vble_decls*)
-	     (format t "*declared_vbles* = ~A~%" *declared_vbles*))
-	   (assert (vble-is-array-p array))
-	   (let ((a-type (lookup-vble-type array))
-		 (b-type (lookup-vble-type b)))
-	     (unless (eq a-type b-type)
-	       (error "f2cl cannot equivalence variables of different types: ~A (~A) and ~A (~A)"
-		      array a-type b b-type))))
-	 (gen-fref (a)
-	   a))
-    (let (res simple)
-      (dolist (equiv *equivalenced-vars*)
-	(cond ((and (symbolp (first equiv))
-		    (symbolp (second equiv)))
-	       ;; Equivalence of two simple vars.  Just make one a
-	       ;; symbol-macrolet of the other, if the types match.
-	       (let ((a-type (lookup-vble-type (first equiv)))
-		     (b-type (lookup-vble-type (second equiv))))
-		 (unless (eq a-type b-type)
-		   (error "f2cl cannot equivalence variables of different types: ~A (~A) and ~A (~A)"
-			  (first equiv) a-type (second equiv) b-type))
-		 (push (first equiv) simple)
-		 (push `(,(first equiv) ,(second equiv)) res)))
-	      ((and (symbolp (first equiv))
-		    (listp (second equiv))
-		    (eq (car (second equiv)) 'fref))
-	       ;; (simple, array)
-	       ;; We want (symbol-macrolet (simple expansion))
-	       (verify-types (second (second equiv)) (first equiv))
-	       (push `(,(first equiv) ,(gen-fref (second equiv))) res)
-	       (push (first equiv) simple))
-	      ((and (symbolp (second equiv))
-		    (listp (first equiv))
-		    (eq (car (first equiv)) 'fref))
-	       ;; (array, simple)
-	       (verify-types (second (first equiv)) (second equiv))
-	       (push `(,(second equiv) ,(gen-fref (first equiv))) res)
-	       (push (second equiv) simple))
-		      ((and (fref-form-p (first  equiv))
-			    (fref-form-p (second equiv))
-			    (constant-index-list-p (fref-indices (first  equiv)))
-			    (constant-index-list-p (fref-indices (second equiv))))
-		       ;; (array-elt, array-elt): the array<->array case.
-		       ;; Pick canonical, record the alias with its constant
-		       ;; element offset, and suppress the alias's own
-		       ;; allocation by adding it to SIMPLE.
-		       (let* ((a-name (fref-array-name (first  equiv)))
-			      (b-name (fref-array-name (second equiv)))
-			      (a-type (lookup-vble-type a-name))
-			      (b-type (lookup-vble-type b-name))
-			      (a-bnds (lookup-array-bounds a-name))
-			      (b-bnds (lookup-array-bounds b-name)))
-			 (unless (eq a-type b-type)
-			   (error "f2cl cannot equivalence arrays of different types: ~A (~A) and ~A (~A)"
-				  a-name a-type b-name b-type))
-			 (unless (and a-bnds b-bnds)
-			   (error "f2cl: missing dimensions for EQUIVALENCE of ~A and ~A"
-				  a-name b-name))
-			 (multiple-value-bind (canon-name canon-bnds alias-name alias-bnds)
-			     (choose-canonical a-name a-bnds b-name b-bnds)
-			   (when (assoc alias-name *equivalence-aliases*)
-			     (error "f2cl: ~A appears in multiple equivalence groups; ~
-                                     chained EQUIVALENCE not yet supported"
-				    alias-name))
-			   (let* ((canon-anchor (fref-indices
-						 (if (eq canon-name a-name)
-						     (first equiv) (second equiv))))
-				  (alias-anchor (fref-indices
-						 (if (eq alias-name a-name)
-						     (first equiv) (second equiv))))
-				  (offset (compute-alias-offset canon-anchor canon-bnds
-								alias-anchor alias-bnds)))
-			     ;; Sanity: alias footprint must lie within canonical.
-			     (let ((alias-size (array-total-size-from-bounds alias-bnds))
-				   (canon-size (array-total-size-from-bounds canon-bnds)))
-			       (unless (and (>= offset 0)
-					    (<= (+ offset alias-size) canon-size))
-				 (error "f2cl: EQUIVALENCE alias ~A extends outside canonical ~A"
-					alias-name canon-name)))
-			     (push (list alias-name canon-name offset alias-bnds a-type)
-				   *equivalence-aliases*)
-			     ;; Strip the alias's own make-array from prog
-			     ;; bindings via the existing SIMPLE channel.
-			     (push alias-name simple)))))
-	      (t
-	       (format t "~S~%" (first equiv))
-	       (format t "~S~%" (second equiv))
-	       (error "f2cl cannot handle EQUIVALENCE of ~A and ~A~%"
-		      (first equiv) (second equiv)))))
-      (values (nreverse res) (nreverse simple)))))
+;;; Connected components of the equivalence graph by union-find.
+;;; PAIRS is a list of pair plists shaped (left right), where each
+;;; side has been normalized by EQUIV-SIDE-INFO.  Returns a list of
+;;; components, each being a list of those pairs.
+(defun partition-equivalence-pairs (pairs)
+  "Group normalized PAIRS into connected components by shared names."
+  (let ((parent (make-hash-table)))
+    (labels ((find-root (x)
+               (let ((p (gethash x parent x)))
+                 (cond ((eq p x) x)
+                       (t (let ((r (find-root p)))
+                            (setf (gethash x parent) r)
+                            r)))))
+             (unite (x y)
+               (let ((rx (find-root x)) (ry (find-root y)))
+                 (unless (eq rx ry)
+                   (setf (gethash rx parent) ry)))))
+      (dolist (pair pairs)
+        (destructuring-bind ((a-name &rest a-rest) (b-name &rest b-rest)) pair
+          (declare (ignore a-rest b-rest))
+          (setf (gethash a-name parent)
+                (gethash a-name parent a-name))
+          (setf (gethash b-name parent)
+                (gethash b-name parent b-name))
+          (unite a-name b-name)))
+      (let ((groups (make-hash-table)))
+        (dolist (pair pairs)
+          (let ((root (find-root (caar pair))))
+            (push pair (gethash root groups))))
+        (let (out)
+          (maphash #'(lambda (k v) (declare (ignore k)) (push (nreverse v) out))
+                   groups)
+          out)))))
 
-;;; Walks FORM structurally: fref forms are rewritten in place,
-;;; their indices are recursively walked so nested alias references
-;;; compose, atoms pass through, and other conses are recursed into.
+;;; Solve constraints in one connected component by walking the graph
+;;; and assigning each name a tentative linear position relative to
+;;; an arbitrary origin.  Returns four values: an alist of (NAME
+;;; OFFSET BOUNDS), the union size, the common element type, and a
+;;; list of scalar names in the group (those whose BOUNDS is NIL).
+(defun solve-equivalence-group (pairs)
+  "Place every name in PAIRS at a non-negative offset in a synthetic union."
+  (let ((position (make-hash-table))   ; name -> tentative linear position
+        (bounds   (make-hash-table))   ; name -> declared bounds (or NIL)
+        (queue    nil))
+    (labels ((record-info (name bnds)
+               (unless (nth-value 1 (gethash name bounds))
+                 (setf (gethash name bounds) bnds)))
+             (place (name pos bnds)
+               ;; Place NAME's first element at union position POS.
+               ;; If already placed, verify consistency.
+               (cond ((not (nth-value 1 (gethash name position)))
+                      (setf (gethash name position) pos)
+                      (record-info name bnds)
+                      (push name queue))
+                     ((/= pos (gethash name position))
+                      (error "f2cl: inconsistent EQUIVALENCE involving ~A: ~
+                              cell would be at both position ~A and ~A"
+                             name (gethash name position) pos)))))
+      ;; Seed: place the first name in the first pair at position 0.
+      (destructuring-bind ((name anchor bnds) (other-name other-anchor other-bnds))
+          (first pairs)
+        (declare (ignore other-name other-anchor other-bnds))
+        (place name (- anchor) bnds))
+      ;; Propagate positions through all constraints until fixpoint.
+      (loop while queue do
+        (let ((node (pop queue)))
+          (dolist (pair pairs)
+            (destructuring-bind ((an aa ab) (bn ba bb)) pair
+              (cond ((eq node an)
+                     ;; AN is placed; force BN such that BN's anchor
+                     ;; lands at the same union cell as AN's anchor.
+                     (let ((shared (+ (gethash an position) aa)))
+                       (place bn (- shared ba) bb)))
+                    ((eq node bn)
+                     (let ((shared (+ (gethash bn position) ba)))
+                       (place an (- shared aa) ab)))))))))
+    ;; Collect element types and verify they all agree.
+    (let ((common-type nil)
+          (offending  nil))
+      (maphash #'(lambda (name pos)
+                   (declare (ignore pos))
+                   (let ((ty (lookup-vble-type name)))
+                     (cond ((null common-type) (setf common-type ty))
+                           ((not (eq common-type ty))
+                            (setf offending name)))))
+               position)
+      (when offending
+        (error "f2cl: mixed-type EQUIVALENCE group containing ~A (~A) ~
+                with other members of type ~A"
+               offending (lookup-vble-type offending) common-type))
+      ;; Normalize: shift positions so the minimum is zero, then
+      ;; compute the union size.
+      (let ((min-pos most-positive-fixnum)
+            (max-end most-negative-fixnum))
+        (maphash #'(lambda (name pos)
+                     (let ((size (member-footprint-size (gethash name bounds))))
+                       (when (< pos min-pos) (setf min-pos pos))
+                       (when (> (+ pos size) max-end)
+                         (setf max-end (+ pos size)))))
+                 position)
+        (let ((alist nil)
+              (scalars nil))
+          (maphash #'(lambda (name pos)
+                       (let ((bnds (gethash name bounds)))
+                         (push (list name (- pos min-pos) bnds) alist)
+                         (when (null bnds) (push name scalars))))
+                   position)
+          (values alist (- max-end min-pos) common-type scalars))))))
+
+;;; Top-level: process all of *equivalenced-vars* into the synthetic
+;;; bindings, alias entries, and symbol-macrolet bindings the caller
+;;; needs to splice into the prog form.  Returns three values:
+;;;
+;;;   1. SYNTHETIC-BINDINGS: prog binding forms allocating each group's
+;;;      backing array.
+;;;   2. MACROLET-BINDINGS: symbol-macrolet entries for scalar aliases,
+;;;      so bare-symbol uses expand to the right aref.
+;;;   3. ALIAS-NAMES: every named member of every group; their original
+;;;      make-array bindings (and bare scalar bindings) must be removed
+;;;      from the prog by the caller.
+;;;
+;;; *equivalence-aliases* is also populated as a side effect, used by
+;;; rewrite-aliased-frefs to redirect array-form references.
+(defun process-equivalence-groups ()
+  "Plan synthetic backing arrays and aliases for every EQUIVALENCE group."
+  (let ((normalized (mapcar #'(lambda (pair)
+                                (list (equiv-side-info (first pair))
+                                      (equiv-side-info (second pair))))
+                            *equivalenced-vars*))
+        (synthetic-bindings nil)
+        (macrolet-bindings  nil)
+        (alias-names        nil))
+    (dolist (group (partition-equivalence-pairs normalized))
+      (multiple-value-bind (positions union-size element-type scalars)
+          (solve-equivalence-group group)
+        (let ((backing (gentemp "EQUIV-")))
+          (push `(,backing
+                  (make-array ,union-size
+                              :element-type ',element-type
+                              :initial-element ,(zero-of-element-type
+                                                 element-type)))
+                synthetic-bindings)
+          (dolist (entry positions)
+            (destructuring-bind (name offset bnds) entry
+              (declare (ignore bnds))
+              ;; The alias entry uses NAME's actually-declared bounds,
+              ;; not the side-info bounds.  Side-info treats bare
+              ;; symbols as scalars for union sizing (avoids choking
+              ;; on symbolic dimensions like Y(N)), but at access
+              ;; sites a (fref Y ...) reference still needs Y's real
+              ;; bounds for correct index arithmetic.
+              (let ((real-bnds (lookup-array-bounds name)))
+                (push (list name backing offset real-bnds element-type)
+                      *equivalence-aliases*)
+                (push name alias-names)
+                ;; Generate a symbol-macrolet for any name that ever
+                ;; appeared as a bare symbol in the source (recorded
+                ;; in SCALARS).  For arrays, this lets bare uses like
+                ;; passing Y to a subroutine expand correctly; for
+                ;; true scalars, it's the only access path.
+                (when (member name scalars)
+                  (push `(,name (aref ,backing ,offset))
+                        macrolet-bindings))))))))
+    (values synthetic-bindings macrolet-bindings alias-names)))
+
+;;; Walks FORM structurally: fref forms are rewritten in place, their
+;;; indices are recursively walked so nested alias references compose,
+;;; atoms pass through, and other conses are recursed into.
 (defun rewrite-aliased-frefs (form)
   "Redirect fref accesses for any name listed in *EQUIVALENCE-ALIASES*."
   (cond ((atom form) form)
@@ -1430,6 +1497,34 @@
 		     `(fref ,name ,walked-idx ,(fref-bounds form)))))))
 	(t (cons (rewrite-aliased-frefs (car form))
 		 (rewrite-aliased-frefs (cdr form))))))
+
+;;; Strip any reference to NAMES from (declare (type ...)) clauses
+;;; inside PROG-FORM.  An empty clause is dropped; an empty declare
+;;; is dropped; everything else passes through.
+(defun strip-alias-declarations (prog-form names)
+  "Remove NAMES from any (declare (type ...)) inside PROG-FORM."
+  (destructuring-bind (prog-sym bindings &rest body) prog-form
+    (let ((new-body
+            (loop for form in body
+                  for kept = (cond ((and (consp form) (eq (car form) 'declare))
+                                    (let ((clauses
+                                            (loop for c in (cdr form)
+                                                  for k = (if (and (consp c)
+                                                                   (eq (car c) 'type))
+                                                              (let ((rest
+                                                                      (remove-if
+                                                                       (lambda (n)
+                                                                         (member n names))
+                                                                       (cddr c))))
+                                                                (and rest
+                                                                     `(type ,(second c)
+                                                                            ,@rest)))
+                                                              c)
+                                                  when k collect k)))
+                                      (and clauses `(declare ,@clauses))))
+                                   (t form))
+                  when kept collect kept)))
+      `(,prog-sym ,bindings ,@new-body))))
 
 (defun get-var-types (arglist &key declare-vars)
   "Compute the types of each variable in ARGLIST and also an
@@ -2425,30 +2520,27 @@
 	 ;;(format t "formal-arg-decls = ~A~%" formal-arg-decls)
 
 	 (when *equivalenced-vars*
-	   (multiple-value-bind (equiv simple-vars)
-	       (verify-and-generate-equivalences)
-	     ;;(setf equivalences equiv)
-	     ;;(format t "equivalences = ~A~%" equivalences)
-
-	     ;; We need to go through prog-bit and remove any
-	     ;; initializations and declarations of the simple-vars
-	     ;; that were equivalenced.  Otherwise the initialization
-	     ;; will very likely mess up the equivalence.
-
-	     ;;(format t "prog = ~A~%" (second prog-bit))
-	     (let ((fixed (remove-if #'(lambda (x)
-					 (member x simple-vars))
-				     (second prog-bit)
-				     :key #'first)))
-	       ;;(format t "inits = ~A~%" (second prog-bit))
-	       ;;(format t "fixed = ~A~%" fixed)
-	       (setf prog-bit `(prog ,fixed ,@(cddr prog-bit))))
-	     
+	   (multiple-value-bind (synthetic-bindings macrolet-bindings alias-names)
+	       (process-equivalence-groups)
+	     ;; Drop the prog bindings of every aliased name; the
+	     ;; storage now lives in the synthetic backing array.
+	     (let* ((fixed (remove-if #'(lambda (x)
+					  (member x alias-names))
+				      (second prog-bit)
+				      :key #'first))
+		    (with-synthetics (append synthetic-bindings fixed)))
+	       (setf prog-bit `(prog ,with-synthetics ,@(cddr prog-bit))))
+	     ;; Drop alias names from any (declare (type ...)) clauses
+	     ;; left in the prog body, since the names no longer have
+	     ;; bindings.
+	     (setf prog-bit (strip-alias-declarations prog-bit alias-names))
+	     ;; Redirect (fref ALIAS ...) references to the synthetic.
 	     (when *equivalence-aliases*
 	       (setf prog-bit (rewrite-aliased-frefs prog-bit)))
-
-	     (setf prog-bit `(symbol-macrolet ,equiv
-			       ,prog-bit))))
+	     ;; Wrap so bare scalar-alias references expand to arefs.
+	     (when macrolet-bindings
+	       (setf prog-bit `(symbol-macrolet ,macrolet-bindings
+				 ,prog-bit)))))
 
 	 ;; If array-slicing is not used and the array-type is
 	 ;; :simple-array, we don't need the with-array-data stuff
