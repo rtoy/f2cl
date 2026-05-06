@@ -1297,21 +1297,51 @@
 ;;; written as a bare symbol, even if NAME happens to be an array;
 ;;; that matches Fortran's interpretation of EQUIVALENCE (X, Y(I))
 ;;; as referring to X's first element).
+(defun render-raw-fref-side (side)
+  "Render an unnormalized EQUIVALENCE side in source-like syntax.
+   SIDE is either a bare symbol or a raw (fref NAME (idx...) ...)
+   form straight from the parser, so indices may be arbitrary
+   expressions rather than integers."
+  (cond ((symbolp side)
+         (format nil "~A" side))
+        ((fref-form-p side)
+         (format nil "~A(~{~A~^, ~})"
+                 (fref-array-name side) (fref-indices side)))
+        (t
+         (format nil "~S" side))))
+
+(defun render-raw-pair (pair)
+  "Render an unnormalized EQUIVALENCE pair in source-like syntax."
+  (format nil "EQUIVALENCE (~A, ~A)"
+          (render-raw-fref-side (first pair))
+          (render-raw-fref-side (second pair))))
+
+(defun validate-equiv-pair (pair)
+  "Signal an error if either side of PAIR can't be normalized.
+   Errors here name the full pair, not just the offending side."
+  (dolist (side pair)
+    (cond ((symbolp side))
+          ((fref-form-p side)
+           (let ((idx (fref-indices side)))
+             (unless (every #'integerp idx)
+               (error "f2cl: subscript ~A in ~A is not a constant; ~
+                       f2cl requires integer literals here"
+                      (render-raw-fref-side side)
+                      (render-raw-pair pair)))))
+          (t
+           (error "f2cl: cannot interpret EQUIVALENCE side ~S in ~A"
+                  side (render-raw-pair pair))))))
+
 (defun equiv-side-info (side)
-  "Return (NAME ANCHOR BOUNDS) for one side of an EQUIVALENCE pair."
+  "Return (NAME ANCHOR BOUNDS) for one side of an EQUIVALENCE pair.
+   PAIR must have passed VALIDATE-EQUIV-PAIR."
   (cond ((symbolp side)
          (list side 0 nil))
         ((fref-form-p side)
          (let* ((name (fref-array-name side))
                 (idx  (fref-indices side))
                 (bnds (lookup-array-bounds name)))
-           (unless bnds
-             (error "f2cl: missing dimensions for ~A in EQUIVALENCE" name))
-           (unless (every #'integerp idx)
-             (error "f2cl: non-constant index in EQUIVALENCE for ~A" name))
-           (list name (column-major-linear-offset idx bnds) bnds)))
-        (t
-         (error "f2cl: cannot interpret EQUIVALENCE side ~S" side))))
+           (list name (column-major-linear-offset idx bnds) bnds)))))
 
 ;;; The "footprint size" is how many cells a name occupies: 1 for a
 ;;; scalar, the array's total size otherwise.
@@ -1357,6 +1387,35 @@
                    groups)
           out)))))
 
+;;; Render a normalized side back to source-like syntax for error
+;;; messages.  Bare-symbol sides (BOUNDS=NIL) print as just the name.
+;;; Array sides invert column-major flattening to recover indices,
+;;; producing e.g. M(2,3) for a 2D array or A(5) for 1D.  May not
+;;; match the source character-for-character (a literal-integer
+;;; rendering replaces any user-written constant expression that
+;;; folded to the same cell), but always names the same storage cell.
+(defun render-equiv-side (side)
+  (destructuring-bind (name anchor bounds) side
+    (cond ((null bounds)
+           (format nil "~A" name))
+          (t
+           (let ((indices nil)
+                 (rest anchor))
+             (dolist (b bounds)
+               (let* ((lo (first b))
+                      (hi (second b))
+                      (extent (1+ (- hi lo))))
+                 (multiple-value-bind (q r) (floor rest extent)
+                   (push (+ lo r) indices)
+                   (setf rest q))))
+             (format nil "~A(~{~A~^, ~})" name (nreverse indices)))))))
+
+(defun render-equiv-pair (pair)
+  (destructuring-bind (left right) pair
+    (format nil "EQUIVALENCE (~A, ~A)"
+            (render-equiv-side left)
+            (render-equiv-side right))))
+
 ;;; Solve constraints in one connected component by walking the graph
 ;;; and assigning each name a tentative linear position relative to
 ;;; an arbitrary origin.  Returns four values: an alist of (NAME
@@ -1364,28 +1423,38 @@
 ;;; list of scalar names in the group (those whose BOUNDS is NIL).
 (defun solve-equivalence-group (pairs)
   "Place every name in PAIRS at a non-negative offset in a synthetic union."
-  (let ((position (make-hash-table))   ; name -> tentative linear position
+  (let ((position (make-hash-table))   ; name -> (linear-position origin-pair)
         (bounds   (make-hash-table))   ; name -> declared bounds (or NIL)
         (queue    nil))
     (labels ((record-info (name bnds)
                (unless (nth-value 1 (gethash name bounds))
                  (setf (gethash name bounds) bnds)))
-             (place (name pos bnds)
+             (place (name pos bnds origin-pair)
                ;; Place NAME's first element at union position POS.
-               ;; If already placed, verify consistency.
+               ;; If already placed, verify consistency.  ORIGIN-PAIR
+               ;; is the EQUIVALENCE pair that caused this placement,
+               ;; saved so a later conflict can name both offending
+               ;; statements in the error message.
                (cond ((not (nth-value 1 (gethash name position)))
-                      (setf (gethash name position) pos)
+                      (setf (gethash name position) (list pos origin-pair))
                       (record-info name bnds)
                       (push name queue))
-                     ((/= pos (gethash name position))
-                      (error "f2cl: inconsistent EQUIVALENCE involving ~A: ~
-                              cell would be at both position ~A and ~A"
-                             name (gethash name position) pos)))))
+                     ((/= pos (first (gethash name position)))
+                      (let ((prior (gethash name position)))
+                        (error "f2cl: inconsistent EQUIVALENCE involving ~A.~%~
+                                  ~A places ~A at union position ~A~%~
+                                  ~A places ~A at union position ~A~%~
+                                  these constraints disagree."
+                               name
+                               (render-equiv-pair (second prior))
+                               name (first prior)
+                               (render-equiv-pair origin-pair)
+                               name pos))))))
       ;; Seed: place the first name in the first pair at position 0.
-      (destructuring-bind ((name anchor bnds) (other-name other-anchor other-bnds))
-          (first pairs)
-        (declare (ignore other-name other-anchor other-bnds))
-        (place name (- anchor) bnds))
+      (let* ((seed-pair (first pairs))
+             (left (first seed-pair)))
+        (destructuring-bind (name anchor bnds) left
+          (place name (- anchor) bnds seed-pair)))
       ;; Propagate positions through all constraints until fixpoint.
       (loop while queue do
         (let ((node (pop queue)))
@@ -1394,39 +1463,58 @@
               (cond ((eq node an)
                      ;; AN is placed; force BN such that BN's anchor
                      ;; lands at the same union cell as AN's anchor.
-                     (let ((shared (+ (gethash an position) aa)))
-                       (place bn (- shared ba) bb)))
+                     (let ((shared (+ (first (gethash an position)) aa)))
+                       (place bn (- shared ba) bb pair)))
                     ((eq node bn)
-                     (let ((shared (+ (gethash bn position) ba)))
-                       (place an (- shared aa) ab)))))))))
-    ;; Collect element types and verify they all agree.
+                     (let ((shared (+ (first (gethash bn position)) ba)))
+                       (place an (- shared aa) ab pair)))))))))
+    ;; Collect element types and verify they all agree.  Track which
+    ;; name first established the common type so a mismatch can name
+    ;; the EQUIVALENCE statements that introduced both types.
     (let ((common-type nil)
+          (common-name nil)
           (offending  nil))
-      (maphash #'(lambda (name pos)
-                   (declare (ignore pos))
+      (maphash #'(lambda (name entry)
+                   (declare (ignore entry))
                    (let ((ty (lookup-vble-type name)))
-                     (cond ((null common-type) (setf common-type ty))
+                     (cond ((null common-type)
+                            (setf common-type ty
+                                  common-name name))
                            ((not (eq common-type ty))
                             (setf offending name)))))
                position)
       (when offending
-        (error "f2cl: mixed-type EQUIVALENCE group containing ~A (~A) ~
-                with other members of type ~A"
-               offending (lookup-vble-type offending) common-type))
+        ;; Print each member's type, then list the relevant EQUIVALENCE
+        ;; statement(s).  When both names came from the same statement,
+        ;; show it only once.
+        (let* ((common-pair    (second (gethash common-name    position)))
+               (offending-pair (second (gethash offending      position)))
+               (same           (eq common-pair offending-pair)))
+          (error "f2cl: mixed-type EQUIVALENCE group: members must ~
+                  have the same type~%~
+                  ~4T~A is of type ~A~%~
+                  ~4T~A is of type ~A~%~
+                  ~A~@[~%~A~]"
+                 common-name common-type
+                 offending (lookup-vble-type offending)
+                 (render-equiv-pair common-pair)
+                 (and (not same) (render-equiv-pair offending-pair)))))
       ;; Normalize: shift positions so the minimum is zero, then
       ;; compute the union size.
       (let ((min-pos most-positive-fixnum)
             (max-end most-negative-fixnum))
-        (maphash #'(lambda (name pos)
-                     (let ((size (member-footprint-size (gethash name bounds))))
+        (maphash #'(lambda (name entry)
+                     (let ((pos (first entry))
+                           (size (member-footprint-size (gethash name bounds))))
                        (when (< pos min-pos) (setf min-pos pos))
                        (when (> (+ pos size) max-end)
                          (setf max-end (+ pos size)))))
                  position)
         (let ((alist nil)
               (scalars nil))
-          (maphash #'(lambda (name pos)
-                       (let ((bnds (gethash name bounds)))
+          (maphash #'(lambda (name entry)
+                       (let ((pos (first entry))
+                             (bnds (gethash name bounds)))
                          (push (list name (- pos min-pos) bnds) alist)
                          (when (null bnds) (push name scalars))))
                    position)
@@ -1448,6 +1536,7 @@
 ;;; rewrite-aliased-frefs to redirect array-form references.
 (defun process-equivalence-groups ()
   "Plan synthetic backing arrays and aliases for every EQUIVALENCE group."
+  (mapc #'validate-equiv-pair *equivalenced-vars*)
   (let ((normalized (mapcar #'(lambda (pair)
                                 (list (equiv-side-info (first pair))
                                       (equiv-side-info (second pair))))
