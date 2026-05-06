@@ -1126,7 +1126,7 @@ correctly"
 	*subprog-arglist* *data-init* *functions-used* *vble-declaration-done*
 	*parsing-lhs*
 	*equivalenced-vars*
-        *equivalenced-aliases*
+        *equivalence-aliases*
 	*common_array_dims*
 	*non-intrinsic-function-names*)
 
