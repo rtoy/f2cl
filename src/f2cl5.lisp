@@ -1235,13 +1235,20 @@
 ;;; final pass to redirect them to the canonical backing array, using
 ;;; the offset slot fref already accepts.
 
-(defun fref-form-p (x) (and (consp x) (eq (car x) 'fref)))
-(defun fref-array-name (form) (second form))
-(defun fref-indices    (form) (third form))
-(defun fref-bounds     (form) (fourth form))
-(defun fref-offset     (form) (fifth form))
+(defun fref-form-p (x)
+  (and (consp x)
+       (eq (car x) 'fref)))
+(defun fref-array-name (form)
+  (second form))
+(defun fref-indices (form)
+  (third form))
+(defun fref-bounds (form)
+  (fourth form))
+(defun fref-offset (form)
+  (fifth form))
 
-(defun constant-index-list-p (idx) (every #'integerp idx))
+(defun constant-index-list-p (idx)
+  (every #'integerp idx))
 
 ;;; Folds at translation time what fref's col-major-index would
 ;;; compute at runtime, given that the inputs are constants.
@@ -1256,7 +1263,8 @@
 
 (defun array-total-size-from-bounds (bounds)
   "Return total element count for the array described by BOUNDS."
-  (reduce #'* bounds :key (lambda (b) (1+ (- (second b) (first b))))))
+  (reduce #'* bounds :key #'(lambda (b)
+                              (1+ (- (second b) (first b))))))
 
 ;;; *common_array_dims* is stored as a flat list of alternating
 ;;; name and bounds entries: (NAME-1 BOUNDS-1 NAME-2 BOUNDS-2 ...),
@@ -1278,13 +1286,19 @@
         (b-size (array-total-size-from-bounds b-bnds))
         (a-rank (length a-bnds))
         (b-rank (length b-bnds)))
-    (cond ((> a-size b-size)                (values a-name a-bnds b-name b-bnds))
-          ((< a-size b-size)                (values b-name b-bnds a-name a-bnds))
-          ((< a-rank b-rank)                (values a-name a-bnds b-name b-bnds))
-          ((> a-rank b-rank)                (values b-name b-bnds a-name a-bnds))
+    (cond ((> a-size b-size)
+           (values a-name a-bnds b-name b-bnds))
+          ((< a-size b-size)
+           (values b-name b-bnds a-name a-bnds))
+          ((< a-rank b-rank)
+           (values a-name a-bnds b-name b-bnds))
+          ((> a-rank b-rank)
+           (values b-name b-bnds a-name a-bnds))
           ((string< (symbol-name a-name)
-                    (symbol-name b-name))   (values a-name a-bnds b-name b-bnds))
-          (t                                (values b-name b-bnds a-name a-bnds)))))
+                    (symbol-name b-name))
+           (values a-name a-bnds b-name b-bnds))
+          (t
+           (values b-name b-bnds a-name a-bnds)))))
 
 (defun compute-alias-offset (canon-anchor canon-bnds alias-anchor alias-bnds)
   "Return the element offset of ALIAS-ANCHOR relative to CANON-ANCHOR."
@@ -1417,17 +1431,6 @@
 	(t (cons (rewrite-aliased-frefs (car form))
 		 (rewrite-aliased-frefs (cdr form))))))
 
-;;; Returns NIL when VAR-NAME is not an alias, leaving the existing
-;;; data-statement code path to emit a normal make-array.
-;; (defun redirect-data-init-for-alias (var-name init-values)
-;;   "Return setf forms initializing alias VAR-NAME's slice of canonical storage."
-;;   (let ((entry (assoc var-name *equivalence-aliases*)))
-;;     (when entry
-;;       (destructuring-bind (alias canon offset alias-bnds type) entry
-;; 	(declare (ignore alias alias-bnds type))
-;; 	(loop for value in init-values
-;; 	      for k from 0
-;; 
 (defun get-var-types (arglist &key declare-vars)
   "Compute the types of each variable in ARGLIST and also an
   appropriate declaration for each variable, if DECLARE-VARS is
