@@ -802,17 +802,15 @@
   (let ((used-keys nil))
     (dolist (key keys)
       (let ((keyname (first key)))
-	;; If the key is used in other keys, we need to keep it.
-	;; Otherwise, look throught the code to see if the key is
-	;; used.  If so, keep it too.
-	(if (find-if #'(lambda (k)
-			 (if (atom k)
-			     (eq keyname k)
-			     (member keyname k)))
-		     keys :key #'second)
-	    (push key used-keys)
-	    (when (find-sym keyname code)
-	      (push key used-keys)))))
+        ;; Keep this key if its name appears anywhere in another
+        ;; key's value expression, or anywhere in the code body.
+        (if (find-if (lambda (other-key)
+                       (and (not (eq other-key key))
+                            (find-sym keyname (second other-key))))
+                     keys)
+            (push key used-keys)
+            (when (find-sym keyname code)
+              (push key used-keys)))))
     (setf used-keys (nreverse used-keys))
     (values used-keys)))
 
@@ -1460,6 +1458,46 @@
 
     (values vbles decls stmt-fns)))
 
+(defun topo-sort-key-params (key-params)
+  "Sort KEY-PARAMS — a list of (name value-expr) pairs — so that every
+  binding precedes any other binding that references its name. Signals
+  an error if there is a circular reference."
+  (let ((names (mapcar #'first key-params))
+        (sorted '())
+        (visiting '())
+        (visited (make-hash-table)))
+    (labels ((deps-of (param)
+               (let ((expr (second param))
+                     (found '()))
+                 (labels ((walk (x)
+                            (cond ((symbolp x)
+                                   (when (and (member x names)
+                                              (not (eq x (first param))))
+                                     (pushnew x found)))
+                                  ((consp x)
+                                   (walk (car x))
+                                   (walk (cdr x))))))
+                   (walk expr))
+                 found))
+             (visit (param)
+               (let ((n (first param)))
+                 (cond ((gethash n visited))
+                       ((member n visiting)
+                        (error "Circular reference in PARAMETER ~
+                                statements involving: ~{~A~^, ~}"
+                               (cons n (ldiff visiting (member n visiting)))))
+                       (t
+                        (push n visiting)
+                        (dolist (dep (deps-of param))
+                          (let ((dep-param (find dep key-params :key #'first)))
+                            (when dep-param (visit dep-param))))
+                        (setf visiting (rest visiting))
+                        (setf (gethash n visited) t)
+                        (push param sorted))))))
+      (dolist (p key-params)
+        (visit p))
+      (nreverse sorted))))
+
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
 		   local-vbles vble-decls body common-blocks
@@ -1683,12 +1721,13 @@
      ;; Convert reserved names in parameter statements.  Coerce the
      ;; bindings to the right type as well.
      (setq key-params
-	   (mapcar #'(lambda (x)
-		       (let ((maybe-new-name (check-reserved-lisp-names (car x))))
+           (topo-sort-key-params
+	    (mapcar #'(lambda (x)
+		        (let ((maybe-new-name (check-reserved-lisp-names (car x))))
 				    
-			 (list maybe-new-name
-			       (coerce-parameter-assign maybe-new-name (cadr x)))))
-		   *key_params*))
+			  (list maybe-new-name
+			        (coerce-parameter-assign maybe-new-name (cadr x)))))
+		    *key_params*)))
      ;;(format t "key-params = ~S~%" key-params)
      
      (when (eq *save_vbles* '%save-all-locals%)
@@ -1888,7 +1927,9 @@
      ;;(format t "body            = ~S~%" body)
      (setf all-decls (append (rest (first vble-decls))
 			     (rest (first other-fcn-decls))))
-     (setf all-decls `((declare ,@all-decls)))
+     (setf all-decls (if all-decls
+                         `((declare ,@all-decls))
+                         nil))
      ;;(format t "all-decls = ~A~%" all-decls)
 
      (when *entry-points*
