@@ -3463,16 +3463,10 @@
                     1))
        (return
          (if *dlist-flag*
-             `(let ((%ret nil))
-                (setf ,ivar ,e1)
-                (do () ((> ,ivar ,e2) (nreverse %ret))
-                  ,@(map-items (cdr dlist))
-                  (setf ,ivar (+ ,ivar ,e3))))
-             `(let ((%ret nil))
-                (setf ,ivar ,e1)
-                (do () ((> ,ivar ,e2) (nreverse %ret))
-                  (push ,dlist %ret)
-                  (setf ,ivar (+ ,ivar ,e3)))))))))
+             `(f2cl-lib:implied-do-collect (,ivar ,e1 ,e2 ,e3)
+                                            ,@(cdr dlist))
+             `(f2cl-lib:implied-do-collect (,ivar ,e1 ,e2 ,e3)
+                                                ,dlist))))))
 
 (defun parse-dlist (x)
    (setq *dlist-flag* t)

@@ -967,6 +967,22 @@ is not included")
     `(let ((,v (list ,@vals)))
       ,(process-implied-do implied-do array-bnds var-types v))))
 
+(defmacro implied-do-collect ((var start end &optional (step 1)) &body body)
+  "Implied-DO for I/O lists.  Steps VAR from START to END by
+  STEP,evaluating BODY on each iteration and collecting the resulting
+  value(s) into a list returned at the end.  VAR must be bound in an
+  enclosing scope; this form assigns rather than rebinds."
+  (let ((acc (gensym "ACC"))
+        (limit (gensym "LIMIT"))
+        (stp (gensym "STEP")))
+    `(let ((,acc nil)
+           (,limit ,end)
+           (,stp ,step))
+       (setf ,var ,start)
+       (do () ((> ,var ,limit) (nreverse ,acc))
+         (push (progn ,@body) ,acc)
+         (setf ,var (+ ,var ,stp))))))
+
 ;;-----------------------------------------------------------------------------
    
 ;; Map Fortran logical unit numbers to Lisp streams
