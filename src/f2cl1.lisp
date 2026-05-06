@@ -3255,6 +3255,32 @@ loop2
 
 (defun const (x n)
   (make-list n :initial-element x))
+
+;;------------------------------------------------------------------------------	
+;;
+;; A useful utility to take the parsed tokens and produce the original
+;; Fortran code.
+;;
+(defun render-tokens-as-fortran (toks)
+  "Render a flat token list (as built up by lineread/concat-operators) as
+  a Fortran-ish source line: no package prefixes, no spaces
+  around `(', `)',`[', `]', or commas, Used to make brackets-check
+  error messages point at the offending statement."
+  (let ((*package* (find-package :fortran-to-lisp))
+        (no-space-before '(|(| |)| |[| |]| |,|))
+        (no-space-after  '(|(| |[|))
+        (count 0)
+        (prev nil))
+    (with-output-to-string (s)
+      (dolist (tok toks)
+        (when (and prev
+                   (not (member tok no-space-before))
+                   (not (member prev no-space-after)))
+          (write-char #\Space s))
+        (princ tok s)
+        (setf prev tok)
+        (incf count)))))
+
 ;------------------------------------------------------------------------------	
 (defun brackets-check (x)
   (prog (path-stack ce check-list ret-list)
@@ -3266,17 +3292,26 @@ loop2
      (setq path-stack '((0 0 0)) ;;;stack-top '(0 0 0)
            check-list x ce (car x) ret-list nil)
      loop
+     ;; Every branch below must terminate the loop — `princ-reset' just
+     ;; prints, it doesn't return, and the trailing `(go loop)' would
+     ;; otherwise re-enter this same branch forever on `check-list = NIL'.
+     ;;
+     ;; A bracket imbalance here is fatal: it almost always means the input
+     ;; lexed badly (e.g. a source line longer than 72 columns, so the
+     ;; closing `)' was dropped).  Continuing past it produces garbled Lisp
+     ;; for any non-trivial input, so we signal an error showing the
+     ;; offending statement to help locate the source line.
      (cond ((null check-list)
 	    (cond 
 	      ((greaterp (caar path-stack) 0)
-	       (princ-reset 
-		'|Syntax error: missing right parenthesis ")"|) )
+	       (error "f2cl: missing right parenthesis \")\" in statement:~%~6T~A"
+                      (render-tokens-as-fortran x)))
 	      ((greaterp (cadar path-stack) 0)
-	       (princ-reset 
-		'|Syntax error: missing right bracket "]"|) )
+	       (error "f2cl: missing right bracket \"]\" in statement:~%~6T~A"
+                      (render-tokens-as-fortran x)))
 	      ((greaterp (caddar path-stack) 0)
-	       (princ-reset 
-		'|Syntax error: missing right brace "}"|))
+	       (error "f2cl: missing right brace \"}\" in statement:~%~6T~A"
+                      (render-tokens-as-fortran x)))
 	      (t (return ret-list)))))
 
      (cond 
