@@ -1235,7 +1235,18 @@
 ;;;
 ;;; Names recorded in *equivalence-aliases* are then handled in two
 ;;; ways at use sites: array references inside (fref NAME ...) forms
-;;; are rewritten by REWRITE-ALIASED-FREFS to redirect to the
+;;; are rewritten by REWRITE-ALIASED-FREFS to redirect to the synthetic
+;;; with the recorded offset (using the offset slot fref already
+;;; accepts).  Scalar references appear as bare symbols and are handled
+;;; by a symbol-macrolet wrap that expands them to (aref BACKING OFF).
+;;;
+;;; This subsumes all three previously-special cases (scalar<->scalar,
+;;; scalar<->array-element, array<->array) and additionally handles
+;;; chained EQUIVALENCE, non-aligned anchors, and any group whose
+;;; union footprint exceeds the size of any single member.
+;;;
+;;; Mixed element types within a group remain unsupported and signal
+;;; an error: byte-level reinterpretation has no portable CL form.
 
 (defun fref-form-p (x)
   (and (consp x)
@@ -1443,11 +1454,19 @@
                             *equivalenced-vars*))
         (synthetic-bindings nil)
         (macrolet-bindings  nil)
-        (alias-names        nil))
+        (alias-names        nil)
+        (group-counter      0))
     (dolist (group (partition-equivalence-pairs normalized))
       (multiple-value-bind (positions union-size element-type scalars)
           (solve-equivalence-group group)
-        (let ((backing (gentemp "EQUIV-")))
+        ;; Mint a name like EQUIV-BACKING-ARRAY-1.  The counter is
+        ;; per-subprogram (this defun runs once per subprogram), so
+        ;; generated output is reproducible across translation runs
+        ;; and across whole-image lifetimes.  We intern in the
+        ;; current package so the symbol prints cleanly in the
+        ;; generated lisp.
+        (let ((backing (intern (format nil "EQUIV-BACKING-ARRAY-~A"
+                                       (incf group-counter)))))
           (push `(,backing
                   (make-array ,union-size
                               :element-type ',element-type
