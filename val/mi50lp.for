@@ -427,7 +427,8 @@ C     END OF M5FRMC
       COMMON    /M7PHES/ RGMIN1,RGNRM1,RGNRM2,JZ1,JZ2,LABZ,NFULLZ,MFULLZ
       COMMON    /M8FUNC/ NFCON(4),NFOBJ(4),NPROB,NSTAT1,NSTAT2
       LOGICAL            SHORT
-      INTEGER            LABEL(2)
+c      INTEGER            LABEL(2)
+      character*1        label(2)
       DATA               LABEL(1)/' '/, LABEL(2)/'R'/
 C
 C     M5LOG   PRINTS THE ITERATION LOG.
