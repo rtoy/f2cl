@@ -1345,6 +1345,121 @@
         (push v unused)))
     unused))
 
+;;----------------------------------------------------------------------
+;; Declaration filtering and statement-function dummy migration.
+;;
+;; These helpers operate on local-vbles and vble-decls before they
+;; are folded into the surrounding routine's PROG.
+;;----------------------------------------------------------------------
+
+(defun filter-decls-removing-names (vble-decls names-to-remove)
+  "Strip NAMES-TO-REMOVE from each type clause in VBLE-DECLS, a singleton
+  list ((declare (type T v...) ...)).  Drop empty clauses; return nil
+  if the declare itself is emptied."
+  (let* ((decl-form (first vble-decls))
+         (kept-clauses
+           (when decl-form
+             (mapcan
+              #'(lambda (clause)
+                  (cond ((and (consp clause) (eq (car clause) 'type))
+                         (let ((kept (remove-if #'(lambda (n)
+                                                    (member n names-to-remove))
+                                                (cddr clause))))
+                           (when kept
+                             (list `(type ,(cadr clause) ,@kept)))))
+                        (t (list clause))))
+              (cdr decl-form)))))
+    (if kept-clauses (list `(declare ,@kept-clauses)) nil)))
+
+(defun make-stmt-fn-binding (sf-triple)
+  "Convert (name (args...) body) into a labels binding with type
+  declarations on the parameters.  Args without a known type get no
+  declaration."
+  (destructuring-bind (name args body) sf-triple
+    (let ((type-clauses
+            (loop for arg in args
+                  for type = (lookup-vble-type arg)
+                  when type
+                    collect `(type ,type ,arg))))
+      (if type-clauses
+          `(,name ,args (declare ,@type-clauses) ,body)
+          `(,name ,args ,body)))))
+
+(defun remove-unused-locals (local-vbles vble-decls body keep-always)
+  "Drop bindings whose name is neither referenced in BODY nor in
+  KEEP-ALWAYS.  Returns filtered local-vbles and vble-decls."
+  (labels ((name-of (b) (if (consp b) (car b) b))
+           (used-p (name)
+             (or (member name keep-always)
+                 (find-sym name body))))
+    (let* ((kept-vbles
+             (remove-if-not #'(lambda (b)
+                                (used-p (name-of b)))
+                            local-vbles))
+           (dropped-names
+             (mapcan #'(lambda (b)
+                         (let ((n (name-of b)))
+                           (unless (used-p n) (list n))))
+                     local-vbles))
+           (kept-decls
+             (filter-decls-removing-names vble-decls dropped-names)))
+      (values kept-vbles kept-decls))))
+
+(defun process-local-decls (local-vbles vble-decls body
+                            arglist key-params
+                            stmt-fns-bodies
+                            saved-vbles common-vars
+                            data-init prune-unused-p)
+  "Filter LOCAL-VBLES and VBLE-DECLS before they're folded into
+  all-decls.  Returns three values: filtered local-vbles, filtered
+  vble-decls, and rewritten statement-function bodies."
+  (let ((vbles local-vbles)
+        (decls vble-decls)
+        (stmt-fns stmt-fns-bodies))
+
+    ;; Phase 1: move stmt-fn dummy declarations onto their labels
+    ;; parameters.  Strip a dummy from the host's locals only when
+    ;; its name isn't referenced in body — otherwise it's a real
+    ;; host local that happens to share the name.
+    (when stmt-fns-bodies
+      (let* ((all-sf-dummies
+               (delete-duplicates
+                (mapcan #'(lambda (sf)
+                            (copy-list (second sf)))
+                        stmt-fns-bodies)))
+             (safe-to-strip
+               (remove-if #'(lambda (n)
+                              (find-sym n body))
+                          all-sf-dummies)))
+        (when safe-to-strip
+          (setf vbles
+                (remove-if #'(lambda (b)
+                               (member (if (consp b) (car b) b)
+                                       safe-to-strip))
+                           vbles))
+          (setf decls
+                (filter-decls-removing-names decls safe-to-strip)))
+        (setf stmt-fns
+              (mapcar #'make-stmt-fn-binding stmt-fns-bodies))))
+
+    ;; Phase 2: drop locals not referenced in body or data-init,
+    ;; except formals, key params, SAVEs, and COMMONs.
+    (when prune-unused-p
+      (let ((keep-always
+              (append arglist
+                      saved-vbles
+                      common-vars
+                      (mapcar #'first key-params))))
+        (multiple-value-bind (new-vbles new-decls)
+            (remove-unused-locals vbles
+                                  decls
+                                  `(,@body ,@data-init)
+                                  keep-always)
+          (setf vbles new-vbles
+                decls new-decls))))
+
+    (values vbles decls stmt-fns)))
+
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
 		   local-vbles vble-decls body common-blocks
@@ -1753,6 +1868,20 @@
 				     (cddr x)
 				     nil))
 			     (rest (first formal-arg-decls)))))
+     ;; Migrate statement-function dummy declarations onto their
+     ;; LABELS parameters, and (when enabled) prune locals not
+     ;; referenced in the body.  Both transforms operate on
+     ;; vble-decls in its native shape, before line below folds it
+     ;; into all-decls.
+     ;;
+     ;; process-local-decls doesn't mutate any of the globals.
+     (multiple-value-setq (local-vbles vble-decls *subprog_stmt_fns_bodies*)
+       (process-local-decls local-vbles vble-decls body
+                            arglist key-params
+                            *subprog_stmt_fns_bodies*
+                            *save_vbles* *subprog_common_vars*
+                            *data-init* *prune-unused-vars*))
+
      ;;(format t "local-vbles     = ~S~%" local-vbles)
      ;;(format t "vbles-decls     = ~S~%" vble-decls)
      ;;(format t "other-fcn-decls = ~S~%" other-fcn-decls)
