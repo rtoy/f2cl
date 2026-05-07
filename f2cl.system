@@ -30,3 +30,35 @@
      (:file "f2cl7")
      #+cmu(:file "f2cl8")
      (:file "f2cl-lib")))))
+
+;; Regression-test system.
+;;
+;; Loading this only registers the test cases with RT; running them
+;; is left to the user.  Typical session:
+;;
+;;   (load "f2cl.system")
+;;   (mk:oos :f2cl-tests :load)     ; compile + load
+;;   (rt:do-tests)                   ; run the tests
+;;
+;; After do-tests, RT's pending-tests, *expected-failures*, etc. are
+;; available at the REPL for poking around.
+;;
+;; If you don't want mk-defsystem prompting whether to recompile when
+;; an old fasl is found in the source tree, bind these before
+;; invoking mk:oos:
+;;
+;;   (setf mk::*bother-user-if-no-binary* nil)
+;;   (setf mk::*compile-during-load* t)
+
+(mk:defsystem f2cl-tests
+  :source-pathname
+  (truename (merge-pathnames (make-pathname :directory '(#-gcl :relative "val" "regression"))
+		             (make-pathname :directory (pathname-directory #-gcl *load-pathname*
+								           #+gcl sys:*load-pathname*))))
+  :depends-on (f2cl)
+  :components
+  ((:file "rt-package" :source-extension "lsp")
+   (:file "rt"         :source-extension "lsp")
+   (:file "helpers")
+   (:file "tests")))
+
