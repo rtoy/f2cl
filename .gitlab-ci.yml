@@ -30,9 +30,9 @@ asdf-tests:
               (require :asdf)
               ;; Don'"'"'t let style-warnings or compile warnings
               ;; abort the build; only unexpected test failures
-              ;; should fail the job.
-              (setf uiop:*compile-file-warnings-behaviour* :ignore
-                    uiop:*compile-file-failure-behaviour*  :ignore)
+              ;; should fail the job.  
+              (setf asdf:*compile-file-warnings-behaviour* :ignore
+                    asdf:*compile-file-failure-behaviour*  :ignore)
               (push (truename "./") asdf:*central-registry*)
               (asdf:test-system :f2cl)
               (ext:quit :unix-status 0))
