@@ -1,0 +1,72 @@
+# GitLab CI for f2cl regression suite.
+#
+# Runs the suite under both build systems on CMUCL 21f.  The Docker
+# image bundles ASDF and mk-defsystem 3.9.2 as built-in modules
+# accessible via (require :asdf) / (require :defsystem) -- no external
+# downloads needed.
+#
+# Each job exits non-zero when the test runner signals on unexpected
+# outcomes (mismatch between *expected-failures* and the actual
+# pending tests after do-tests).  The handler-case wrapper makes
+# that exit explicit rather than relying on -batch's default error
+# behavior.
+
+image: clfoundation/cmucl:21f
+
+stages:
+  - test
+
+# Run the ASDF flow.  The eval-when block at the top of f2cl.asd
+# self-registers our vendored "rt" system and adds packages/ to
+# asdf:*central-registry*, so only the repo root needs to be on the
+# registry.
+asdf-tests:
+  stage: test
+  script:
+    - |
+      cmucl -batch -noinit -nositeinit -quiet \
+        -eval '(require :asdf)' \
+        -eval '
+        (handler-case
+            (progn
+              ;; Don'"'"'t let style-warnings or compile warnings
+              ;; abort the build; only unexpected test failures
+              ;; should fail the job.  These symbols live in :uiop
+              ;; but are also re-exported from :asdf, which is more
+              ;; reliably available across ASDF versions.
+              (setf asdf:*compile-file-warnings-behaviour* :ignore
+                    asdf:*compile-file-failure-behaviour*  :ignore)
+              (push (truename "./") asdf:*central-registry*)
+              (asdf:test-system :f2cl)
+              (ext:quit nil 0))
+          (error (c)
+            (format *error-output* "~&FAIL: ~A~%" c)
+            (ext:quit nil 1)))'
+
+# Run the mk-defsystem flow.  Mirrors the documented user sequence:
+# load f2cl.system, build f2cl, build f2cl-tests; the :finally-do
+# hook on f2cl-tests runs do-tests and signals on unexpected
+# outcomes.
+#
+# The (mk:oos :f2cl :load) step is required separately because
+# packages/quadpack.system reads f2cl: symbols at file-read time, so
+# the f2cl package must already exist when mk discovers and loads
+# quadpack.system to resolve the quadpack-tests dependency.
+mk-defsys-tests:
+  stage: test
+  script:
+    - |
+      cmucl -batch -noinit -nositeinit -quiet \
+        -eval '(require :defsystem)' \
+        -eval '
+        (handler-case
+            (progn
+              (setf mk::*bother-user-if-no-binary* nil
+                    mk::*compile-during-load*      t)
+              (load "f2cl.system")
+              (mk:oos :f2cl :load)
+              (mk:oos :f2cl-tests :load)
+              (ext:quit nil 0))
+          (error (c)
+            (format *error-output* "~&FAIL: ~A~%" c)
+            (ext:quit nil 1)))'

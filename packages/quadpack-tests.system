@@ -1,0 +1,44 @@
+;;; -*- Mode: lisp -*-
+;;;
+;;; mk-defsystem definition for the rt-based quadpack tests.
+;;;
+;;; Mirrors the ASDF "quadpack/tests" system in quadpack.asd: each
+;;; test-N.lisp file contains a series of rt:deftest forms calling
+;;; QUADPACK routines and comparing against known values.  Loading
+;;; this system registers the deftests with RT; running them is left
+;;; to the caller's (rt:do-tests) (or to f2cl-tests' :finally-do hook
+;;; in f2cl.system).
+;;;
+;;; Lives in its own file (not inside packages/quadpack.system)
+;;; because mk-defsystem's central-registry discovery looks for
+;;; <system-name>.system on disk -- so a system named "quadpack-tests"
+;;; has to live in "quadpack-tests.system" to be findable that way.
+;;; Without this, anything depending on quadpack-tests would require
+;;; the user to have manually loaded packages/quadpack.system first.
+;;;
+;;; Depends on:
+;;;   f2cl      -- the translator (needed for f2cl-compile to be a
+;;;                resolvable symbol when quadpack.system loads)
+;;;   quadpack  -- the f2cl-translated quadpack itself, defined in
+;;;                packages/quadpack.system
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *quadpack-tests-root*
+    (let ((load-path #-gcl *load-truename*
+		     #+gcl sys:*load-truename*))
+      (make-pathname :host (pathname-host load-path)
+		     :device (pathname-device load-path)
+		     :directory (append (pathname-directory load-path)
+					'("quadpack"))))))
+
+(mk:defsystem quadpack-tests
+    :source-pathname *quadpack-tests-root*
+    :source-extension "lisp"
+    :depends-on (f2cl quadpack)
+    :components
+    ((:file "test-1")
+     (:file "test-2")
+     ;; test-3 omitted; depends on besj0 which isn't always
+     ;; available, matching what packages/quadpack.asd does.
+     (:file "test-4-qng")
+     (:file "test-4-qags")))

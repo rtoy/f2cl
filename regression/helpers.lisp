@@ -1,0 +1,111 @@
+;;; -*- Mode: Lisp -*-
+;;;
+;;; Helpers for f2cl regression tests.
+;;;
+;;; Two functions:
+;;;
+;;;   (convert PATH)
+;;;       Translate a Fortran file with f2cl.  Return T iff no
+;;;       condition was signalled.  Used by tests on files that have
+;;;       no main program -- the best we can verify automatically is
+;;;       that translation didn't blow up.
+;;;
+;;;   (run-program PATH ENTRY)
+;;;       Translate, compile, load, then call ENTRY (a string naming
+;;;       a function in CL-USER) with stdout captured to a string.
+;;;       Return that string.  The caller compares it against an
+;;;       expected literal in the deftest.
+;;;
+;;; Both helpers reset f2cl's per-translation state before doing
+;;; anything else, so the order in which deftests run doesn't matter.
+
+(defpackage #:f2cl-regression
+  (:use #:cl)
+  (:export #:convert
+           #:run-program))
+
+(in-package #:f2cl-regression)
+
+(defparameter *work-dir*
+  ;; Subdirectory of where this source file lives.  Computed at read
+  ;; time (#.) so the value is the source location, not the fasl
+  ;; cache.  No need for TMPDIR, UIOP, or per-implementation getenv.
+  #.(let ((here (or *compile-file-pathname* *load-pathname*)))
+      (when here
+        (merge-pathnames
+         (make-pathname :directory '(:relative "f2cl-regression-out")
+                        :defaults here)
+         (make-pathname :directory (pathname-directory here)
+                        :name nil :type nil :version nil
+                        :defaults here))))
+  "Where translated .lisp and .fasl files go.")
+
+(defparameter *repo-root*
+  ;; This file lives at <repo>/regression/helpers.lisp, so the repo
+  ;; root is one directory level up from where it was loaded.  Use
+  ;; #. so the value is computed at *read* time, before ASDF can
+  ;; redirect *LOAD-PATHNAME* to a cached fasl in the build cache --
+  ;; we want the path to the source file, not its compiled output.
+  ;; Works under ASDF, mk-defsystem, or a bare CL:LOAD.
+  #.(let ((here (or *compile-file-pathname* *load-pathname*)))
+      (when here
+        (make-pathname :directory (butlast (pathname-directory here) 1)
+                       :name nil :type nil :version nil
+                       :defaults here)))
+  "Pathname of the f2cl repo root, derived from this file's location.")
+
+(defun src-path (path)
+  "Resolve PATH (e.g. \"val/twoscale.f\") relative to the f2cl repo."
+  (merge-pathnames path *repo-root*))
+
+(defun lisp-out (path)
+  (merge-pathnames (concatenate 'string (pathname-name path) ".lisp")
+                   *work-dir*))
+
+(defun reset-state ()
+  "Reset f2cl's global state so tests don't poison each other.
+
+  *F2CL-FUNCTION-INFO* records the signature of every routine f2cl
+  has translated so far and is consulted when emitting calls in
+  later files; without resetting it, e.g. tst-init.f's zero-arg SUB
+  would cause tst-slice.f's two-arg SUB to be mistranslated as a
+  zero-arg call.  *LUN-HASH* caches the stream associated with each
+  Fortran logical unit number; without reseating it, a previous
+  run's now-closed string-output-stream stays cached as unit 6 and
+  the next run gets 'stream is closed' errors."
+  (let ((finfo (find-symbol "*F2CL-FUNCTION-INFO*" :fortran-to-lisp)))
+    (when (and finfo (boundp finfo))
+      ;; f2cl1.lisp's clear-f2cl-finfo clears the table and re-registers
+      ;; d1mach/i1mach as built-ins.
+      (let ((clear (find-symbol "CLEAR-F2CL-FINFO" :fortran-to-lisp)))
+        (when (and clear (fboundp clear))
+          (funcall clear)))))
+  (let ((init-io (find-symbol "INIT-FORTRAN-IO" :f2cl-lib)))
+    (when (and init-io (fboundp init-io))
+      (funcall init-io))))
+
+(defun convert (path)
+  "Translate PATH with f2cl.  Returns T iff no error."
+  (reset-state)
+  (ensure-directories-exist *work-dir*)
+  (f2cl:f2cl (src-path path) :output-file (lisp-out path))
+  t)
+
+(defun run-program (path entry)
+  "Translate, compile, load PATH; call CL-USER::ENTRY with stdout
+  captured.  Return the captured string."
+  (reset-state)
+  (ensure-directories-exist *work-dir*)
+  (let ((lisp (lisp-out path)))
+    (f2cl:f2cl (src-path path) :output-file lisp)
+    (load (compile-file lisp :verbose nil :print nil))
+    (let ((fn (find-symbol (string-upcase entry) :common-lisp-user)))
+      (unless (and fn (fboundp fn))
+        (error "no such entry function ~A in CL-USER" entry))
+      (with-output-to-string (out)
+        (let ((*standard-output* out))
+          ;; Re-seat f2cl-lib's unit cache so it points at OUT, not
+          ;; the *standard-output* we had at top-level.
+          (let ((init-io (find-symbol "INIT-FORTRAN-IO" :f2cl-lib)))
+            (when (and init-io (fboundp init-io)) (funcall init-io)))
+          (funcall fn))))))
