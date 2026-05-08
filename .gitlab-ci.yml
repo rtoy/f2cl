@@ -24,7 +24,7 @@ asdf-tests:
   stage: test
   script:
     - |
-      lisp -batch -noinit -nositeinit -quiet -eval '
+      cmucl -batch -noinit -nositeinit -quiet -eval '
         (handler-case
             (progn
               (require :asdf)
@@ -53,7 +53,7 @@ mk-defsys-tests:
   stage: test
   script:
     - |
-      lisp -batch -noinit -nositeinit -quiet -eval '
+      cmucl -batch -noinit -nositeinit -quiet -eval '
         (handler-case
             (progn
               (require :defsystem)
