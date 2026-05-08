@@ -41,15 +41,15 @@
   "Where translated .lisp and .fasl files go.")
 
 (defparameter *repo-root*
-  ;; This file lives at <repo>/val/regression/helpers.lisp, so the
-  ;; repo root is two directory levels up from where it was loaded.
-  ;; Use #. so the value is computed at *read* time, before ASDF can
+  ;; This file lives at <repo>/regression/helpers.lisp, so the repo
+  ;; root is one directory level up from where it was loaded.  Use
+  ;; #. so the value is computed at *read* time, before ASDF can
   ;; redirect *LOAD-PATHNAME* to a cached fasl in the build cache --
   ;; we want the path to the source file, not its compiled output.
   ;; Works under ASDF, mk-defsystem, or a bare CL:LOAD.
   #.(let ((here (or *compile-file-pathname* *load-pathname*)))
       (when here
-        (make-pathname :directory (butlast (pathname-directory here) 2)
+        (make-pathname :directory (butlast (pathname-directory here) 1)
                        :name nil :type nil :version nil
                        :defaults here)))
   "Pathname of the f2cl repo root, derived from this file's location.")

@@ -49,16 +49,19 @@
 ;;
 ;;   (setf mk::*bother-user-if-no-binary* nil)
 ;;   (setf mk::*compile-during-load* t)
+;;
+;; Note: only covers the regression suite for now; the
+;; quadpack-tests integration that exists on the ASDF side
+;; (f2cl.asd) hasn't been ported here yet.
 
 (mk:defsystem f2cl-tests
   :source-pathname
-  (truename (merge-pathnames (make-pathname :directory '(#-gcl :relative "val" "regression"))
-		             (make-pathname :directory (pathname-directory #-gcl *load-pathname*
-								           #+gcl sys:*load-pathname*))))
+  (merge-pathnames (make-pathname :directory '(#-gcl :relative "regression"))
+		   (make-pathname :directory (pathname-directory #-gcl *load-pathname*
+								 #+gcl sys:*load-pathname*)))
   :depends-on (f2cl)
   :components
   ((:file "rt-package" :source-extension "lsp")
    (:file "rt"         :source-extension "lsp")
    (:file "helpers")
    (:file "tests")))
-
