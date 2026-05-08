@@ -38,10 +38,10 @@ asdf-tests:
                     asdf:*compile-file-failure-behaviour*  :ignore)
               (push (truename "./") asdf:*central-registry*)
               (asdf:test-system :f2cl)
-              (ext:quit :unix-status 0))
+              (ext:quit nil 0))
           (error (c)
             (format *error-output* "~&FAIL: ~A~%" c)
-            (ext:quit :unix-status 1)))'
+            (ext:quit nil 1)))'
 
 # Run the mk-defsystem flow.  Mirrors the documented user sequence:
 # load f2cl.system, build f2cl, build f2cl-tests; the :finally-do
@@ -66,7 +66,7 @@ mk-defsys-tests:
               (load "f2cl.system")
               (mk:oos :f2cl :load)
               (mk:oos :f2cl-tests :load)
-              (ext:quit :unix-status 0))
+              (ext:quit nil 0))
           (error (c)
             (format *error-output* "~&FAIL: ~A~%" c)
-            (ext:quit :unix-status 1)))'
+            (ext:quit nil 1)))'
