@@ -10,52 +10,12 @@
 
 (in-package :f2cl-asdf)
 
-;; Package for the quadpack routines.
-(defpackage :quadpack
-  (:use :cl)
-  (:export
-   ;; Support
-   #:dqwgtf
-   #:dqcheb
-   #:dqk15w
-   #:dqwgts
-   #:dqwgtc
-   #:dgtsl
-   #:xerror
-
-   ;; Core integration routines
-   #:dqk15
-   #:dqk31
-   #:dqk41
-   #:dqk51
-   #:dqk61
-   #:dqk21
-   #:dqk15i
-   #:dqelg
-   #:dqpsrt
-   #:dqc25s
-   #:dqmomo
-   #:dqc25c
-   #:dqc25f
-   ;; Basic integrators
-   #:dqage
-   #:dqagie
-   #:dqagpe
-   #:dqagse
-   #:dqawfe
-   #:dqawoe
-   #:dqawse
-   #:dqawce
-   ;; Simplified interface routines
-   #:dqng
-   #:dqag
-   #:dqags
-   #:dqagi
-   #:dqagp
-   #:dqawf
-   #:dqawo
-   #:dqaws
-   #:dqawc))
+;; Package definitions for :quadpack and :quadpack-tests live in
+;; quadpack/quadpack-package.lisp, factored out so that the
+;; mk-defsystem version (quadpack.system) can use the same forms.
+;; The "quadpack" system below loads it as its first component so
+;; that the :quadpack package exists before the Fortran-translated
+;; lisp files compile.
 
 ;; Defsystem for d1mach and i1mach
 (defsystem "quadpack/mach-par"
@@ -73,7 +33,9 @@
   :depends-on ("quadpack/mach-par")
   :pathname "quadpack/"
   :components
-  ((:module "fortran"
+  ((:cl-source-file "quadpack-package")
+   (:module "fortran"
+            :depends-on ("quadpack-package")
 	    :components
 	    (;; Support
 	     (:file "dqwgtf")
@@ -184,9 +146,6 @@
 		    :depends-on ("dqawce"
 				 "xerror")))))
   :in-order-to ((test-op (test-op "quadpack/tests"))))
-
-(defpackage quadpack-tests
-  (:use :cl))
 
 (defsystem "quadpack/tests"
   :depends-on ("quadpack" "rt")

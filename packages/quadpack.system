@@ -69,31 +69,47 @@
      (:file "i1mach")))
 
 
-(defvar *quadpack-package* nil)
-(defun quadpack-compile (filename &key output-file error-file
-				  (array-slicing t) (array-type :array))
-  (f2cl:f2cl-compile filename :output-file output-file
-	     ;;:error-file error-file
-		     :array-slicing array-slicing
-		     :array-type array-type
-		     :package *quadpack-package*
-		     ))
+;; Symbols emitted by f2cl-compile go into the QUADPACK package.
+;; (Was nil historically, which put the symbols into cl-user; the
+;; new test system below references quadpack:dqag etc., so we need
+;; them in the proper package.)
+(defvar *quadpack-package* :quadpack)
 
+;; Wrapper that adds :package *quadpack-package* to whatever else
+;; mk's compile-language flow passes in.  Uses &allow-other-keys
+;; rather than enumerating the f2cl-compile arglist so future
+;; additions to f2cl-compile don't require updates here.
+(defun quadpack-compile (filename &rest args &key &allow-other-keys)
+  (apply #'f2cl:f2cl-compile filename
+	 :package *quadpack-package*
+	 args))
+
+;; The :f2cl mk-defsystem language used to be wired directly to
+;; f2cl:f2cl-compile, which dropped the :package argument and put
+;; quadpack symbols in cl-user.  Route through quadpack-compile
+;; instead so *quadpack-package* takes effect.
 (mk:define-language :f2cl
-    :compiler #'f2cl:f2cl-compile
+    :compiler #'quadpack-compile
     :source-extension "f")
 
 ;; Defsystem for quadpack.
 (mk:defsystem quadpack
-    :source-pathname (merge-pathnames "quadpack/fortran"
+    :source-pathname (merge-pathnames "quadpack"
 				      *quadpack-root*)
     :depends-on ("mach-par")
     :components
-    ((:module Fortran
-	      :source-pathname ""
+    (;; Defines the :quadpack and :quadpack-tests packages.  Loaded
+     ;; first so the package exists before any quadpack files
+     ;; compile (and the in-package form at the top of generated
+     ;; sources resolves).  Same file is referenced from
+     ;; quadpack.asd.
+     (:file "quadpack-package" :source-extension "lisp")
+     (:module Fortran
+	      :source-pathname "fortran"
 	      :binary-pathname "lib/"
 	      :source-extension "f"
 	      :language :f2cl
+	      :depends-on ("quadpack-package")
 	      :components
 	      (
 	       ;; Support
@@ -218,6 +234,11 @@
 ;; If you have TOMS 715 loaded, you can get comparisons between the
 ;; quadpack values and the true values for some of the tests where the
 ;; true value is in terms of Bessel functions.
+;;
+;; The newer rt-based quadpack tests (mirroring what the ASDF
+;; quadpack/tests system runs) live in their own mk-defsystem file,
+;; packages/quadpack-tests.system, since mk-defsystem's central
+;; registry discovery requires <system-name>.system filenames.
 (mk:defsystem quadpack-test
     :source-pathname (merge-pathnames "quadpack"
 				      *quadpack-root*)
