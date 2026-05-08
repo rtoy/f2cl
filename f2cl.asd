@@ -1,6 +1,27 @@
 ;;; -*- Mode: lisp -*-
 ;; f2cl asd file
 
+;; Make packages/quadpack.asd findable so the f2cl/tests dependency
+;; on "quadpack/tests" resolves.
+(eval-when (:load-toplevel :execute)
+  (let ((pkgs (make-pathname
+               :directory (append (pathname-directory *load-pathname*)
+                                  '("packages"))
+               :name nil :type nil :version nil
+               :defaults *load-pathname*)))
+    (pushnew pkgs asdf:*central-registry* :test #'equal)))
+
+;;; Force our copy of RT to win over any other "rt" ASDF system
+;;; (notably the older one shipped with Quicklisp's ansi-test, which
+;;; lacks *expected-failures* and would silently mishandle our test
+;;; suite).
+(eval-when (:load-toplevel :execute)
+  (asdf:load-asd
+   (make-pathname :directory (append (pathname-directory *load-pathname*)
+                                     '("regression"))
+                  :name "rt" :type "asd"
+                  :defaults *load-pathname*)))
+
 (defsystem "f2cl"
   :description "F2CL:  Fortran to Lisp converter"
   :defsystem-depends-on ("f2cl-asdf")
