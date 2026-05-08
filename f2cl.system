@@ -33,35 +33,90 @@
 
 ;; Regression-test system.
 ;;
-;; Loading this only registers the test cases with RT; running them
-;; is left to the user.  Typical session:
+;; The user-visible flow:
 ;;
-;;   (load "f2cl.system")
-;;   (mk:oos :f2cl-tests :load)     ; compile + load
-;;   (rt:do-tests)                   ; run the tests
+;;   (load "/path/to/mk-defsystem/defsystem.lisp")
+;;   (setf mk::*bother-user-if-no-binary* nil
+;;         mk::*compile-during-load*      t)
+;;   (load "/path/to/f2cl/f2cl.system")
+;;   (mk:oos :f2cl-tests :load)
 ;;
-;; After do-tests, RT's pending-tests, *expected-failures*, etc. are
-;; available at the REPL for poking around.
-;;
-;; If you don't want mk-defsystem prompting whether to recompile when
-;; an old fasl is found in the source tree, bind these before
-;; invoking mk:oos:
-;;
-;;   (setf mk::*bother-user-if-no-binary* nil)
-;;   (setf mk::*compile-during-load* t)
+;; That single :load operation compiles f2cl, compiles RT, compiles
+;; the regression helpers and tests, loads it all, and -- via the
+;; :finally-do hook below -- runs (rt:do-tests), then signals if
+;; anything failed unexpectedly.  The shape mirrors the :perform
+;; method of f2cl/tests in f2cl.asd.
 ;;
 ;; Note: only covers the regression suite for now; the
 ;; quadpack-tests integration that exists on the ASDF side
 ;; (f2cl.asd) hasn't been ported here yet.
 
-(mk:defsystem f2cl-tests
-  :source-pathname
-  (merge-pathnames (make-pathname :directory '(#-gcl :relative "regression"))
-		   (make-pathname :directory (pathname-directory #-gcl *load-pathname*
-								 #+gcl sys:*load-pathname*)))
-  :depends-on (f2cl)
+;; Compute the regression directory once for both rt and f2cl-tests
+;; below.  Same pattern as packages/quadpack.system: an explicit
+;; (make-pathname :host ... :directory ...) so all pathname slots
+;; that aren't directory ones come out NIL rather than inheriting
+;; from *default-pathname-defaults* (which on some lisps causes mk's
+;; binary-path computation to double up the directory).
+(defparameter *f2cl-regression-root*
+  (let ((load-path #-gcl *load-truename*
+		   #+gcl sys:*load-truename*))
+    (make-pathname :host (pathname-host load-path)
+		   :device (pathname-device load-path)
+		   :directory (append (pathname-directory load-path)
+				      '("regression")))))
+
+;; Vendored ansi-test RT, broken out so f2cl-tests can :depends-on
+;; it the same way the ASDF f2cl/tests does.  Source files live in
+;; regression/ alongside helpers.lisp and tests.lisp.
+(mk:defsystem rt
+  :source-pathname *f2cl-regression-root*
+  :depends-on nil
   :components
   ((:file "rt-package" :source-extension "lsp")
-   (:file "rt"         :source-extension "lsp")
-   (:file "helpers")
+   (:file "rt"         :source-extension "lsp")))
+
+(mk:defsystem f2cl-tests
+  :source-pathname *f2cl-regression-root*
+  :depends-on (f2cl rt)
+  :components
+  ((:file "helpers")
    (:file "tests")))
+
+;; Wire up an after-load hook that runs (rt:do-tests) and signals if
+;; anything failed unexpectedly.  Mirrors the :perform method on
+;; f2cl/tests in f2cl.asd.
+;;
+;; Why we don't pass :finally-do to defsystem above: mk-defsystem's
+;; preprocess-component-definition wraps every form-slot value in a
+;; (lambda () ...) but does the slot-removal *before* re-reading the
+;; value, so the form is silently dropped and the slot ends up as
+;; (lambda () nil).  Setting the slot directly here sidesteps that.
+;;
+;; The hook fires after every mk:oos invocation (compile or load).
+;; We only want it to do work when the regression-test files have
+;; actually been loaded into the image -- if entries-table is empty,
+;; either RT didn't load yet (compile pass under some configurations)
+;; or tests.lisp wasn't loaded, and "0 out of 0" isn't useful.
+(setf (mk::component-finally-do (mk:find-system :f2cl-tests))
+      (lambda ()
+        (let ((rt (find-package :regression-test)))
+          (when rt
+            (let ((pending-fn    (find-symbol "PENDING-TESTS"     rt))
+                  (do-tests-fn   (find-symbol "DO-TESTS"          rt))
+                  (expected-var  (find-symbol "*EXPECTED-FAILURES*" rt))
+                  (entries-table (find-symbol "*ENTRIES-TABLE*"   rt)))
+              (when (and entries-table
+                         (boundp entries-table)
+                         (plusp (hash-table-count
+                                 (symbol-value entries-table))))
+                (funcall do-tests-fn)
+                (let ((pending  (funcall pending-fn))
+                      (expected (and (boundp expected-var)
+                                     (symbol-value expected-var))))
+                  (let ((unexpected (set-difference pending expected))
+                        (surprises  (set-difference expected pending)))
+                    (when (or unexpected surprises)
+                      (error "f2cl-tests: ~@[~D unexpected failures: ~S~]~
+                                          ~@[~D unexpected successes: ~S~]"
+                             (and unexpected (length unexpected)) unexpected
+                             (and surprises  (length surprises))  surprises))))))))))
