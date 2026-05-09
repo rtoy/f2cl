@@ -21,7 +21,7 @@
 
 ;; Forward declarations.
 (defvar *f2cl2-version*)
-(defvar *f2cl3-version*)
+;; f2cl3.lisp is no longer compiled; no code in f2cl3.lisp is called
 (defvar *f2cl4-version*)
 (defvar *f2cl5-version*)
 (defvar *f2cl6-version*)
@@ -35,7 +35,6 @@
                                  (string-left-trim "$Id: " s)))
           (list *f2cl1-version*
                 *f2cl2-version*
-                *f2cl3-version*
                 *f2cl4-version*
                 *f2cl5-version*
                 *f2cl6-version*
@@ -3077,6 +3076,24 @@ correctly"
          (concatenate 'string (symbol-name (first syms))
                       (apply #'concat (rest syms))))))
 
+;; MATCH-SEPARATED - matches (a1 s1 a2 s2 ...... an)
+;;
+;; where the si are separators , it delivers a list of two lists, the
+;; first being a list of lists of the ai and the second a list of the
+;; separators or returns nil if an ai is missing - this could be used
+;; to produce a syntax error.
+(defun match-separated (separators lis)
+  "Split LIS at any element that is EQ to a member of
+  SEPARATORS (compared one level deep, not into sublists). Returns the
+  list (SEGMENTS OPS-FOUND) where SEGMENTS is a list of the
+  inter-separator subsequences and OPS-FOUND is the list of separator
+  elements actually encountered, in order. Returns NIL if any segment
+  would be empty (i.e., the input has a leading separator, a trailing
+  separator, or two consecutive separators)."
+  (prog (ret)
+     (setq ret (gen-list-split separators lis))
+     (cond ((member nil (car ret)) (return nil))
+           (t (return ret)))))
 
 (defun list-split-multi (op lis)
   (prog (ret)
