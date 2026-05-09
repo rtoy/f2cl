@@ -6,9 +6,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;check
 ;functions:
-;	f2cl
-;	concaten
-;	f-to-l
+;       f2cl
+;       concaten
+;       f-to-l
 ;---------------------------------------------------------------------------
 (in-package :f2cl)
 (defvar *verbose* nil)
@@ -29,17 +29,17 @@
 
 (defun f2cl-version ()
   (mapcar #'(lambda (s)
-	      ;; Need to strip off the leading "$Id:" so CVS/RCS won't
-	      ;; create a new Id.  Strip off the trailing "$" too.
-	      (string-right-trim "$"
+              ;; Need to strip off the leading "$Id:" so CVS/RCS won't
+              ;; create a new Id.  Strip off the trailing "$" too.
+              (string-right-trim "$"
                                  (string-left-trim "$Id: " s)))
-	  (list *f2cl1-version*
-		*f2cl2-version*
-		*f2cl3-version*
-		*f2cl4-version*
-		*f2cl5-version*
-		*f2cl6-version*
-		f2cl-lib::*f2cl-macros-version*)))
+          (list *f2cl1-version*
+                *f2cl2-version*
+                *f2cl3-version*
+                *f2cl4-version*
+                *f2cl5-version*
+                *f2cl6-version*
+                f2cl-lib::*f2cl-macros-version*)))
 
  
 (defparameter *intrinsic-function-names*
@@ -112,34 +112,34 @@
 (eval-when (compile load eval)
   (proclaim '(special *sentable*))
   (proclaim '(special
-	      *external-function-names*
-	      *undeclared_vbles* *declared_vbles* *implicit_vble_decls*
-	      *subprog-arglist* *data-init*
-	      *explicit_vble_decls* *function-flag* *key_params*
-	      *save_vbles* *program-flag* *subprog_name*
-	      *subprog_common_vars*  *common_array_dims*
-	      *format_stmts* *current_label*
-	      *subprog-stmt-fns* *subprog_stmt_fns_bodies* *prune_labels*
+              *external-function-names*
+              *undeclared_vbles* *declared_vbles* *implicit_vble_decls*
+              *subprog-arglist* *data-init*
+              *explicit_vble_decls* *function-flag* *key_params*
+              *save_vbles* *program-flag* *subprog_name*
+              *subprog_common_vars*  *common_array_dims*
+              *format_stmts* *current_label*
+              *subprog-stmt-fns* *subprog_stmt_fns_bodies* *prune_labels*
               *prune-unused-vars*
-	      *auto-save-data*
-	      *functions-used*
-	      *vble-declaration-done*
-	      ;; Specifies how Fortran arrays should be declared (array or simple-array)
-	      *array-type*
-	      ;; If non-NIL, treat all array references in calls to
-	      ;; routines as a slice of the array.  Thus, we create a
-	      ;; displaced array.  (Implies *array-type* is array.)
-	      *array-slicing*
-	      ;; If non-NIL, apply array slicing (in ID-FACTOR)
-	      *apply-array-slice*
-	      ;; If non-NIL, we are parsing the LHS of an assignment.
-	      ;; (Used mostly so we don't incorrectly convert the
-	      ;; definition of a statement function into a call of the
-	      ;; function with mutliple-value-bind.)
-	      *parsing-lhs*
-	      ;; List of statement labels in a subprogram
-	      *statement-labels*
-	      )))
+              *auto-save-data*
+              *functions-used*
+              *vble-declaration-done*
+              ;; Specifies how Fortran arrays should be declared (array or simple-array)
+              *array-type*
+              ;; If non-NIL, treat all array references in calls to
+              ;; routines as a slice of the array.  Thus, we create a
+              ;; displaced array.  (Implies *array-type* is array.)
+              *array-slicing*
+              ;; If non-NIL, apply array slicing (in ID-FACTOR)
+              *apply-array-slice*
+              ;; If non-NIL, we are parsing the LHS of an assignment.
+              ;; (Used mostly so we don't incorrectly convert the
+              ;; definition of a statement function into a call of the
+              ;; function with mutliple-value-bind.)
+              *parsing-lhs*
+              ;; List of statement labels in a subprogram
+              *statement-labels*
+              )))
 
 (defvar *common-blocks* (make-hash-table)
   "Hash table of all common blocks.  The key is the name of the common
@@ -226,29 +226,29 @@ incorrect, so use caution.")
 
 (defun relax-array-decl (decls)
   (flet ((relax-1 (decl)
-	   (cond ((and *relaxed-array-decls* (subtypep decl 'array))
-		  (destructuring-bind (a &optional n l)
-		      decl
-		    (if (subtypep a 'string)
-			`(,a ,@(mapcar (constantly '*) l))
-			`(,a ,n ,(mapcar (constantly '*) l)))))
-		 (t
-		  decl))))
+           (cond ((and *relaxed-array-decls* (subtypep decl 'array))
+                  (destructuring-bind (a &optional n l)
+                      decl
+                    (if (subtypep a 'string)
+                        `(,a ,@(mapcar (constantly '*) l))
+                        `(,a ,n ,(mapcar (constantly '*) l)))))
+                 (t
+                  decl))))
     (mapcar #'relax-1 decls)))
 
 (defun make-f2cl-finfo (&key arg-types return-values calls)
   (%make-f2cl-finfo :arg-types (relax-array-decl arg-types)
-		    :return-values return-values
-		    :calls calls))
+                    :return-values return-values
+                    :calls calls))
 
 ;; Hash table of all known converted functions.  
 (defvar *f2cl-function-info*
   (let ((table (make-hash-table)))
     ;; Insert d1mach and i1mach into the table
     (setf (gethash 'd1mach table)
-	  (make-f2cl-finfo :arg-types '(integer4) :return-values '(nil)))
+          (make-f2cl-finfo :arg-types '(integer4) :return-values '(nil)))
     (setf (gethash 'i1mach table)
-	  (make-f2cl-finfo :arg-types '(integer4) :return-values '(nil)))
+          (make-f2cl-finfo :arg-types '(integer4) :return-values '(nil)))
     table))
 
 ;; Hash table of all statement functions
@@ -257,9 +257,9 @@ incorrect, so use caution.")
 (defun clear-f2cl-finfo ()
   (clrhash *f2cl-function-info*)
   (setf (gethash 'd1mach *f2cl-function-info*)
-	(make-f2cl-finfo :arg-types '(integer4) :return-values '(nil)))
+        (make-f2cl-finfo :arg-types '(integer4) :return-values '(nil)))
   (setf (gethash 'i1mach *f2cl-function-info*)
-	(make-f2cl-finfo :arg-types '(integer4) :return-values '(nil)))
+        (make-f2cl-finfo :arg-types '(integer4) :return-values '(nil)))
   *f2cl-function-info*)
 
 (defun save-f2cl-finfo (path)
@@ -268,38 +268,38 @@ later to provide the function information for f2cl to compile functions
 correctly"
   (with-open-file (s path :direction :output :if-exists :supersede)
     (maphash #'(lambda (key val)
-		 (write `(setf (gethash ',key f2cl::*f2cl-function-info*)
-			  ,val)
-			:stream s
-			:pretty t)
-		 (terpri s))
-	     *f2cl-function-info*)))
+                 (write `(setf (gethash ',key f2cl::*f2cl-function-info*)
+                          ,val)
+                        :stream s
+                        :pretty t)
+                 (terpri s))
+             *f2cl-function-info*)))
 ;----------------------------------------------------------------------------
 
 (defun f2cl (input-file
-	     &key
-	     verbose
-	     keep-temp-file
-	     (extension (or *default-lisp-extension* "lisp"))
+             &key
+             verbose
+             keep-temp-file
+             (extension (or *default-lisp-extension* "lisp"))
 
-	     output-file
-	     prune-labels
+             output-file
+             prune-labels
              prune-unused-vars
-	     include-comments
-	     (auto-save t)
-	     (relaxed-array-decls t)
-	     (coerce-assigns :as-needed)
-	     (array-type :array array-type-p)
-	     (array-slicing t)
-	     (package :common-lisp-user)
-	     declaim
-	     declare-common
-	     (float-format *read-default-float-format*)
-	     common-as-array
-	     common-block-file
-	     copy-array-parameter
-	     promote-to-double
-	     &allow-other-keys)
+             include-comments
+             (auto-save t)
+             (relaxed-array-decls t)
+             (coerce-assigns :as-needed)
+             (array-type :array array-type-p)
+             (array-slicing t)
+             (package :common-lisp-user)
+             declaim
+             declare-common
+             (float-format *read-default-float-format*)
+             common-as-array
+             common-block-file
+             copy-array-parameter
+             promote-to-double
+             &allow-other-keys)
   "Fortran to Common Lisp converter
 
   INPUT-FILE               File containing Fortran code
@@ -309,54 +309,54 @@ correctly"
   :VERBOSE                 verbose output. Default = NIL.
   :PRUNE-LABELS            Prune unused labels. Default = NIL.
   :INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be
-			    buggy.) Default = NIL
+                            buggy.) Default = NIL
   :AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
-			   Default = T.
+                           Default = T.
   :RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal
-			   parameters to functions. That is, any array
-			   length declarations are ignored if possible,
-			   like old Fortran used to. Default = T.
+                           parameters to functions. That is, any array
+                           length declarations are ignored if possible,
+                           like old Fortran used to. Default = T.
   :COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements
-			    automatically coerce the RHS to the
-			    appropriate type for the assignment.  If NIL
-			    or :NEVER, coercion never happens.
-			    Otherwise, coercion happens as needed.  The
-			    Default = :AS-NEEDED
+                            automatically coerce the RHS to the
+                            appropriate type for the assignment.  If NIL
+                            or :NEVER, coercion never happens.
+                            Otherwise, coercion happens as needed.  The
+                            Default = :AS-NEEDED
   :EXTENSION               The extension to use for the output file, if needed.
-			    Defaults to *DEFAULT-LISP-EXTENSION* or \"lisp\"
+                            Defaults to *DEFAULT-LISP-EXTENSION* or \"lisp\"
   :KEEP-TEMP-FILE          If T, the temporary file is not deleted.
-			    Default = NIL.
+                            Default = NIL.
   :ARRAY-TYPE              The type of array f2cl should use.  Should be
-			    :simple-array or :array.
+                            :simple-array or :array.
   :ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an
-			    array reference in a call to a subroutine or
-			    function, we are really passing a subarray
-			    to the routine instead of just the single
-			    value, unless f2cl knows the function takes
-			    a scalar arg that is not modified.
+                            array reference in a call to a subroutine or
+                            function, we are really passing a subarray
+                            to the routine instead of just the single
+                            value, unless f2cl knows the function takes
+                            a scalar arg that is not modified.
   :PACKAGE                 A string or symbol specifying what package the
-			    resulting code should be in. (Basically puts a
-			    (in-package <p>) at the top.)
+                            resulting code should be in. (Basically puts a
+                            (in-package <p>) at the top.)
   :DECLAIM                 Declaim compilation options  (Basically puts a
-			    (declaim <declaim>) at the top.)
+                            (declaim <declaim>) at the top.)
   :DECLARE-COMMON          When non-NIL, any structures defintions for common
-			    blocks are defined here. Otherwise, the structures
-			    for the common blocks are expected to be defined
-			    elsewhere.
+                            blocks are defined here. Otherwise, the structures
+                            for the common blocks are expected to be defined
+                            elsewhere.
   :FLOAT-FORMAT            Float format to use when printing the result.
-			    Default is *READ-DEFAULT-FLOAT-FORMAT*
+                            Default is *READ-DEFAULT-FLOAT-FORMAT*
   :COMMON-AS-ARRAY         Common blocks are created as a set of arrays, and the
-			    common block variables are offsets into the arrays.
-			    This mimics Fortran common block layouts.
-			    Default = NIL.
+                            common block variables are offsets into the arrays.
+                            This mimics Fortran common block layouts.
+                            Default = NIL.
   :COMMON-BLOCK-FILE       If common blocks are to be declared, then
-			    each common block is written to a file whose name
-			    is the name of the common block, with the extension
-			    \"cmn\"
+                            each common block is written to a file whose name
+                            is the name of the common block, with the extension
+                            \"cmn\"
   :COPY-ARRAY-PARAMETER    In some Fortran code an array of one type is passed to
-			    a routine expecting a different type.  F2CL implements
-			    this by creating an array and copying the data.  The
-			    default is not to copy since it is relatively slow.
+                            a routine expecting a different type.  F2CL implements
+                            this by creating an array and copying the data.  The
+                            default is not to copy since it is relatively slow.
   :PROMOTE-TO-DOUBLE       Promote REAL and COMPLEX constants, variables, and
                             arrays to REAL*8 and COMPLEX*16 types. 
 "
@@ -367,69 +367,69 @@ correctly"
 
   ;; Check (some) parameters for validity
   (assert (or (null coerce-assigns)
-	      (member coerce-assigns '(:always :never :as-needed t))))
+              (member coerce-assigns '(:always :never :as-needed t))))
   (assert (member array-type '(:simple-array :array)))
   #+nil
   (when (and array-slicing array-type-p
-	     (eq array-type :simple-array))
+             (eq array-type :simple-array))
     (warn ":array-slicing is T, so specified :array-type of :simple-array is overridden"))
   (let ((*verbose* verbose)
-	(*prune_labels* prune-labels)
+        (*prune_labels* prune-labels)
         (*prune-unused-vars* prune-unused-vars)
-	(*comments* include-comments)
-	(*auto-save-data* auto-save)
-	(*common-block-initialized* nil)
-	(*relaxed-array-decls* relaxed-array-decls)
-	(*coerce-assignments* coerce-assigns)
-	(*array-type* (cdr (assoc array-type '((:simple-array . common-lisp:simple-array)
-					       (:array . common-lisp:array)))))
-	(*array-slicing* array-slicing)
-	(*apply-array-slice* nil)
-	(*declare-common-blocks* declare-common)
-	(*assigned-variables* nil)
-	(*entry-points* nil)
-	(*equivalenced-vars* nil)
+        (*comments* include-comments)
+        (*auto-save-data* auto-save)
+        (*common-block-initialized* nil)
+        (*relaxed-array-decls* relaxed-array-decls)
+        (*coerce-assignments* coerce-assigns)
+        (*array-type* (cdr (assoc array-type '((:simple-array . common-lisp:simple-array)
+                                               (:array . common-lisp:array)))))
+        (*array-slicing* array-slicing)
+        (*apply-array-slice* nil)
+        (*declare-common-blocks* declare-common)
+        (*assigned-variables* nil)
+        (*entry-points* nil)
+        (*equivalenced-vars* nil)
         (*equivalence-aliases* nil)
-	(*float-format* float-format)
-	(*common-blocks-as-arrays* common-as-array)
-	(*common-block-file* common-block-file)
-	(*copy-array-parameter* copy-array-parameter)
-	(*promote-to-double* promote-to-double))
+        (*float-format* float-format)
+        (*common-blocks-as-arrays* common-as-array)
+        (*common-block-file* common-block-file)
+        (*copy-array-parameter* copy-array-parameter)
+        (*promote-to-double* promote-to-double))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
       (do* ((ext *fortran-extensions* (rest ext))
-	    (path (merge-pathnames input-file (make-pathname :type (first ext)))
-		  (merge-pathnames input-file (make-pathname :type (first ext)))))
-	  ((or (null ext)
-	       (probe-file path))
-	   (setf input-file path))))
+            (path (merge-pathnames input-file (make-pathname :type (first ext)))
+                  (merge-pathnames input-file (make-pathname :type (first ext)))))
+          ((or (null ext)
+               (probe-file path))
+           (setf input-file path))))
       
     (unless output-file
       (let ((input-path (pathname input-file)))
-	(setf output-file (merge-pathnames
-			   (make-pathname :host (pathname-host input-path)
-					  :device (pathname-device input-path)
-					  :directory (pathname-directory input-path)
-					  :name (pathname-name input-path)
-					  )
-			   (make-pathname :type extension)))))
+        (setf output-file (merge-pathnames
+                           (make-pathname :host (pathname-host input-path)
+                                          :device (pathname-device input-path)
+                                          :directory (pathname-directory input-path)
+                                          :name (pathname-name input-path)
+                                          )
+                           (make-pathname :type extension)))))
     (format t "~&;; ~S -> ~S~%" input-file output-file)
     (let ((processed-file (preprocess input-file)))
       (fortran-to-lisp processed-file output-file
-		       :declaim declaim
-		       :package package
-		       :options `((:prune-labels ,prune-labels)
-				  (:auto-save ,auto-save)
-				  (:relaxed-array-decls ,relaxed-array-decls)
-				  (:coerce-assigns ,coerce-assigns)
-				  (:array-type ',array-type)
-				  (:array-slicing ,array-slicing)
-				  (:declare-common ,declare-common)
-				  (:float-format ,float-format)
+                       :declaim declaim
+                       :package package
+                       :options `((:prune-labels ,prune-labels)
+                                  (:auto-save ,auto-save)
+                                  (:relaxed-array-decls ,relaxed-array-decls)
+                                  (:coerce-assigns ,coerce-assigns)
+                                  (:array-type ',array-type)
+                                  (:array-slicing ,array-slicing)
+                                  (:declare-common ,declare-common)
+                                  (:float-format ,float-format)
                                   (:prune-unused-vars ,prune-unused-vars)))
       (unless keep-temp-file
-	(delete-file processed-file))
+        (delete-file processed-file))
       (values output-file))))
 
 (defun remove-f2cl-keys (keys)
@@ -438,35 +438,35 @@ correctly"
       ((null key)
        (nreverse result))
     (unless (member (car key)
-		    '(:output-file :error-file :prune-labels :include-comments
-		      :auto-save :relaxed-array-decls :coerce-assigns
-		      :keep-lisp-file :array-type :array-slicing :package
-		      :declaim :declare-common :float-format :common-as-array
-		      :common-block-file :copy-array-parameter :promote-to-double))
+                    '(:output-file :error-file :prune-labels :include-comments
+                      :auto-save :relaxed-array-decls :coerce-assigns
+                      :keep-lisp-file :array-type :array-slicing :package
+                      :declaim :declare-common :float-format :common-as-array
+                      :common-block-file :copy-array-parameter :promote-to-double))
       (push (car key) result)
       (push (second key) result))))
 
 (defun f2cl-compile (filename &rest all-keys
-		     &key
-		     error-file
-		     (keep-lisp-file t)
+                     &key
+                     error-file
+                     (keep-lisp-file t)
 
-		     (output-file (compile-file-pathname filename))
-		     prune-labels
-		     include-comments
-		     (auto-save t)
-		     (relaxed-array-decls t)
-		     (coerce-assigns :as-needed)
-		     (array-type :array)
-		     (array-slicing t)
-		     (package :common-lisp-user)
-		     declaim
-		     declare-common
-		     (float-format *read-default-float-format*)
-		     common-as-array
-		     copy-array-parameter
-		     promote-to-double
-		     &allow-other-keys)
+                     (output-file (compile-file-pathname filename))
+                     prune-labels
+                     include-comments
+                     (auto-save t)
+                     (relaxed-array-decls t)
+                     (coerce-assigns :as-needed)
+                     (array-type :array)
+                     (array-slicing t)
+                     (package :common-lisp-user)
+                     declaim
+                     declare-common
+                     (float-format *read-default-float-format*)
+                     common-as-array
+                     copy-array-parameter
+                     promote-to-double
+                     &allow-other-keys)
   "Convert the Fortran to Common Lisp and compile the resulting Lisp file
 
   FILENAME                 File containing Fortran code
@@ -476,76 +476,76 @@ correctly"
   :VERBOSE                 verbose output. Default = NIL.
   :PRUNE-LABELS            Prune unused labels. Default = NIL.
   :INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be
-			    buggy.) Default = NIL
+                            buggy.) Default = NIL
   :AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
-			    Default = T.
+                            Default = T.
   :RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal
-			   parameters to functions.  Default = T.
+                           parameters to functions.  Default = T.
   :COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements
-			    automatically coerce the RHS to the
-			    appropriate type for the assignment.  If NIL
-			    or :NEVER, coercion never happens.
-			    Otherwise, coercion happens as needed.  The
-			    Default = :AS-NEEDED
+                            automatically coerce the RHS to the
+                            appropriate type for the assignment.  If NIL
+                            or :NEVER, coercion never happens.
+                            Otherwise, coercion happens as needed.  The
+                            Default = :AS-NEEDED
 
   :KEEP-LISP-FILE          If T, the converted Lisp file is not deleted.
-			    Default = NIL.
+                            Default = NIL.
   :ARRAY-TYPE              The type of array f2cl should use.  Should be
-			    'simple-array or 'array.
+                            'simple-array or 'array.
   :ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an
-			    array reference in a call to a subroutine or
-			    function, we are really passing a subarray
-			    to the routine instead of just the single
-			    value.
+                            array reference in a call to a subroutine or
+                            function, we are really passing a subarray
+                            to the routine instead of just the single
+                            value.
   :PACKAGE                 A string or symbol specifying what package the
-			    result code should be in. (Basically puts a
-			    (in-package <p>) at the top.)  Default:
-			    :common-lisp-user.
+                            result code should be in. (Basically puts a
+                            (in-package <p>) at the top.)  Default:
+                            :common-lisp-user.
   :DECLAIM                 Declaim compilation options  (Basically puts a
-			    (declaim <declaim>) at the top.)
+                            (declaim <declaim>) at the top.)
   :DECLARE-COMMON          When non-NIL, any structures for common blocks
-			    are declared here.  Otherwise, the
-			    structures for the common blocks are not
-			    declared.
+                            are declared here.  Otherwise, the
+                            structures for the common blocks are not
+                            declared.
   :FLOAT-FORMAT            Float format to use when printing the result.
-			    Default is *READ-DEFAULT-FLOAT-FORMAT*
+                            Default is *READ-DEFAULT-FLOAT-FORMAT*
   :COMMON-AS-ARRAY         Common blocks are created as a set of arrays, and the
-			    common block variables are offsets into the
-			    arrays.  This mimics Fortran common block
-			    layouts.  Default = NIL.
+                            common block variables are offsets into the
+                            arrays.  This mimics Fortran common block
+                            layouts.  Default = NIL.
   :COMMON-BLOCK-FILE       If common blocks are to be declared, then
-			    each common block is written to a file whose name
-			    is the name of the common block, with the extension
-			    \"cmn\"
+                            each common block is written to a file whose name
+                            is the name of the common block, with the extension
+                            \"cmn\"
   :COPY-ARRAY-PARAMETER    In some Fortran code an array of one type is passed to
-			    a routine expecting a different type.  F2CL implements
-			    this by creating an array and copying the data.  The
-			    default is not to copy since it is relatively slow.
+                            a routine expecting a different type.  F2CL implements
+                            this by creating an array and copying the data.  The
+                            default is not to copy since it is relatively slow.
   :PROMOTE-TO-DOUBLE       Promote REAL and COMPLEX constants, variables, and
                             arrays to REAL*8 and COMPLEX*16 types. 
 "
   (let ((lisp-file
-	 (f2cl filename :prune-labels prune-labels :include-comments include-comments
-	       :auto-save auto-save :relaxed-array-decls relaxed-array-decls
-	       :coerce-assigns coerce-assigns
-	       :array-type array-type
-	       :array-slicing array-slicing
-	       :package package :declaim declaim
-	       :declare-common declare-common
-	       :float-format float-format
-	       :common-as-array common-as-array
-	       :copy-array-parameter copy-array-parameter
-	       :promote-to-double promote-to-double))
-	(*read-default-float-format* float-format))
+         (f2cl filename :prune-labels prune-labels :include-comments include-comments
+               :auto-save auto-save :relaxed-array-decls relaxed-array-decls
+               :coerce-assigns coerce-assigns
+               :array-type array-type
+               :array-slicing array-slicing
+               :package package :declaim declaim
+               :declare-common declare-common
+               :float-format float-format
+               :common-as-array common-as-array
+               :copy-array-parameter copy-array-parameter
+               :promote-to-double promote-to-double))
+        (*read-default-float-format* float-format))
     (let ((compiler-keys (remove-f2cl-keys all-keys)))
       (multiple-value-prog1
-	  #+(or cmu scl)
-	  (apply #'compile-file lisp-file :output-file output-file
-		 :error-file error-file compiler-keys)
-	  #-(or cmu scl)
-	  (apply #'compile-file lisp-file :output-file output-file compiler-keys)
-	  (unless keep-lisp-file
-	    (delete-file lisp-file))))))
+          #+(or cmu scl)
+          (apply #'compile-file lisp-file :output-file output-file
+                 :error-file error-file compiler-keys)
+          #-(or cmu scl)
+          (apply #'compile-file lisp-file :output-file output-file compiler-keys)
+          (unless keep-lisp-file
+            (delete-file lisp-file))))))
 ;---------------------------------------------------------------------------
 (defun process-data (x) 
    (print x)
@@ -564,64 +564,64 @@ correctly"
 ;----------------------------------------------------------------------------
   
 ; utilities
-;	fortran-to-lisp
+;       fortran-to-lisp
 ;       readsubprog-extract-format-stmts
 ;       translate-and-write-subprog
-;	translate-line
-;	setsyntax
-;	single-macro-character
-;	set-fortran-read
-;	setlispread
-;	lineread
-;	read-six-chars
-;	introduce-continue
-;	find-do
+;       translate-line
+;       setsyntax
+;       single-macro-character
+;       set-fortran-read
+;       setlispread
+;       lineread
+;       read-six-chars
+;       introduce-continue
+;       find-do
 ;----------------------------------
 ; identifiers
 ;       id-definition-prog
-;	id-definition-sub
-;	id-definition-fun-typed
-;	id-definition-fun
-;	id-declaration
-;	id-parameter
+;       id-definition-sub
+;       id-definition-fun-typed
+;       id-definition-fun
+;       id-declaration
+;       id-parameter
 ;       id-implicit-decl
-;	id-assignment
-;	id-subroutine-call
-;	id-do-loop
+;       id-assignment
+;       id-subroutine-call
+;       id-do-loop
 ;       id-pause
 ;       id-return
 ;       id-predicate
-;	id-if
-;	id-endif
+;       id-if
+;       id-endif
 ;       id-if-goto
-;	id-if-then
-;	id-goto
+;       id-if-then
+;       id-goto
 ;       id-continue
 ;-----------------------------------
 ; parsers
 ;       parse-prog-definition
-;	parse-subr-definition
+;       parse-subr-definition
 ;       parse-typed-fun-definition
 ;       parse-fun-definition
 ;       parse-declaration
 ;       parse-implicit-decl
-;	parse-parameter
-;	parse-assignment
-;	parse-expression
+;       parse-parameter
+;       parse-assignment
+;       parse-expression
 ;       parse-pause
-;	parse-subroutine-call
-;	parse-do-loop
-;	parse-if
+;       parse-subroutine-call
+;       parse-do-loop
+;       parse-if
 ;       parse-if-goto
-;	parse-if-then
-;	parse-return
-;	parse-goto
+;       parse-if-then
+;       parse-return
+;       parse-goto
 ;       parse-save
 ;       parse-common
 ;       parse-char-decl
 ;       parse-data
 ;       parse-data1
-;	princ-reset
+;       princ-reset
 ;-------------------------------------
 ; parsing utilities
 ;       extract-atoms
@@ -633,15 +633,15 @@ correctly"
 ;       list-split-bin
 ;       concat-operators
 ;       brackets-check
-;	subsequence
+;       subsequence
 ;-------------------------------------
 ; matching
-;	binding-value
-;	variablep
-;	variable-value
-;	unify - returns fail or a bindings list/nil
-;	match - returns multiple values or nil
-;	maybe-extend-bindings
+;       binding-value
+;       variablep
+;       variable-value
+;       unify - returns fail or a bindings list/nil
+;       match - returns multiple values or nil
+;       maybe-extend-bindings
 ;------------------------------------------------------------------------------
 
 (defun print-header (outport declaim package options)
@@ -656,23 +656,23 @@ correctly"
       (dolist (v version-info)
         (format outport "  ~S~%" v))
       (format outport "~%Using Lisp ~A ~A~2%"
-	      (lisp-implementation-type) (lisp-implementation-version))
+              (lisp-implementation-type) (lisp-implementation-version))
       (let ((*print-case* :downcase))
         ;; Insert in-package and declaim, if needed
         (when options
-	  (format outport "Options: ")
-	  (write options :stream outport :case :downcase))))
+          (format outport "Options: ")
+          (write options :stream outport :case :downcase))))
     (format outport "~2%"))
   (when package
     (format outport "~&(in-package ~S)~%"
             (cond ((keywordp package)
-		   package)
-		  ((symbolp package)
-		   (string package))
-		  ((packagep package)
-		   (package-name package))
-		  (t
-		   package))))
+                   package)
+                  ((symbolp package)
+                   (string package))
+                  ((packagep package)
+                   (package-name package))
+                  (t
+                   package))))
   (when declaim
     (write (list 'declaim declaim) :stream outport :case :downcase))
   (when (or package declaim)
@@ -682,37 +682,37 @@ correctly"
 
 (defun fortran-to-lisp (file ofile &key declaim package options)
   (let ((*package* (find-package :f2cl))
-	;; We need to read in numbers in single-float format because
-	;; Fortran literals are single precision unless an exponent
-	;; marker is given.  However, when writing, we honor
-	;; *float-format* so that the generated output has the desired
-	;; style for printed numbers.
-	(*read-default-float-format* (maybe-promote-type 'single-float))
-	*common_array_dims* *format_stmts* *statement-labels*)
+        ;; We need to read in numbers in single-float format because
+        ;; Fortran literals are single precision unless an exponent
+        ;; marker is given.  However, when writing, we honor
+        ;; *float-format* so that the generated output has the desired
+        ;; style for printed numbers.
+        (*read-default-float-format* (maybe-promote-type 'single-float))
+        *common_array_dims* *format_stmts* *statement-labels*)
     (when *verbose*
       (format t "beginning the main translation ...~%"))
     (with-open-file (inport file :direction :input)
       (with-open-file (outport ofile :direction :output 
-			       :if-exists :rename-and-delete)
+                               :if-exists :rename-and-delete)
         (setq *common_array_dims* nil)
         (do ((char (peek-char nil inport nil 'eof) 
                    (peek-char nil inport nil 'eof)))
             ((eq char 'eof) )
           (setq *format_stmts* nil)
-	  (setq *statement-labels* nil)
-	  (let ((*print-level* nil)
-		(*print-length* nil))
-	    ;; Print a header to the file indicating when this was
-	    ;; compiled and the version of f2cl used to compile it.
-	    ;; Include the options used to compile the file.
-	    (translate-and-write-subprog 
-	     (introduce-continue
-	      (readsubprog-extract-format-stmts inport))
-	     outport
-	     ofile
-	     declaim
-	     package
-	     options))))))
+          (setq *statement-labels* nil)
+          (let ((*print-level* nil)
+                (*print-length* nil))
+            ;; Print a header to the file indicating when this was
+            ;; compiled and the version of f2cl used to compile it.
+            ;; Include the options used to compile the file.
+            (translate-and-write-subprog 
+             (introduce-continue
+              (readsubprog-extract-format-stmts inport))
+             outport
+             ofile
+             declaim
+             package
+             options))))))
   t)
 
 ;---------------------------------------------------------------------------
@@ -728,7 +728,7 @@ correctly"
       (:upper (setf (readtable-case *readtable*) :upcase))
       (:lower (setf (readtable-case *readtable*) :downcase)))
     (flet ((setsyntax (x)
-	     (set-macro-character x #'single-macro-character)))
+             (set-macro-character x #'single-macro-character)))
       (setsyntax #\,)
       (setsyntax #\:)
       (setsyntax #\*)
@@ -775,30 +775,30 @@ correctly"
       (format t "~&extracting format statements ...~%"))
 
     (loop
-	;; Get the left margin (contains line number)
-	(setq margin (unless (eq (peek-char nil inport nil 'eof) 'eof)
-		       (read-six-chars inport)))
-	;; Set the label (line number), if any
-	(setq *current_label*
-	      (let ((label (read-from-string (coerce margin 'string) nil)))
-		(if (integerp label)
-		    label)))
+        ;; Get the left margin (contains line number)
+        (setq margin (unless (eq (peek-char nil inport nil 'eof) 'eof)
+                       (read-six-chars inport)))
+        ;; Set the label (line number), if any
+        (setq *current_label*
+              (let ((label (read-from-string (coerce margin 'string) nil)))
+                (if (integerp label)
+                    label)))
         ;; Make sure we aren't hosed if we break out of this!
-	(with-fortran-syntax
-	  ;; read body of a line
-	  (setq input-list (lineread inport))
-	  ;; read newline character
-	  (read-char inport nil 'eof t)
-	  ;; (format t "~% input-list: ~S" input-list)
-	  )
+        (with-fortran-syntax
+          ;; read body of a line
+          (setq input-list (lineread inport))
+          ;; read newline character
+          (read-char inport nil 'eof t)
+          ;; (format t "~% input-list: ~S" input-list)
+          )
         ;; extract format-stmts
         ;;(format t "extract format-stmts~%")
-	(if (eq (car input-list) 'format)
-	    (parse-format (brackets-check (concat-operators input-list)))
-	    (push (list *current_label* input-list) output-list))
-	;; Check for end of subprogram
-	(if (and (eq (car input-list) 'end) (null (cdr input-list)))
-	    (return (nreverse output-list))))))
+        (if (eq (car input-list) 'format)
+            (parse-format (brackets-check (concat-operators input-list)))
+            (push (list *current_label* input-list) output-list))
+        ;; Check for end of subprogram
+        (if (and (eq (car input-list) 'end) (null (cdr input-list)))
+            (return (nreverse output-list))))))
 
 ;; An extended DO statement is a DO statement without the following
 ;; line number.
@@ -815,8 +815,8 @@ correctly"
 (defun id-do-while (line)
   (and (eq (first line) 'do)
        (or (eq (second line) 'while)
-	   (and (numberp (second line))
-		(eq (third line) 'while)))))
+           (and (numberp (second line))
+                (eq (third line) 'while)))))
 
 (defun rewrite-extended-do (label line)
   `(,(first line) ,label ,@(rest line)))
@@ -837,7 +837,7 @@ correctly"
 (defun id-end-do (x)
   (or (eq (car x) 'enddo)
       (and (eq (car x) 'end)
-	   (eq (cadr x) 'do))))
+           (eq (cadr x) 'do))))
 
 ;; Find a WRITE statement where the format is not a statement number
 ;; but a string giving the format itself.
@@ -850,134 +850,134 @@ correctly"
     ;; (write |(| unit |,| 'foo' |)| ...
     ;; (write |(| unit |,| fmt = 'foo' |)| ...
     (or (stringp (fifth input-list))
-	(and (eq 'fmt (fifth input-list))
-	     (eq '= (sixth input-list))
-	     (stringp (seventh input-list))))))
+        (and (eq 'fmt (fifth input-list))
+             (eq '= (sixth input-list))
+             (stringp (seventh input-list))))))
 
 (defun readsubprog-extract-format-stmts (inport)
-  (let ((extended-label 100000)		; Must be bigger than any possible valid Fortran label.
-	(extended-do-label-stack '())
-	input-list output-list margin *current_label*)
+  (let ((extended-label 100000)         ; Must be bigger than any possible valid Fortran label.
+        (extended-do-label-stack '())
+        input-list output-list margin *current_label*)
     (when *verbose*
       (format t "~&extracting format statements ...~%"))
     (loop
-	;; Get the left margin (contains line number)
-	(setq margin (unless (eq (peek-char nil inport nil 'eof) 'eof)
-		       (read-six-chars inport)))
-	;; Set the label (line number), if any
-	(setq *current_label*
-	      (let ((label (read-from-string (coerce margin 'string) nil)))
-		(if (integerp label)
-		    label)))
+        ;; Get the left margin (contains line number)
+        (setq margin (unless (eq (peek-char nil inport nil 'eof) 'eof)
+                       (read-six-chars inport)))
+        ;; Set the label (line number), if any
+        (setq *current_label*
+              (let ((label (read-from-string (coerce margin 'string) nil)))
+                (if (integerp label)
+                    label)))
         ;; Add to list
         (when *current_label*
-	  (push *current_label* *statement-labels*))
-	;; Make sure we aren't hosed if we break out of this!
-	(with-fortran-syntax
-	  ;; read body of a line
-	  (setq input-list (lineread inport))
-	  ;; read newline character
-	  (read-char inport nil 'eof t)
-	  ;;(format t "~% input-list: ~S" input-list)
-	  )
+          (push *current_label* *statement-labels*))
+        ;; Make sure we aren't hosed if we break out of this!
+        (with-fortran-syntax
+          ;; read body of a line
+          (setq input-list (lineread inport))
+          ;; read newline character
+          (read-char inport nil 'eof t)
+          ;;(format t "~% input-list: ~S" input-list)
+          )
       ;; extract format-stmts
       ;;(format t "extract format-stmts~%")
-	       
+               
       (cond ((id-extended-do input-list)
-	     ;; Handle extended DO statements.  These are DO
-	     ;; statements that do not have a line number.  The DO
-	     ;; statement is ended with an END-DO statement.
-	     ;;
-	     ;; We handle these by faking it. We create a standard
-	     ;; DO statement with a new label.  The matching ENDDO
-	     ;; statement is converted into a corresponding CONTINUE
-	     ;; statement with the correct label.  The label is just
-	     ;; an integer bigger than any allowable Fortran label
-	     ;; (99999), since Fortran labels are limited to 5
-	     ;; digits.
-	     (push extended-label extended-do-label-stack)
-	     (push `(,*current_label* ,(rewrite-extended-do extended-label input-list))
-		   output-list)
-	     (incf extended-label))
-	    ((id-do-while input-list)
-	     ;; Handle do-while statements.
-	     ;;
-	     ;; We handle this by faking it.
-	     ;;
-	     ;; do while (cond)
-	     ;;   <stuff>
-	     ;; end do
-	     ;;
-	     ;; <label1> if (.not. (cond)) goto <label2>
-	     ;;            <stuff>
-	     ;;          goto <label1>
-	     ;; <label2> continue
-	     ;;
-	     ;; So we need to push label1 and label2 onto our label
-	     ;; stack.  Then rewrite the line with what we want.
-	     (let ((label1 extended-label)
-		   (label2 (if (integerp (second input-list))
-			       (second input-list)
-			       (incf extended-label))))
-	       (incf extended-label)
-	       (push (list label1 label2) extended-do-label-stack)
-	       (push `(,label1 ,(rewrite-do-while label1 label2 input-list))
-		     output-list)))
-	    ((id-end-do input-list)
-	     ;; The end of the extended DO statement.  This can either
-	     ;; be the end of an extended do loop or a do-while loop.
-	     ;; Figure out what do do.  For a do-loopk, 
-	     (let ((label (pop extended-do-label-stack)))
-	       (cond ((numberp label)
-		      ;; We have a do-loop.  Convert to a standard
-		      ;; continue statement with the correct label.
-		      (push `(,label (continue))
-			    output-list))
-		     ((consp label)
-		      ;; We have a do-while loop.  We need to replace
-		      ;; this with "goto <label1>" and "<label2>
-		      ;; continue".
-		      (destructuring-bind (l1 l2)
-			  label
-			(push `(nil (goto ,l1)) output-list)
-			(push `(,l2 (continue)) output-list))))))
-	    #+nil
-	    ((id-write-format input-list)
-	     ;; We have a write statement where the format isn't a
-	     ;; label but a string.  Convert this to a label and add
-	     ;; a format statement.
-	     (let ((new
-		    ;; Rewrite a WRITE statement with FMT as if it
-		    ;; weren't.
-		    (if (eq 'fmt (fifth input-list))
-			`(write |(| ,(third input-list) |,| ,extended-label |)|
-				,@(nthcdr 8 input-list))
-			`(write |(| ,(third input-list) |,| ,extended-label |)|
-				,@(nthcdr 6 input-list)))))
-	       (push `(,*current_label* ,new) output-list))
-	     (setf *current_label* extended-label)
-	     (incf extended-label)
-	     ;; Convert the string format into the appropriate format
-	     (let ((fmt (with-fortran-syntax
-			  ;; read body of a line
-			  (lineread
-			   (make-string-input-stream
-			    (process-format-line
-			     (if (eq 'fmt (fifth input-list))
-				 (seventh input-list)
-				 (fifth input-list))))))))
-	       (setf input-list `(format ,@fmt))
-	       (parse-format (brackets-check (concat-operators input-list)))))
-	    ((eq (car input-list) 'format)
-	     (parse-format (brackets-check (concat-operators input-list))))
-	    (t
-	     (push (list *current_label* input-list) output-list)))
-	
+             ;; Handle extended DO statements.  These are DO
+             ;; statements that do not have a line number.  The DO
+             ;; statement is ended with an END-DO statement.
+             ;;
+             ;; We handle these by faking it. We create a standard
+             ;; DO statement with a new label.  The matching ENDDO
+             ;; statement is converted into a corresponding CONTINUE
+             ;; statement with the correct label.  The label is just
+             ;; an integer bigger than any allowable Fortran label
+             ;; (99999), since Fortran labels are limited to 5
+             ;; digits.
+             (push extended-label extended-do-label-stack)
+             (push `(,*current_label* ,(rewrite-extended-do extended-label input-list))
+                   output-list)
+             (incf extended-label))
+            ((id-do-while input-list)
+             ;; Handle do-while statements.
+             ;;
+             ;; We handle this by faking it.
+             ;;
+             ;; do while (cond)
+             ;;   <stuff>
+             ;; end do
+             ;;
+             ;; <label1> if (.not. (cond)) goto <label2>
+             ;;            <stuff>
+             ;;          goto <label1>
+             ;; <label2> continue
+             ;;
+             ;; So we need to push label1 and label2 onto our label
+             ;; stack.  Then rewrite the line with what we want.
+             (let ((label1 extended-label)
+                   (label2 (if (integerp (second input-list))
+                               (second input-list)
+                               (incf extended-label))))
+               (incf extended-label)
+               (push (list label1 label2) extended-do-label-stack)
+               (push `(,label1 ,(rewrite-do-while label1 label2 input-list))
+                     output-list)))
+            ((id-end-do input-list)
+             ;; The end of the extended DO statement.  This can either
+             ;; be the end of an extended do loop or a do-while loop.
+             ;; Figure out what do do.  For a do-loopk, 
+             (let ((label (pop extended-do-label-stack)))
+               (cond ((numberp label)
+                      ;; We have a do-loop.  Convert to a standard
+                      ;; continue statement with the correct label.
+                      (push `(,label (continue))
+                            output-list))
+                     ((consp label)
+                      ;; We have a do-while loop.  We need to replace
+                      ;; this with "goto <label1>" and "<label2>
+                      ;; continue".
+                      (destructuring-bind (l1 l2)
+                          label
+                        (push `(nil (goto ,l1)) output-list)
+                        (push `(,l2 (continue)) output-list))))))
+            #+nil
+            ((id-write-format input-list)
+             ;; We have a write statement where the format isn't a
+             ;; label but a string.  Convert this to a label and add
+             ;; a format statement.
+             (let ((new
+                    ;; Rewrite a WRITE statement with FMT as if it
+                    ;; weren't.
+                    (if (eq 'fmt (fifth input-list))
+                        `(write |(| ,(third input-list) |,| ,extended-label |)|
+                                ,@(nthcdr 8 input-list))
+                        `(write |(| ,(third input-list) |,| ,extended-label |)|
+                                ,@(nthcdr 6 input-list)))))
+               (push `(,*current_label* ,new) output-list))
+             (setf *current_label* extended-label)
+             (incf extended-label)
+             ;; Convert the string format into the appropriate format
+             (let ((fmt (with-fortran-syntax
+                          ;; read body of a line
+                          (lineread
+                           (make-string-input-stream
+                            (process-format-line
+                             (if (eq 'fmt (fifth input-list))
+                                 (seventh input-list)
+                                 (fifth input-list))))))))
+               (setf input-list `(format ,@fmt))
+               (parse-format (brackets-check (concat-operators input-list)))))
+            ((eq (car input-list) 'format)
+             (parse-format (brackets-check (concat-operators input-list))))
+            (t
+             (push (list *current_label* input-list) output-list)))
+        
       ;; Check for end of subprogram
       (when (and (eq (car input-list) 'end) (null (cdr input-list)))
-	(when extended-do-label-stack
-	  (warn "An extended DO statement is missing its matching ENDDO statement"))
-	(return (nreverse output-list))))))
+        (when extended-do-label-stack
+          (warn "An extended DO statement is missing its matching ENDDO statement"))
+        (return (nreverse output-list))))))
 
 ;------------------------------------------------------------------------------
 (defun introduce-continue (prog-list) ; ((margin line) (margin line) ...)
@@ -1014,18 +1014,18 @@ correctly"
   ;; remove them.  This assumes that d1mach and friends really is the
   ;; standard SLATEC d1mach.
   (let ((external-names (append (remove-if #'(lambda (s)
-					       (member s '(d1mach r1mach i1mach)))
-					   external-names)
-				*non-intrinsic-function-names*)))
+                                               (member s '(d1mach r1mach i1mach)))
+                                           external-names)
+                                *non-intrinsic-function-names*)))
     (do-external-symbols (lib-sym :f2cl-lib)
       (unless (member lib-sym external-names :test #'(lambda (a b)
-						       (string-equal (symbol-name a)
-								     (symbol-name b))))
-	(setf tree (subst lib-sym lib-sym tree
-			  :test #'(lambda (a b)
-				    (and (symbolp a)
-					 (symbolp b)
-					 (string-equal a b)))))))
+                                                       (string-equal (symbol-name a)
+                                                                     (symbol-name b))))
+        (setf tree (subst lib-sym lib-sym tree
+                          :test #'(lambda (a b)
+                                    (and (symbolp a)
+                                         (symbolp b)
+                                         (string-equal a b)))))))
     tree))
 
 ;------------------------------------------------------------------------------
@@ -1037,129 +1037,129 @@ correctly"
   ;; that means the var was never assigned, so we can return NIL
   ;; instead of the variable.
   (mapcar #'(lambda (v)
-	      (if (member v *assigned-variables*)
-		  v
-		  nil))
-	  ret-values))
+              (if (member v *assigned-variables*)
+                  v
+                  nil))
+          ret-values))
 
 (defun maybe-nullify-returns (fcn-name arg-names)
   ;; If the return values are not members of *assigned-variables*,
   ;; that means the var was never assigned, so we can return NIL
   ;; instead of the variable.
   (let ((arg-types nil)
-	(ret-vals nil)
-	(entry (gethash fcn-name *f2cl-function-info*)))
+        (ret-vals nil)
+        (entry (gethash fcn-name *f2cl-function-info*)))
     (dolist (v arg-names)
       (push (if (member v *assigned-variables*)
-		v
-		nil)
-	    ret-vals)
+                v
+                nil)
+            ret-vals)
       )
     (setf ret-vals (nreverse ret-vals))
     (if entry
-	(setf (f2cl-finfo-return-values entry) ret-vals)
-	(setf (gethash fcn-name *f2cl-function-info*)
-	      (make-f2cl-finfo :return-values ret-vals
-			       :arg-types arg-types)))
+        (setf (f2cl-finfo-return-values entry) ret-vals)
+        (setf (gethash fcn-name *f2cl-function-info*)
+              (make-f2cl-finfo :return-values ret-vals
+                               :arg-types arg-types)))
     ret-vals))
 
 
 (defun output-common-block (spec-proc spec-decl outport
-			    output-path declaim package options)
+                            output-path declaim package options)
   (labels
       ((do-core (port s-proc s-decl)
-	 (setf s-proc (fixup-f2cl-lib s-proc *external-function-names*))
-	 (special-print s-proc port)
-	 (terpri port)
-	 (format port "~%~%")
-	 (setf s-decl (fixup-f2cl-lib s-decl *external-function-names*))
-	 (special-print s-decl port)
-	 (terpri port)
-	 (format port "~%~%")
-	 (pushnew (caadr s-proc) *common-block-initialized*))
+         (setf s-proc (fixup-f2cl-lib s-proc *external-function-names*))
+         (special-print s-proc port)
+         (terpri port)
+         (format port "~%~%")
+         (setf s-decl (fixup-f2cl-lib s-decl *external-function-names*))
+         (special-print s-decl port)
+         (terpri port)
+         (format port "~%~%")
+         (pushnew (caadr s-proc) *common-block-initialized*))
        (do-file ()
-	 (let (filenames)
-	   (mapc
-	    #'(lambda (s-proc s-decl)
-		(unless (find (caadr s-proc) *common-block-initialized*)
-		  (let* ((cname (caadr s-proc))
-			 (file (make-pathname
-				:name (string-downcase (string cname))
-				:type "cmn"
-				:defaults output-path)))
-		    (push file filenames)
-		    (with-open-file (port file
-					  :direction :output
-					  :if-exists :supersede)
-				
-		      (format port ";;; -*- Mode: lisp -*-~2%")
-		      (print-header port declaim package options)
-		      (format port "~2%;;; Common block specification~%")
-		      (do-core port s-proc s-decl)))))
-	    spec-proc
-	    spec-decl)
-	 filenames))
+         (let (filenames)
+           (mapc
+            #'(lambda (s-proc s-decl)
+                (unless (find (caadr s-proc) *common-block-initialized*)
+                  (let* ((cname (caadr s-proc))
+                         (file (make-pathname
+                                :name (string-downcase (string cname))
+                                :type "cmn"
+                                :defaults output-path)))
+                    (push file filenames)
+                    (with-open-file (port file
+                                          :direction :output
+                                          :if-exists :supersede)
+                                
+                      (format port ";;; -*- Mode: lisp -*-~2%")
+                      (print-header port declaim package options)
+                      (format port "~2%;;; Common block specification~%")
+                      (do-core port s-proc s-decl)))))
+            spec-proc
+            spec-decl)
+         filenames))
        (do-output (port)
-	 (mapc
-	  #'(lambda (s-proc s-decl)
-	      (unless (find (caadr s-proc) *common-block-initialized*)
-		(do-core port s-proc s-decl)))
-	  spec-proc
-	  spec-decl)))
+         (mapc
+          #'(lambda (s-proc s-decl)
+              (unless (find (caadr s-proc) *common-block-initialized*)
+                (do-core port s-proc s-decl)))
+          spec-proc
+          spec-decl)))
     (if *common-block-file*
-	(do-file)
-	(do-output outport))))
+        (do-file)
+        (do-output outport))))
 
 (defun translate-and-write-subprog (prog-list outport output-path
-				    declaim package options)
+                                    declaim package options)
   (clrhash *common-blocks*)
   (clrhash *f2cl-statement-finfo*)
   (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is
-							   ; the list
-							   ; of do
-							   ; integers
-	fort-fun *external-function-names*
-	*undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
-	*save_vbles* *key_params* *subprog_common_vars* 
-	*subprog-stmt-fns* *subprog_stmt_fns_bodies* *subprog_name*
-	*function-flag* *program-flag*
-	*subprog-arglist* *data-init* *functions-used* *vble-declaration-done*
-	*parsing-lhs*
-	*equivalenced-vars*
+                                                           ; the list
+                                                           ; of do
+                                                           ; integers
+        fort-fun *external-function-names*
+        *undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
+        *save_vbles* *key_params* *subprog_common_vars* 
+        *subprog-stmt-fns* *subprog_stmt_fns_bodies* *subprog_name*
+        *function-flag* *program-flag*
+        *subprog-arglist* *data-init* *functions-used* *vble-declaration-done*
+        *parsing-lhs*
+        *equivalenced-vars*
         *equivalence-aliases*
-	*common_array_dims*
-	*non-intrinsic-function-names*)
+        *common_array_dims*
+        *non-intrinsic-function-names*)
 
     (print-header outport declaim package options)
      (setq fort-fun
-	   (do ((lines prog-list (cdr lines)) 
-		(fort-fun nil (append fort-fun
-				      (append (translate-label (caar lines))
-					      (translate-line 
-					       (brackets-check (concat-operators
-								(cadar lines))))))))
-	       ((null (cdr lines))
-		(append fort-fun
-			(cond (*function-flag*
-			       ;; A function.  Return the value of the
-			       ;; function, the value of the variable
-			       ;; with the same name as the function.
-			       `(end_label
-				 (return (values ,(cadr fort-fun)
-						 ,@(mapcar #'first *entry-points*)
-						 ,@(maybe-nullify-returns (second fort-fun) (caddr fort-fun))))))
-			      ((or *program-flag*
-				   (not (eq (car fort-fun) 'defun)))
-			       ;; Return nil if this is the main
-			       ;; program, indicated by either having
-			       ;; a PROGRAM statement (*program-flag*
-			       ;; set) or no DEFUN in FORT-FUN.
-			       `(end_label (return nil)))
-			      (t
-			       ;; A subroutine definition.  Return the
-			       ;; arguments of the subroutine.
-			       `(end_label (return (values 
-						    ,@(maybe-nullify-returns (second fort-fun) (caddr fort-fun)))))))))))
+           (do ((lines prog-list (cdr lines)) 
+                (fort-fun nil (append fort-fun
+                                      (append (translate-label (caar lines))
+                                              (translate-line 
+                                               (brackets-check (concat-operators
+                                                                (cadar lines))))))))
+               ((null (cdr lines))
+                (append fort-fun
+                        (cond (*function-flag*
+                               ;; A function.  Return the value of the
+                               ;; function, the value of the variable
+                               ;; with the same name as the function.
+                               `(end_label
+                                 (return (values ,(cadr fort-fun)
+                                                 ,@(mapcar #'first *entry-points*)
+                                                 ,@(maybe-nullify-returns (second fort-fun) (caddr fort-fun))))))
+                              ((or *program-flag*
+                                   (not (eq (car fort-fun) 'defun)))
+                               ;; Return nil if this is the main
+                               ;; program, indicated by either having
+                               ;; a PROGRAM statement (*program-flag*
+                               ;; set) or no DEFUN in FORT-FUN.
+                               `(end_label (return nil)))
+                              (t
+                               ;; A subroutine definition.  Return the
+                               ;; arguments of the subroutine.
+                               `(end_label (return (values 
+                                                    ,@(maybe-nullify-returns (second fort-fun) (caddr fort-fun)))))))))))
 
      ;; check for missing PROGRAM stmt
      (if (not (eq (car fort-fun) 'defun))
@@ -1167,20 +1167,20 @@ correctly"
      ;;     (format t "~%after translation : ~A" fort-fun)
 
      (multiple-value-bind (spec-proc spec-decl fun)
-	 (insert-declarations (prune-labels (fix-structure fort-fun labels)))
+         (insert-declarations (prune-labels (fix-structure fort-fun labels)))
        #+nil
        (let ((*package* (find-package '#:cl-user)))
-	 (format t "spec-proc = ~S~%" spec-proc)
-	 (format t "spec-decl = ~S~%" spec-decl)
-	 (format t "fun = ~S~%" fun))
+         (format t "spec-proc = ~S~%" spec-proc)
+         (format t "spec-decl = ~S~%" spec-decl)
+         (format t "fun = ~S~%" fun))
        (when spec-proc
-	 (setf *common-block-file-names*
-	       (output-common-block spec-proc spec-decl outport
-				    output-path declaim package options)))
+         (setf *common-block-file-names*
+               (output-common-block spec-proc spec-decl outport
+                                    output-path declaim package options)))
 
        #+nil
        (let ((*package* (find-package '#:cl-user)))
-	 (format t "fun = ~S~%" fun))
+         (format t "fun = ~S~%" fun))
        
        ;; Add the function name to the list of external function names
        ;; because we don't want to mangle the function name.  This is
@@ -1198,19 +1198,19 @@ correctly"
        ;; Write out the sexp that sets up the function info database
        ;; for this function.
        (let* ((*package* (find-package '#:cl-user))
-	      (fname (second fort-fun))
-	      (info (gethash fname *f2cl-function-info*)))
-	 (write `(eval-when (:load-toplevel :compile-toplevel :execute)
-		   (setf (gethash ',fname *f2cl-function-info*)
-			 (make-f2cl-finfo :arg-types ',(f2cl-finfo-arg-types info)
-					  :return-values ',(f2cl-finfo-return-values info)
-					  :calls ',(f2cl-finfo-calls info))))
-		:stream outport
-		:pretty t
-		:case :downcase
-		:circle nil
-		:readably t)))
-     (print (cadr fort-fun))		;indicate which subprogram is being translated
+              (fname (second fort-fun))
+              (info (gethash fname *f2cl-function-info*)))
+         (write `(eval-when (:load-toplevel :compile-toplevel :execute)
+                   (setf (gethash ',fname *f2cl-function-info*)
+                         (make-f2cl-finfo :arg-types ',(f2cl-finfo-arg-types info)
+                                          :return-values ',(f2cl-finfo-return-values info)
+                                          :calls ',(f2cl-finfo-calls info))))
+                :stream outport
+                :pretty t
+                :case :downcase
+                :circle nil
+                :readably t)))
+     (print (cadr fort-fun))            ;indicate which subprogram is being translated
      (write-char '#\newline outport)
      (write-char '#\newline outport)
      ))
@@ -1222,17 +1222,17 @@ correctly"
 (defun special-print (x o)
   (with-standard-io-syntax
     (let ((*package* (find-package :f2cl))
-	  (*print-pretty* t)
-	  (*print-case* :downcase)
-	  (*print-circle* nil)
-	  ;; Clisp basically seems ignores all other settings and
-	  ;; tries very, very hard to make sure what's written is read
-	  ;; back in exactly the same way if *print-readably* is non-NIL.
-	  (*print-readably* nil)
-	  ;; Write out the code using the desired floating-point
-	  ;; format.
-	  (*read-default-float-format* *float-format*)
-	  (*print-pprint-dispatch* *f2cl-pprint-dispatch*))
+          (*print-pretty* t)
+          (*print-case* :downcase)
+          (*print-circle* nil)
+          ;; Clisp basically seems ignores all other settings and
+          ;; tries very, very hard to make sure what's written is read
+          ;; back in exactly the same way if *print-readably* is non-NIL.
+          (*print-readably* nil)
+          ;; Write out the code using the desired floating-point
+          ;; format.
+          (*read-default-float-format* *float-format*)
+          (*print-pprint-dispatch* *f2cl-pprint-dispatch*))
       (write x :stream o))))
 ;------------------------------------------------------------------------------
 (defun princ-reset (x &optional (y ""))
@@ -1243,7 +1243,7 @@ correctly"
    (if label 
        (list (read-from-string
                   (concatenate 'string (symbol-name :label) (princ-to-string label))
-		  nil))
+                  nil))
        nil))
 
 ;------------------------------------------------------------------------------
@@ -1280,7 +1280,7 @@ correctly"
        (return (parse-fun-definition bindings)))
      (setq bindings (id-definition-fun-typed x))
      (when (not (eq bindings 'fail))
-	
+        
        (return (parse-typed-fun-definition bindings)))
      ;;goto/go to
      (when (id-comp-goto x)
@@ -1323,10 +1323,10 @@ correctly"
        ;; No need to check for new vars here, because I don't think
        ;; there can be.
        (return `((elseif_place_holder 
-		  ,(id-logical (cadr x))))))
+                  ,(id-logical (cadr x))))))
      (when (id-else-if x)
        (return `((elseif_place_holder
-		  ,(id-logical (caddr x))))))
+                  ,(id-logical (caddr x))))))
      ;; else
      (when (id-else x)
        (return '((elseif_place_holder t))))
@@ -1400,34 +1400,34 @@ correctly"
      ;; just leave it as is.
      (when (eq (car x) 'fortran_comment)
        (return (if (cddr x)
-		   (list x)
-		   (list (list 'quote (second x))))))
+                   (list x)
+                   (list (list 'quote (second x))))))
      
      ;; (return (list '----> (check_new_vbles x)))
 
      (when (or (eq (car x) 'blockdata)
-	       (and (eq (car x) 'block)
-		    (eq (second x) 'data)))
+               (and (eq (car x) 'block)
+                    (eq (second x) 'data)))
        ;; A block data subprogram.  We cheat and pretend it's a
        ;; subroutine with a special name. If a name is given, use that
        ;; as part of the special name.  Be careful.  If we change the
        ;; name used here, we need to modify f2cl5.l to recognize the
        ;; new name.
        (let* ((name (cond ((eq (car x) 'blockdata)
-			   (if (second x)
-			       (string (second x))
-			       nil))
-			  ((eq (car x) 'block)
-			   (if (third x)
-			       (string (third x))
-			       nil))
-			  (t
-			   nil)))
-	      (bdname (if name
-			  (intern (concatenate 'string (symbol-name '#:/blockdata-) name "/"))
-			  '/blockdata/)))
-	 (setq bindings (id-definition-sub `(subroutine ,bdname)))
-	 (return (parse-subr-definition bindings))))
+                           (if (second x)
+                               (string (second x))
+                               nil))
+                          ((eq (car x) 'block)
+                           (if (third x)
+                               (string (third x))
+                               nil))
+                          (t
+                           nil)))
+              (bdname (if name
+                          (intern (concatenate 'string (symbol-name '#:/blockdata-) name "/"))
+                          '/blockdata/)))
+         (setq bindings (id-definition-sub `(subroutine ,bdname)))
+         (return (parse-subr-definition bindings))))
 
      #+nil
      (when (eq (car x) 'entry)
@@ -1458,7 +1458,7 @@ correctly"
      ;;fall out the bottom:
      (warn "F2CL did not translate: ~S" (write-to-string (check_new_vbles x)))
      (return (list (list 'quote (concatenate ' string  "****NOT TRANSLATED: " 
-					       (write-to-string (check_new_vbles x))))))
+                                               (write-to-string (check_new_vbles x))))))
      ))
 ;------------------------------------------------------------------------------
 ;program 
@@ -1498,7 +1498,7 @@ correctly"
   ;; (l1, l2, ...) [,] expr
   (let ((ex (remove '|,| x)))
     (and (listp (first ex))
-	 (second x))))
+         (second x))))
 
 (defun id-comp-goto (x)
   ;; goto (l1, l2, l3, ...) [,] expr
@@ -1519,7 +1519,7 @@ correctly"
   ;; var [,] [(l1, l2, ...)]
   (let ((expr (remove '|,| x)))
     (and (symbolp (first expr))
-	 (listp (second expr)))))
+         (listp (second expr)))))
 
 (defun id-assgn-go-to (x)
   ;; go to var [,] [(l1, l2, l3, ...)]
@@ -1541,10 +1541,10 @@ correctly"
 ;; integer x,y,z,...
 (defun id-declaration (x) 
   (member (first x) '(integer integer1 integer2 integer4
-		      double real real8 character
-		      complex complex8 complex16
-		      logical dimension)
-	  :test #'eq))
+                      double real real8 character
+                      complex complex8 complex16
+                      logical dimension)
+          :test #'eq))
 ;------------------------------------------------------------------------------
 (defun id-if-then (x)
   (and (eq (car x) 'if)
@@ -1559,11 +1559,11 @@ correctly"
 (defun id-if (x)
   ;; Is this an IF statement?
   (cond ((eq (car x) 'if)
-	 ;; But "IF =" is definitely not.  Assume everything else is.
-	 ;; This needs more work.
-	 (not (eq (second x) '=)))
-	(t
-	 nil)))
+         ;; But "IF =" is definitely not.  Assume everything else is.
+         ;; This needs more work.
+         (not (eq (second x) '=)))
+        (t
+         nil)))
 
 (defun id-else (x)
   (eq (car x) 'else))
@@ -1581,7 +1581,7 @@ correctly"
 (defun id-endif (x) 
   (or (eq (car x) 'endif) 
       (and (eq (car x) 'end)
-	   (eq (cadr x) 'if))))
+           (eq (cadr x) 'if))))
 
 (defun id-assignment (x)
   (member '= x :test #'eq))
@@ -1633,7 +1633,7 @@ correctly"
   (prog (arg-list)
    (setq *subprog_name* (check-reserved-lisp-names (variable-value '%name bindings)))
    (setq arg-list (mapcar #'check-subprogram-arg-names
-			  (remove '|,| (variable-value '%arg-list bindings))))
+                          (remove '|,| (variable-value '%arg-list bindings))))
    (setq *subprog-arglist* arg-list)
    (return (list 'defun *subprog_name* 
                     (if arg-list arg-list nil)))))
@@ -1648,8 +1648,8 @@ correctly"
               (list (list (convert-data-type (variable-value '%type bindings))
                           (list fun-name))))
    (setq *subprog-arglist*
-	 (mapcar #'check-subprogram-arg-names
-		 (remove '|,| (variable-value '%arg-list bindings))))
+         (mapcar #'check-subprogram-arg-names
+                 (remove '|,| (variable-value '%arg-list bindings))))
    (setf *subprog_name* fun-name)
    (return
    (list 'defun 
@@ -1660,19 +1660,19 @@ correctly"
 (defun parse-fun-definition (bindings)
    (setq *function-flag* t)
    (setq *subprog-arglist*
-	 (mapcar #'check-subprogram-arg-names
-		 (remove '|,| (variable-value '%arg-list bindings))))
+         (mapcar #'check-subprogram-arg-names
+                 (remove '|,| (variable-value '%arg-list bindings))))
    (list 'defun 
          (setf *subprog_name*
-	       (check-reserved-lisp-names (variable-value '%name bindings)))
+               (check-reserved-lisp-names (variable-value '%name bindings)))
          *subprog-arglist*))
 
 
 ;; Entry point
 (defun parse-entry-definition (bindings)
   (let* ((entry-name (variable-value '%name bindings))
-	 (arglist (remove '|,| (variable-value '%arg-list bindings)))
-	 (args (mapcar #'check-reserved-lisp-names arglist)))
+         (arglist (remove '|,| (variable-value '%arg-list bindings)))
+         (args (mapcar #'check-reserved-lisp-names arglist)))
     ;;(format t "parent = ~A~%" *subprog_name*)
     (push (list entry-name args *subprog_name*) *entry-points*)
     (list entry-name)))
@@ -1699,26 +1699,26 @@ correctly"
   ;; Remove optional comma before the expression
   (let ((x (remove '|,| x)))
     (if (cddr x)
-	`((computed-goto 
-	   ,(mapcar #'(lambda (l) 
-			(read-from-string 
-			 (concatenate 'string (symbol-name :label) (princ-to-string l))))
-		    (remove '|,| (second x)))
-	   ,(third x)))
-	`((computed-goto ,(second x))))))
+        `((computed-goto 
+           ,(mapcar #'(lambda (l) 
+                        (read-from-string 
+                         (concatenate 'string (symbol-name :label) (princ-to-string l))))
+                    (remove '|,| (second x)))
+           ,(third x)))
+        `((computed-goto ,(second x))))))
 
 (defun parse-comp-go-to (x)
   ;; go to (l1, l2, l3, ...) [,] expr
   ;; Remove the optional comma before the expression
   (let ((x (remove '|,| x)))
     (if (fourth x)
-	`((computed-goto 
-	   ,(mapcar #'(lambda (l) 
-			(read-from-string 
-			 (concatenate 'string (symbol-name :label) (princ-to-string l))))
-		    (remove '|,| (third x)))
-	   ,(fourth x)))
-	`((computed-goto ,(caddr x))))))
+        `((computed-goto 
+           ,(mapcar #'(lambda (l) 
+                        (read-from-string 
+                         (concatenate 'string (symbol-name :label) (princ-to-string l))))
+                    (remove '|,| (third x)))
+           ,(fourth x)))
+        `((computed-goto ,(caddr x))))))
 
 ;------------------------------------------------------------------------------
 #+nil
@@ -1729,12 +1729,12 @@ correctly"
   (return
     `((case 
        ,(id-expression (cddddr x)) 
-	,@(mapcar #'(lambda (x n) (list n (make-label x))) labels (listn 1 len)))))))
+        ,@(mapcar #'(lambda (x n) (list n (make-label x))) labels (listn 1 len)))))))
 
 (defun parse-assgn-go-to (x)
   ;; go to var [,] [(l1, l2, ...)]
   (let* ((expr (remove '|,| x))
-	 (labels (remove '|,| (fourth expr))))
+         (labels (remove '|,| (fourth expr))))
     `((assigned-goto ,(third expr) ,(or labels (reverse *statement-labels*))))))
     
 #+nil
@@ -1746,19 +1746,19 @@ correctly"
     `((case 
        ,(id-expression (cdddr x)) 
        ,@(mapcar #'(lambda (x n)
-		     (list n (make-label x)))
-		 labels (listn 1 len)))))))
+                     (list n (make-label x)))
+                 labels (listn 1 len)))))))
 
 (defun parse-assgn-goto (x)
   ;; goto var [,] [(l1, l2, ...)]
   (let* ((expr (remove '|,| x))
-	 (labels (remove '|,| (third expr))))
+         (labels (remove '|,| (third expr))))
     `((assigned-goto ,(second expr) ,(or labels (reverse *statement-labels*))))))
 
 (defun parse-assign (x)
   ;; assign num to var
   (let ((label (second x))
-	(var (fourth x)))
+        (var (fourth x)))
     `((setf ,var ,label))))
 
 ;------------------------------------------------------------------------------
@@ -1766,28 +1766,28 @@ correctly"
 (defun maybe-promote-type (type)
   (if *promote-to-double*
       (cond ((or (eq type 'real)
-		 (eq type 'single-float))
-	     'double-float)
-	    ((eq type 'complex8)
-	     'complex16)
-	    (t
-	     type))
+                 (eq type 'single-float))
+             'double-float)
+            ((eq type 'complex8)
+             'complex16)
+            (t
+             type))
       type))
 
 ;declaration
-(defun parse-declaration (x)		; x is the line
+(defun parse-declaration (x)            ; x is the line
   (setq *declared_vbles*
-	(append (mapcar #'(lambda (v)
-			    #+nil
-			    (when (member (first v) *intrinsic-function-names*)
-			      (warn "~A is being declared but is also the name of an intrinsic function"
-				    (first v)))
-			    (check-reserved-lisp-names (car v)))
-			(list-split '|,|
-			 (if (eq (cadr x) '*)
-			     (cdddr x)
-			     (cdr x))))
-		*declared_vbles*))
+        (append (mapcar #'(lambda (v)
+                            #+nil
+                            (when (member (first v) *intrinsic-function-names*)
+                              (warn "~A is being declared but is also the name of an intrinsic function"
+                                    (first v)))
+                            (check-reserved-lisp-names (car v)))
+                        (list-split '|,|
+                         (if (eq (cadr x) '*)
+                             (cdddr x)
+                             (cdr x))))
+                *declared_vbles*))
   ;; If we declared an intrinsic function name, remove that from the
   ;; list of declared variables.
 
@@ -1797,82 +1797,82 @@ correctly"
   ;; is supposed to happen here.
   #+nil
   (setf *declared_vbles*
-	(set-difference *declared_vbles* *intrinsic-function-names*))
+        (set-difference *declared_vbles* *intrinsic-function-names*))
 
   (let ((type (find (first x) '((integer integer4)
-				(integer4 integer4)
-				(integer2 integer2)
-				(integer1 integer1)
-				(double double-float)
-				(real single-float)
-				(real8 double-float)
-				(character #'parse-char-decl)
-				(complex complex8)
-				(complex8 complex8)
-				(complex16 complex16)
-				(logical logical)
-				(dimension array))
-		    :key #'car)))
+                                (integer4 integer4)
+                                (integer2 integer2)
+                                (integer1 integer1)
+                                (double double-float)
+                                (real single-float)
+                                (real8 double-float)
+                                (character #'parse-char-decl)
+                                (complex complex8)
+                                (complex8 complex8)
+                                (complex16 complex16)
+                                (logical logical)
+                                (dimension array))
+                    :key #'car)))
     (when type
       (cond ((symbolp (second type))
-	     (setq *explicit_vble_decls* 
-		   (build_decl_list *explicit_vble_decls* (maybe-promote-type (second type)) (cdr x))))
-	    ((consp (second type))
-	     (funcall (second (second type)) x))
-	    (t
-	     (error "Failed to parse a declaration!")))))
+             (setq *explicit_vble_decls* 
+                   (build_decl_list *explicit_vble_decls* (maybe-promote-type (second type)) (cdr x))))
+            ((consp (second type))
+             (funcall (second (second type)) x))
+            (t
+             (error "Failed to parse a declaration!")))))
   nil)
 
 ;; Parse an implicit declaration.  X is the whole statement.
 (defun parse-implicit-decl (x)
   (cond ((eq (second x) 'none)
-	 ;; implicit none
-	 ;;
-	 ;; I don't think we need to do anything here.  Besides, this
-	 ;; causes problems later because there's no such Lisp type as
-	 ;; :none.  By leaving this out, I think it means when we
-	 ;; derive types we'll use the standard Fortran types.
-	 ;; However, variables and such should already have been
-	 ;; declared so we should be ok.  (We don't have to check
-	 ;; because the Fortran code is supposed to be valid.)
-	 #+nil
-	 (setq *implicit_vble_decls* '((:none (a z))))
-	 )
-	(t
-	 (let ((decls 
-		(cond ((eq (third x) '*)
-		       ;; Handle IMPLICIT <type> * <length> by rewriting x with
-		       ;; the appropriate type.
-		       `(,(first x) 
-			  (,(second x) ,(third x) ,(fourth x))
-			  ,@(cddddr x)))
-		      ((eq (third x) 'precision)
-		       ;; Handle IMPLICIT DOUBLE PRECISION
-		       `(,(first x)
-			  (real * 8)
-			  ,@(cdddr x)))
-		      (t
-		       x))))
-	   (mapc #'(lambda (y)
+         ;; implicit none
+         ;;
+         ;; I don't think we need to do anything here.  Besides, this
+         ;; causes problems later because there's no such Lisp type as
+         ;; :none.  By leaving this out, I think it means when we
+         ;; derive types we'll use the standard Fortran types.
+         ;; However, variables and such should already have been
+         ;; declared so we should be ok.  (We don't have to check
+         ;; because the Fortran code is supposed to be valid.)
+         #+nil
+         (setq *implicit_vble_decls* '((:none (a z))))
+         )
+        (t
+         (let ((decls 
+                (cond ((eq (third x) '*)
+                       ;; Handle IMPLICIT <type> * <length> by rewriting x with
+                       ;; the appropriate type.
+                       `(,(first x) 
+                          (,(second x) ,(third x) ,(fourth x))
+                          ,@(cddddr x)))
+                      ((eq (third x) 'precision)
+                       ;; Handle IMPLICIT DOUBLE PRECISION
+                       `(,(first x)
+                          (real * 8)
+                          ,@(cdddr x)))
+                      (t
+                       x))))
+           (mapc #'(lambda (y)
                      (let* ((converted (convert-data-type (car y)))
                             (type-name (if (consp converted)
                                            (car converted)
                                            converted)))
-		       (push `(,type-name
-			       ,@(list-split '|,|
-					     (remove '- (car (last y)))))
-			     *implicit_vble_decls*)))
-		   (list-split '|,| (cdr decls))))))
+                       (push `(,type-name
+                               ,@(list-split '|,|
+                                             (remove '- (car (last y)))))
+                             *implicit_vble_decls*)))
+                   (list-split '|,| (cdr decls))))))
   nil)
 
 
 (defun build_decl_list (decl_list type decl)
   (cons `(,type 
-	  ,@(mapcar #'(lambda (y)
-			`(,(check-reserved-lisp-names (car y))
-			  ,@(parse_dimension_specs (cadr y))))
-		    (list-split '|,| decl)))
-	decl_list))
+          ,@(mapcar #'(lambda (y)
+                        `(,(check-reserved-lisp-names (car y))
+                          ,@(parse_dimension_specs (cadr y))))
+                    (list-split '|,| decl)))
+        decl_list))
 
 (defun parse_dimension_specs (specs)
   (if (null specs) nil
@@ -1882,56 +1882,56 @@ correctly"
 ;; "*" to mean unbounded or unknown.
 (defun parse_upper_and_lower_bounds (bds)
   (flet ((fixup-negative (expr)
-	   ;; If a bound is negative, f2cl separates the negative sign
-	   ;; from the expression.  This function replaces that
-	   ;; expression with the actual negative number if the
-	   ;; expression is, in fact, a number.
-	   (cond ((and (eq '- (first expr))
-		       (numberp (second expr)))
-		  (list (- (second expr))))
-		 (t
-		  expr))))
+           ;; If a bound is negative, f2cl separates the negative sign
+           ;; from the expression.  This function replaces that
+           ;; expression with the actual negative number if the
+           ;; expression is, in fact, a number.
+           (cond ((and (eq '- (first expr))
+                       (numberp (second expr)))
+                  (list (- (second expr))))
+                 (t
+                  expr))))
     (let ((fixed-up-bds (mapcar #'fixup-negative (list-split '|:| bds))))
       ;; If a bound is "*", just return "*".
       (if (null (cdr fixed-up-bds))
-	  (list 1 (if (eq (caar fixed-up-bds) '*)
-		      '*
-		      (id-expression (car fixed-up-bds))))
-	  (list (if (eq (caar fixed-up-bds) '*)
-		    '*
-		    (id-expression (car fixed-up-bds)))
-		(if (eq (caadr fixed-up-bds) '*)
-		    '*
-		    (id-expression (cdr fixed-up-bds))))))))
+          (list 1 (if (eq (caar fixed-up-bds) '*)
+                      '*
+                      (id-expression (car fixed-up-bds))))
+          (list (if (eq (caar fixed-up-bds) '*)
+                    '*
+                    (id-expression (car fixed-up-bds)))
+                (if (eq (caadr fixed-up-bds) '*)
+                    '*
+                    (id-expression (cdr fixed-up-bds))))))))
 
 
 ;; Try to coerce the RHS type to the LHS type as appropriate.  May
 ;; also include taking the realpart of the RHS.
 (defun coerce-rhs-to-lhs (lhs-type rhs-type rhs)
   (cond ((or (eq t rhs-type)
-	     (eq t lhs-type)
-	     (subtypep rhs-type lhs-type))
-	 ;; No coercion is needed if the types are compatible, or if
-	 ;; we can't determine the type of the LHS or RHS.
-	 rhs)
-	((and (subtypep lhs-type 'integer)
-	      (not (subtypep rhs-type 'integer)))
-	 ;; We're trying to set a integer variable to non-integer
-	 ;; value.  Use truncate.
-	 `(int ,rhs))
-	((and (subtypep rhs-type 'integer)
-	      (subtypep lhs-type 'float))
-	 ;; We're trying to set a float to an integer value.  Convert
-	 ;; to a float.
-	 `(coerce (the integer4 ,rhs) ',lhs-type))
-	((and (subtypep lhs-type 'real)
-	      (subtypep rhs-type 'complex))
-	 ;; Assigning a complex to a real.  We need to take the real
-	 ;; part.
-	 `(coerce (realpart ,rhs) ',lhs-type))
-	(t
-	 ;; Haven't a clue, so coerce
-	 `(coerce ,rhs ',lhs-type))))
+             (eq t lhs-type)
+             (subtypep rhs-type lhs-type))
+         ;; No coercion is needed if the types are compatible, or if
+         ;; we can't determine the type of the LHS or RHS.
+         rhs)
+        ((and (subtypep lhs-type 'integer)
+              (not (subtypep rhs-type 'integer)))
+         ;; We're trying to set a integer variable to non-integer
+         ;; value.  Use truncate.
+         `(int ,rhs))
+        ((and (subtypep rhs-type 'integer)
+              (subtypep lhs-type 'float))
+         ;; We're trying to set a float to an integer value.  Convert
+         ;; to a float.
+         `(coerce (the integer4 ,rhs) ',lhs-type))
+        ((and (subtypep lhs-type 'real)
+              (subtypep rhs-type 'complex))
+         ;; Assigning a complex to a real.  We need to take the real
+         ;; part.
+         `(coerce (realpart ,rhs) ',lhs-type))
+        (t
+         ;; Haven't a clue, so coerce
+         `(coerce ,rhs ',lhs-type))))
 
 ;-----------------------------------------------------------------------------
 ; expression is algebraic with function calls:
@@ -1941,101 +1941,101 @@ correctly"
   ;; now. When parsing the RHS, it's OK if we convert function calls
   ;; to a multiple-value-bind form.
   (let ((lhs (parse-expression (tail-chop '= x) t))
-	(rhs (parse-expression (head-chop '= x) nil)))
+        (rhs (parse-expression (head-chop '= x) nil)))
     #+nil
     (progn
       (format t "lhs = ~A~%" lhs)
       (format t "rhs = ~A~%" rhs))
     (cond ((listp lhs)
-	   ;; Look for undeclared variables in the rhs
-	   (check_new_vbles rhs)
-	   (parse-arrayref-or-stmtfn lhs rhs))
-	  (t
-	   ;; Look for undeclared variables in the lhs or rhs.
-	   (check_new_vbles (list lhs))
-	   (check_new_vbles (list rhs))
-	   (when (member lhs *subprog-arglist*)
-	     ;;(format t "subprog-arglist = ~A~%" *subprog-arglist*)
-	     ;;(format t "lhs = ~A~%" lhs)
-	     (pushnew lhs *assigned-variables*))
-	   (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
-		  (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
-	     #+nil
-	     (progn
-	       (format t "~&")
-	       (format t "lhs = ~A, type ~A~%" lhs lhs-type)
-	       (format t "rhs = ~A, type ~A~%" rhs rhs-type))
-	     (cond ((subtypep lhs-type 'string)
-		    ;; Strings need to be handled carefully
-		    `((f2cl-set-string ,lhs ,rhs ,lhs-type)))
-		   (t
-		    (let ((new-rhs
-			   (cond ((find *coerce-assignments* '(t :always))
-				  `(coerce ,rhs (type-of ,lhs)))
-				 ((find *coerce-assignments* '(nil :never))
-				  rhs)
-				 (t
-				  (coerce-rhs-to-lhs lhs-type rhs-type rhs)))))
-		      #+nil
-		      (when (and (listp new-rhs)
-				 (eq 'coerce (first new-rhs)))
-			(format t "lhs, rhs types = ~A (~A) = ~A (~A) ~%      -> ~A~%"
-				lhs lhs-type rhs rhs-type new-rhs))
-		      `((setf ,lhs ,new-rhs))))))))))
+           ;; Look for undeclared variables in the rhs
+           (check_new_vbles rhs)
+           (parse-arrayref-or-stmtfn lhs rhs))
+          (t
+           ;; Look for undeclared variables in the lhs or rhs.
+           (check_new_vbles (list lhs))
+           (check_new_vbles (list rhs))
+           (when (member lhs *subprog-arglist*)
+             ;;(format t "subprog-arglist = ~A~%" *subprog-arglist*)
+             ;;(format t "lhs = ~A~%" lhs)
+             (pushnew lhs *assigned-variables*))
+           (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
+                  (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
+             #+nil
+             (progn
+               (format t "~&")
+               (format t "lhs = ~A, type ~A~%" lhs lhs-type)
+               (format t "rhs = ~A, type ~A~%" rhs rhs-type))
+             (cond ((subtypep lhs-type 'string)
+                    ;; Strings need to be handled carefully
+                    `((f2cl-set-string ,lhs ,rhs ,lhs-type)))
+                   (t
+                    (let ((new-rhs
+                           (cond ((find *coerce-assignments* '(t :always))
+                                  `(coerce ,rhs (type-of ,lhs)))
+                                 ((find *coerce-assignments* '(nil :never))
+                                  rhs)
+                                 (t
+                                  (coerce-rhs-to-lhs lhs-type rhs-type rhs)))))
+                      #+nil
+                      (when (and (listp new-rhs)
+                                 (eq 'coerce (first new-rhs)))
+                        (format t "lhs, rhs types = ~A (~A) = ~A (~A) ~%      -> ~A~%"
+                                lhs lhs-type rhs rhs-type new-rhs))
+                      `((setf ,lhs ,new-rhs))))))))))
 
 (defun parse-arrayref-or-stmtfn (lhs rhs)
   ;;lhs is either an array ref or a statement function name
   (cond ((eq (car lhs) 'fref)
-	 ;;array_ref 
-	 (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
-		(rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
-	   #+nil
-	   (progn
-	     (format t "~&")
-	     (format t "lhs = ~A, type ~A~%" lhs lhs-type)
-	     (format t "rhs = ~A, type ~A~%" rhs rhs-type))
-	   (cond ((subtypep lhs-type 'string)
-		  ;; Strings need to be handled specially
-		  `((f2cl-set-string ,lhs ,rhs ,lhs-type)))
-		 (t
-		  (let ((new-rhs
-			 (cond ((find *coerce-assignments* '(t :always))
-				`(coerce ,rhs (type-of ,lhs)))
-			       ((find *coerce-assignments* '(nil :never))
-				rhs)
-			       (t
-				(coerce-rhs-to-lhs lhs-type rhs-type rhs)))))
-		    `((setf ,lhs ,new-rhs)))))))
-	((eq (car lhs) 'fref-string)
-	 ;; Fortran string ref
-	 `((fset-string ,lhs ,rhs)))
-	(t
-	 ;;statement_function
-	 (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list (car lhs))))))
-		(rhs-type (first (get-upgraded-fun-arg-type (list (list rhs)))))
-		(rhs-expr (if (subtypep rhs-type lhs-type)
-			      rhs
-			      `(coerce ,rhs ',lhs-type))))
-	   ;; Look up type of statement function and coerce the RHS to the desired type.
-	   #+nil
-	   (progn
-	     (format t "statement func:  ~A~%" `((,(car lhs) ,(cdr lhs) ,rhs)))
-	     (format t "type = ~A, ~A~%" lhs-type rhs-type))
-	   
-	   ;; Add this function to the function database
-	   (let ((arg-types (mapcar #'(lambda (a)
-					(first (get-upgraded-fun-arg-type (list (list a)))))
-				    (cdr lhs))))
-	     #+nil
-	     (format t "arg-types = ~A~%" arg-types)
-	     (setf (gethash (car lhs) *f2cl-statement-finfo*)
-		   (make-f2cl-finfo :arg-types arg-types :return-values (make-list (length arg-types)))))
-	   
-	   (setq *subprog-stmt-fns* (append *subprog-stmt-fns* (list (car lhs)))
-		 *subprog_stmt_fns_bodies*
-		 (append *subprog_stmt_fns_bodies* 
-			 `((,(car lhs) ,(cdr lhs) ,rhs-expr))))
-	   nil))))
+         ;;array_ref 
+         (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
+                (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
+           #+nil
+           (progn
+             (format t "~&")
+             (format t "lhs = ~A, type ~A~%" lhs lhs-type)
+             (format t "rhs = ~A, type ~A~%" rhs rhs-type))
+           (cond ((subtypep lhs-type 'string)
+                  ;; Strings need to be handled specially
+                  `((f2cl-set-string ,lhs ,rhs ,lhs-type)))
+                 (t
+                  (let ((new-rhs
+                         (cond ((find *coerce-assignments* '(t :always))
+                                `(coerce ,rhs (type-of ,lhs)))
+                               ((find *coerce-assignments* '(nil :never))
+                                rhs)
+                               (t
+                                (coerce-rhs-to-lhs lhs-type rhs-type rhs)))))
+                    `((setf ,lhs ,new-rhs)))))))
+        ((eq (car lhs) 'fref-string)
+         ;; Fortran string ref
+         `((fset-string ,lhs ,rhs)))
+        (t
+         ;;statement_function
+         (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list (car lhs))))))
+                (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs)))))
+                (rhs-expr (if (subtypep rhs-type lhs-type)
+                              rhs
+                              `(coerce ,rhs ',lhs-type))))
+           ;; Look up type of statement function and coerce the RHS to the desired type.
+           #+nil
+           (progn
+             (format t "statement func:  ~A~%" `((,(car lhs) ,(cdr lhs) ,rhs)))
+             (format t "type = ~A, ~A~%" lhs-type rhs-type))
+           
+           ;; Add this function to the function database
+           (let ((arg-types (mapcar #'(lambda (a)
+                                        (first (get-upgraded-fun-arg-type (list (list a)))))
+                                    (cdr lhs))))
+             #+nil
+             (format t "arg-types = ~A~%" arg-types)
+             (setf (gethash (car lhs) *f2cl-statement-finfo*)
+                   (make-f2cl-finfo :arg-types arg-types :return-values (make-list (length arg-types)))))
+           
+           (setq *subprog-stmt-fns* (append *subprog-stmt-fns* (list (car lhs)))
+                 *subprog_stmt_fns_bodies*
+                 (append *subprog_stmt_fns_bodies* 
+                         `((,(car lhs) ,(cdr lhs) ,rhs-expr))))
+           nil))))
 ;       (and (setq *subprog-stmt-fns* (append *subprog-stmt-fns* (list (car lhs))))
 ;            `((defun ,(read-from-string 
 ;                           (concatenate 'string 
@@ -2053,11 +2053,11 @@ correctly"
 (defun find-duplicates (list)
   (let ((dups '()))
     (do ((head list (rest head))
-	 (tail (rest list) (rest tail)))
-	((null tail))
+         (tail (rest list) (rest tail)))
+        ((null tail))
       (when (and (atom (first head))
-		 (member (first head) tail :test 'eq))
-	(pushnew (first head) dups)))
+                 (member (first head) tail :test 'eq))
+        (pushnew (first head) dups)))
     dups))
 
 
@@ -2072,66 +2072,66 @@ correctly"
 (defun massage-arglist (arglist info copy-names)
   ;;(format t "info = ~A~%" info)
   (let ((arg-types (f2cl-finfo-arg-types info))
-	new-arglist)
+        new-arglist)
     (flet ((fortran-string-p (sym)
-	     (cond ((stringp sym)
-		    t)
-		   ((symbolp sym)
-		    ;; Look through explicit_vble_decls for sym and
-		    ;; see if it's a character array.
-		    ;;(format t "explicit-vble-decls = ~S~%" *explicit_vble_decls*)
-		    (do ((type-clauses *explicit_vble_decls* (cdr type-clauses)))
-			((null type-clauses))
-		      (let ((vars (cdar type-clauses)))
-			;;(format t "type-clauses = ~S~%" type-clauses)
-			;;(format t "vars = ~S~%" vars)
-			(when (and (member sym vars :key #'car)
-				   (and (listp (car type-clauses))
-					(member 'character (caar type-clauses))))
-			  (return-from fortran-string-p t)))))
-		   (t
-		    ;; I think all other cases can't be strings,
-		    ;; including array-slice, which should have been
-		    ;; handled elsewhere.
-		    t))))
+             (cond ((stringp sym)
+                    t)
+                   ((symbolp sym)
+                    ;; Look through explicit_vble_decls for sym and
+                    ;; see if it's a character array.
+                    ;;(format t "explicit-vble-decls = ~S~%" *explicit_vble_decls*)
+                    (do ((type-clauses *explicit_vble_decls* (cdr type-clauses)))
+                        ((null type-clauses))
+                      (let ((vars (cdar type-clauses)))
+                        ;;(format t "type-clauses = ~S~%" type-clauses)
+                        ;;(format t "vars = ~S~%" vars)
+                        (when (and (member sym vars :key #'car)
+                                   (and (listp (car type-clauses))
+                                        (member 'character (caar type-clauses))))
+                          (return-from fortran-string-p t)))))
+                   (t
+                    ;; I think all other cases can't be strings,
+                    ;; including array-slice, which should have been
+                    ;; handled elsewhere.
+                    t))))
       (do ((arg-type arg-types (cdr arg-type))
-	   (arg arglist (cdr arg))
-	   (copy copy-names (cdr copy)))
-	  ((null arg-type))
-	;;(format t "~A -> ~A~%" (car arg-type) (car arg))
-	(cond ((and (symbolp (car arg-type))
-		    (listp (car arg))
-		    (eq (caar arg) 'array-slice))
-	       ;; This means the expected arg type is a variable.  If
-	       ;; the actual arg is is an array slice, we can replace
-	       ;; the slice with the actual value.
-	       (destructuring-bind (slice var type indices limits)
-		   (car arg)
-		 (declare (ignore slice type))
-		 (push `(fref ,var ,indices ,limits)
-		       new-arglist)))
-	      ((and (not (subtypep (car arg-type) 'array))
-		    (vble-is-array-p (car arg)))
-	       ;; The arg type is not an array, but the actual argument
-	       ;; is.  We want the first element of the array as the
-	       ;; arg.
-	       (push `(aref ,(car arg) 0) new-arglist))
-	      ((and (subtypep (car arg-type) 'array)
-		    (not (vble-is-array-p (car arg)))
-		    (not (and (listp (car arg))
-			      (eq (caar arg) 'array-slice)))
-		    (not (fortran-string-p (car arg))))
-	       ;; Function wants an array, but we're passing in a
-	       ;; scalar.  Make an array out of that variable.
-	       #+(or)
-	       (progn
-		 (format t "arg ~S: ~%" (car arg))
-		 (format t "  explicit: ~S~%" *explicit_vble_decls*))
-	       (push `(make-array 1 :element-type (type-of ,(car arg))
-				  :initial-element ,(car arg))
-		     new-arglist))
-	      (t
-	       (push (or (car copy) (car arg)) new-arglist)))))
+           (arg arglist (cdr arg))
+           (copy copy-names (cdr copy)))
+          ((null arg-type))
+        ;;(format t "~A -> ~A~%" (car arg-type) (car arg))
+        (cond ((and (symbolp (car arg-type))
+                    (listp (car arg))
+                    (eq (caar arg) 'array-slice))
+               ;; This means the expected arg type is a variable.  If
+               ;; the actual arg is is an array slice, we can replace
+               ;; the slice with the actual value.
+               (destructuring-bind (slice var type indices limits)
+                   (car arg)
+                 (declare (ignore slice type))
+                 (push `(fref ,var ,indices ,limits)
+                       new-arglist)))
+              ((and (not (subtypep (car arg-type) 'array))
+                    (vble-is-array-p (car arg)))
+               ;; The arg type is not an array, but the actual argument
+               ;; is.  We want the first element of the array as the
+               ;; arg.
+               (push `(aref ,(car arg) 0) new-arglist))
+              ((and (subtypep (car arg-type) 'array)
+                    (not (vble-is-array-p (car arg)))
+                    (not (and (listp (car arg))
+                              (eq (caar arg) 'array-slice)))
+                    (not (fortran-string-p (car arg))))
+               ;; Function wants an array, but we're passing in a
+               ;; scalar.  Make an array out of that variable.
+               #+(or)
+               (progn
+                 (format t "arg ~S: ~%" (car arg))
+                 (format t "  explicit: ~S~%" *explicit_vble_decls*))
+               (push `(make-array 1 :element-type (type-of ,(car arg))
+                                  :initial-element ,(car arg))
+                     new-arglist))
+              (t
+               (push (or (car copy) (car arg)) new-arglist)))))
     (setf new-arglist (nreverse new-arglist))
     ;;(format t "new arglist = ~A~%" new-arglist)
     new-arglist))
@@ -2148,193 +2148,193 @@ correctly"
 (defun generate-call-to-routine (routine arglist &optional return)
   (multiple-value-bind (routine-name finfo)
       (if (eq (first routine) 'funcall)
-	  (values routine nil)
-	  (let ((checked (check-reserved-lisp-names (first routine))))
-	    (values (list checked)
-		    (gethash checked *f2cl-function-info*))))
+          (values routine nil)
+          (let ((checked (check-reserved-lisp-names (first routine))))
+            (values (list checked)
+                    (gethash checked *f2cl-function-info*))))
     (if (and finfo (f2cl-finfo-return-values finfo))
-	(let ((this (gethash *subprog_name* *f2cl-function-info*)))
-	  (unless this
-	    (setf (gethash *subprog_name* *f2cl-function-info*)
-		  (make-f2cl-finfo)))
-	  ;; Add this function to the list of called functions
-	  (pushnew (first routine-name)
-		   (f2cl-finfo-calls (gethash *subprog_name*
-					      *f2cl-function-info*))))
-	(warn "Generating call to unknown function ~A.  Check generated call!" routine-name))
+        (let ((this (gethash *subprog_name* *f2cl-function-info*)))
+          (unless this
+            (setf (gethash *subprog_name* *f2cl-function-info*)
+                  (make-f2cl-finfo)))
+          ;; Add this function to the list of called functions
+          (pushnew (first routine-name)
+                   (f2cl-finfo-calls (gethash *subprog_name*
+                                              *f2cl-function-info*))))
+        (warn "Generating call to unknown function ~A.  Check generated call!" routine-name))
 
     (let ((ret-finfo (if (and *use-function-info* finfo)
-			 (f2cl-finfo-return-values finfo)
-			 (make-list (length arglist) :initial-element :unknown))))
+                         (f2cl-finfo-return-values finfo)
+                         (make-list (length arglist) :initial-element :unknown))))
 
       ;; (format t "ret-info = ~A~%" ret-finfo)
       (multiple-value-bind (all-setters vnames)
-	  ;; Figure out if and how to set the parameters to the returned values.
-	  ;;
-	  ;; Note that if the same arg appears more than once, we assume
-	  ;; that only one use actually sets the variable.  If this is
-	  ;; not true, I think the original Fortran was broken anyway.
-	  ;; We don't check for this here.  Should we?  We can't in
-	  ;; general unless *f2cl-function-info* tells us the return
-	  ;; values for the function.
-	  (do ((v nil)
-	       (count 0 (+ count 1))
-	       (vnames nil)
-	       (args arglist (rest args))
-	       (ret-info ret-finfo (rest ret-info)))
-	      ((null args)
-	       (values (nreverse v) (nreverse vnames)))
-	    (let* ((arg (first args))
-		   (var (intern (concatenate 'string (symbol-name '#:var-)
-					     (princ-to-string count)))))
-	      (push var vnames)
-	      ;; (format t "arg = ~A~%" arg)
-	      ;;(format t "ret-info = ~A~%" (first ret-info))
-	      (push (cond ((or (vble-is-array-p arg)
-			       (member arg *external-function-names*)
-			       (member arg *intrinsic-function-names*)
-			       (member arg '(%true% %false%)))
-			   ;; Fortran can't return whole arrays or
-			   ;; functions, so don't try to assign the value
-			   ;; to arrays or functions.  Also, we don't want
-			   ;; to assign to constants like %true% and
-			   ;; %false%.
-			   ;;
-			   nil)
-			  ((symbolp arg)
-			   ;; A simple variable
-			   (cond ((eq (first ret-info) :unknown)
-				  ;; Don't know anything about this, so
-				  ;; we need to check.  Also assume
-				  ;; worst case that the variable is
-				  ;; assigned to.
-				  (pushnew arg *assigned-variables*)
-				  `(when ,var (setf ,arg ,var)))
-				 ((eq (first ret-info) nil)
-				  ;; Definitely isn't returned
-				  nil)
-				 (t
-				  ;; Definitely returned.  Update
-				  ;; *assigned-variables* with this new
-				  ;; arg.
-				  (pushnew arg *assigned-variables*)
-				  `(setf ,arg ,var))))
-			  ((and (listp arg)
-				(eq (first arg) 'fref))
-			   ;; A reference to a single element of an array.
-			   (cond ((eq (first ret-info) :unknown)
-				  ;; Don't know anything about this
-				  `(when ,var (fset ,arg ,var)))
-				 ((eq (first ret-info) nil)
-				  ;; Definitely isn't returned
-				  nil)
-				 (t
-				  ;; Definitely is returned
-				  `(setf ,arg ,var))))
-			  (t
-			   ;; This means it's either a number or some
-			   ;; expression, so obviously we can't modify
-			   ;; that.  (The original Fortran code was broken
-			   ;; if the routine is trying to modify this.)
-			   nil))
-		    v)))
-	;; (format t "all-setters = ~A~%" all-setters)
-	(let ((ignored-vars
-	       ;; A variable is ignored if no setter for it is given.
-	       (remove nil (mapcar #'(lambda (varname setter)
-				       (if (not setter)
-					   varname))
-				   vnames all-setters)))
-	      (setters (remove nil all-setters))
-	      (actual-arg-types
-	       (mapcar #'(lambda (v)
-			   (multiple-value-bind (type arrayp)
-			       (get-fun-arg-type v)
-			     (if arrayp
-				 `(,*array-type* ,type (*))
-				 type)))
-		       arglist))
-	      (copy-name nil)
-	      (body nil))
-	  ;;(format t "ignored-vars = ~A~%" ignored-vars)
-	  ;;(format t "setters = ~A~%" setters)
-	  ;;(format t "arglist = ~A~%" arglist)
-	  ;;(format t "arglist types  = ~A~%" actual-arg-types)
-	  ;;(format t "declared types = ~A~%" (f2cl-finfo-arg-types finfo))
+          ;; Figure out if and how to set the parameters to the returned values.
+          ;;
+          ;; Note that if the same arg appears more than once, we assume
+          ;; that only one use actually sets the variable.  If this is
+          ;; not true, I think the original Fortran was broken anyway.
+          ;; We don't check for this here.  Should we?  We can't in
+          ;; general unless *f2cl-function-info* tells us the return
+          ;; values for the function.
+          (do ((v nil)
+               (count 0 (+ count 1))
+               (vnames nil)
+               (args arglist (rest args))
+               (ret-info ret-finfo (rest ret-info)))
+              ((null args)
+               (values (nreverse v) (nreverse vnames)))
+            (let* ((arg (first args))
+                   (var (intern (concatenate 'string (symbol-name '#:var-)
+                                             (princ-to-string count)))))
+              (push var vnames)
+              ;; (format t "arg = ~A~%" arg)
+              ;;(format t "ret-info = ~A~%" (first ret-info))
+              (push (cond ((or (vble-is-array-p arg)
+                               (member arg *external-function-names*)
+                               (member arg *intrinsic-function-names*)
+                               (member arg '(%true% %false%)))
+                           ;; Fortran can't return whole arrays or
+                           ;; functions, so don't try to assign the value
+                           ;; to arrays or functions.  Also, we don't want
+                           ;; to assign to constants like %true% and
+                           ;; %false%.
+                           ;;
+                           nil)
+                          ((symbolp arg)
+                           ;; A simple variable
+                           (cond ((eq (first ret-info) :unknown)
+                                  ;; Don't know anything about this, so
+                                  ;; we need to check.  Also assume
+                                  ;; worst case that the variable is
+                                  ;; assigned to.
+                                  (pushnew arg *assigned-variables*)
+                                  `(when ,var (setf ,arg ,var)))
+                                 ((eq (first ret-info) nil)
+                                  ;; Definitely isn't returned
+                                  nil)
+                                 (t
+                                  ;; Definitely returned.  Update
+                                  ;; *assigned-variables* with this new
+                                  ;; arg.
+                                  (pushnew arg *assigned-variables*)
+                                  `(setf ,arg ,var))))
+                          ((and (listp arg)
+                                (eq (first arg) 'fref))
+                           ;; A reference to a single element of an array.
+                           (cond ((eq (first ret-info) :unknown)
+                                  ;; Don't know anything about this
+                                  `(when ,var (fset ,arg ,var)))
+                                 ((eq (first ret-info) nil)
+                                  ;; Definitely isn't returned
+                                  nil)
+                                 (t
+                                  ;; Definitely is returned
+                                  `(setf ,arg ,var))))
+                          (t
+                           ;; This means it's either a number or some
+                           ;; expression, so obviously we can't modify
+                           ;; that.  (The original Fortran code was broken
+                           ;; if the routine is trying to modify this.)
+                           nil))
+                    v)))
+        ;; (format t "all-setters = ~A~%" all-setters)
+        (let ((ignored-vars
+               ;; A variable is ignored if no setter for it is given.
+               (remove nil (mapcar #'(lambda (varname setter)
+                                       (if (not setter)
+                                           varname))
+                                   vnames all-setters)))
+              (setters (remove nil all-setters))
+              (actual-arg-types
+               (mapcar #'(lambda (v)
+                           (multiple-value-bind (type arrayp)
+                               (get-fun-arg-type v)
+                             (if arrayp
+                                 `(,*array-type* ,type (*))
+                                 type)))
+                       arglist))
+              (copy-name nil)
+              (body nil))
+          ;;(format t "ignored-vars = ~A~%" ignored-vars)
+          ;;(format t "setters = ~A~%" setters)
+          ;;(format t "arglist = ~A~%" arglist)
+          ;;(format t "arglist types  = ~A~%" actual-arg-types)
+          ;;(format t "declared types = ~A~%" (f2cl-finfo-arg-types finfo))
 
-	  (loop for count from 0
-	        for arg in arglist
-	        for actual-type in actual-arg-types
-	        for declared-type in (and finfo (relax-array-decl (f2cl-finfo-arg-types finfo)))
-	        do (cond ((or (typep arg 'string)
-			      (typep arg 'number))
-			  (push nil copy-name))
-			 ((subtypep actual-type declared-type)
-			  (push nil copy-name))
-			 ((and (subtypep declared-type 'array)
-			       (subtypep actual-type 'array))
-			  ;; Print a warning if the types don't match and we
-			  ;; aren't doing copying.
-			  (if *copy-array-parameter*
-			      (push (intern (concatenate 'string (symbol-name '#:%copy-)
-							 (cond ((symbolp arg)
-								(symbol-name arg))
-							       ((and (listp arg)
-								     (eq (car arg) 'array-slice))
-								(symbol-name (second arg)))
-							       (t
-								(error "Unknown name to use")))))
-				    copy-name)
-			      (progn
-				(push nil copy-name)
-				(format t "Warning:  Types of argument ~A in call to ~A do not match.~%  ~
+          (loop for count from 0
+                for arg in arglist
+                for actual-type in actual-arg-types
+                for declared-type in (and finfo (relax-array-decl (f2cl-finfo-arg-types finfo)))
+                do (cond ((or (typep arg 'string)
+                              (typep arg 'number))
+                          (push nil copy-name))
+                         ((subtypep actual-type declared-type)
+                          (push nil copy-name))
+                         ((and (subtypep declared-type 'array)
+                               (subtypep actual-type 'array))
+                          ;; Print a warning if the types don't match and we
+                          ;; aren't doing copying.
+                          (if *copy-array-parameter*
+                              (push (intern (concatenate 'string (symbol-name '#:%copy-)
+                                                         (cond ((symbolp arg)
+                                                                (symbol-name arg))
+                                                               ((and (listp arg)
+                                                                     (eq (car arg) 'array-slice))
+                                                                (symbol-name (second arg)))
+                                                               (t
+                                                                (error "Unknown name to use")))))
+                                    copy-name)
+                              (progn
+                                (push nil copy-name)
+                                (format t "Warning:  Types of argument ~A in call to ~A do not match.~%  ~
                                              Declared type: ~A~%  ~
                                              Argument type: ~A~%"
-					count (car routine-name) declared-type actual-type))))))
-	  (setf copy-name (nreverse copy-name))
-	  (let ((new-args (if (and *use-function-info* finfo)
-			      (massage-arglist arglist finfo copy-name)
-			      arglist)))
-	    (setf body (if setters
-			   `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
-				 (,@routine-name ,@new-args)
-			       (declare (ignore ,@ignored-vars))
-			       ,@setters
-			       ,@(if return (list 'ret-val))))
-			   `((,@routine-name ,@new-args)))))
-	  (cond ((some #'identity copy-name)
-		 ;; Some args don't match and we want to copy the item
-		 (multiple-value-bind (copy-to copy-from init-copy)
-		     (loop for arg in arglist
-			   for copy in copy-name
-			   for actual-type in actual-arg-types
-			   for declared-type in (f2cl-finfo-arg-types finfo)
-			   when copy
-			     collect `(f2cl-lib:f2cl-copy-seq ,copy ,arg
-							      ,(second declared-type)
-							      ,(second actual-type))
-			              into copy-to
-			     and collect `(f2cl-lib:f2cl-copy-seq ,arg ,copy
-								  ,(second actual-type)
-								  ,(second declared-type))
-			                  into copy-from
-			     and collect `(,copy (f2cl-lib:make-compatible-seq ,declared-type
-									       ,arg
-									       ,actual-type))
-			                  into init-copy
-			  finally (return (values copy-to copy-from init-copy)))
-		   (setf init-copy (remove-duplicates init-copy :key #'car))
-		   (setf copy-from (remove-duplicates copy-from :test #'equal))
-		   (setf copy-to (remove-duplicates copy-to :test #'equal))
-		   ;;(format t "init-copy = ~S~%" init-copy)
-		   ;;(format t "copy-from = ~S~%" copy-from)
-		   `((let (,@init-copy)
-		       ,@copy-to
-		       ,@body
-		       ,@copy-from))))
-		(t
-		 ;; Just return the body.
-		 body)))))))
+                                        count (car routine-name) declared-type actual-type))))))
+          (setf copy-name (nreverse copy-name))
+          (let ((new-args (if (and *use-function-info* finfo)
+                              (massage-arglist arglist finfo copy-name)
+                              arglist)))
+            (setf body (if setters
+                           `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
+                                 (,@routine-name ,@new-args)
+                               (declare (ignore ,@ignored-vars))
+                               ,@setters
+                               ,@(if return (list 'ret-val))))
+                           `((,@routine-name ,@new-args)))))
+          (cond ((some #'identity copy-name)
+                 ;; Some args don't match and we want to copy the item
+                 (multiple-value-bind (copy-to copy-from init-copy)
+                     (loop for arg in arglist
+                           for copy in copy-name
+                           for actual-type in actual-arg-types
+                           for declared-type in (f2cl-finfo-arg-types finfo)
+                           when copy
+                             collect `(f2cl-lib:f2cl-copy-seq ,copy ,arg
+                                                              ,(second declared-type)
+                                                              ,(second actual-type))
+                                      into copy-to
+                             and collect `(f2cl-lib:f2cl-copy-seq ,arg ,copy
+                                                                  ,(second actual-type)
+                                                                  ,(second declared-type))
+                                          into copy-from
+                             and collect `(,copy (f2cl-lib:make-compatible-seq ,declared-type
+                                                                               ,arg
+                                                                               ,actual-type))
+                                          into init-copy
+                          finally (return (values copy-to copy-from init-copy)))
+                   (setf init-copy (remove-duplicates init-copy :key #'car))
+                   (setf copy-from (remove-duplicates copy-from :test #'equal))
+                   (setf copy-to (remove-duplicates copy-to :test #'equal))
+                   ;;(format t "init-copy = ~S~%" init-copy)
+                   ;;(format t "copy-from = ~S~%" copy-from)
+                   `((let (,@init-copy)
+                       ,@copy-to
+                       ,@body
+                       ,@copy-from))))
+                (t
+                 ;; Just return the body.
+                 body)))))))
 
 ;; Convert array references to an array slice, as appropriate. That
 ;; is, the array reference must be the actual arg. No arithmetic
@@ -2345,72 +2345,72 @@ correctly"
   (if (not *array-slicing*)
       arg-list
       (mapcar #'(lambda (expr)
-		  ;;(format t "expr = ~A~%" expr)
-		  (if (and (listp expr)
-			   (eq (first expr) 'fref))
-		      `(array-slice ,(second expr) ,(lookup-vble-type (second expr)) ,@(cddr expr))
-		      expr))
-	      arg-list)))
+                  ;;(format t "expr = ~A~%" expr)
+                  (if (and (listp expr)
+                           (eq (first expr) 'fref))
+                      `(array-slice ,(second expr) ,(lookup-vble-type (second expr)) ,@(cddr expr))
+                      expr))
+              arg-list)))
 
 (defun maybe-convert-array-ref-to-slice (arg-list fun-name)
   (cond (*array-slicing*
-	 ;; Look up the arg types for the function.  If we know the
-	 ;; function, we can be smarter about generating the call.
-	 ;;
-	 ;; That is, if the actual arg is an array reference, we need
-	 ;; to decide if we want just the selected element or a slice
-	 ;; of the array.  If the declared type is a scalar, and we
-	 ;; don't modify it, just use the array element.  Otherwise,
-	 ;; we want a slice.
-	 (let ((n-args (length arg-list))
-	       (finfo (if (member fun-name *subprog-arglist*)
-			  nil
-			  (or (gethash fun-name *f2cl-statement-finfo*)
-			      (gethash fun-name *f2cl-function-info*))))
-	       arg-info ret-info)
-	   #+nil
-	   (when *subprog-arglist*
-	     (format t "external = ~A~%" *subprog-arglist*)
-	     (format t "finfo = ~A~%" finfo)
-	     (format t "fun-name = ~A~%" fun-name))
-	   ;;(format t "~A finfo = ~A~%" fun-name finfo)
-	   (cond (finfo
-		  (setf arg-info (f2cl-finfo-arg-types finfo))
-		  (setf ret-info (f2cl-finfo-return-values finfo)))
-		 (t
-		  (setf arg-info (make-list n-args))
-		  (setf ret-info (make-list n-args))))
-	   ;;(format t "calling ~A~%" fun-name)
-	   ;;(format t " finfo = ~A~%" finfo)
-	   (mapcar #'(lambda (expr a-info r-info)
-		       ;;(format t "expr = ~A~%" expr)
-		       (cond ((and (listp expr)
-				   (eq (first expr) 'fref))
-			      #+nil
-			      (format t " expr = ~A~%" expr)
-			      #+nil
-			      (format t "  a-info, r-info, SLICE-P = ~A ~A ~A~%"
-				      a-info r-info (or (subtypep a-info 'array) r-info))
-			      ;; If the declared type is an array,
-			      ;; slice it.  Otherwise, grab just the
-			      ;; element.
-			      (if (subtypep a-info 'array)
-				  `(array-slice ,(second expr) ,(lookup-vble-type (second expr)) ,@(cddr expr))
-				  expr))
-			     (t
-			      expr)))
-		   arg-list arg-info ret-info)))
-	(t
-	 arg-list)))
+         ;; Look up the arg types for the function.  If we know the
+         ;; function, we can be smarter about generating the call.
+         ;;
+         ;; That is, if the actual arg is an array reference, we need
+         ;; to decide if we want just the selected element or a slice
+         ;; of the array.  If the declared type is a scalar, and we
+         ;; don't modify it, just use the array element.  Otherwise,
+         ;; we want a slice.
+         (let ((n-args (length arg-list))
+               (finfo (if (member fun-name *subprog-arglist*)
+                          nil
+                          (or (gethash fun-name *f2cl-statement-finfo*)
+                              (gethash fun-name *f2cl-function-info*))))
+               arg-info ret-info)
+           #+nil
+           (when *subprog-arglist*
+             (format t "external = ~A~%" *subprog-arglist*)
+             (format t "finfo = ~A~%" finfo)
+             (format t "fun-name = ~A~%" fun-name))
+           ;;(format t "~A finfo = ~A~%" fun-name finfo)
+           (cond (finfo
+                  (setf arg-info (f2cl-finfo-arg-types finfo))
+                  (setf ret-info (f2cl-finfo-return-values finfo)))
+                 (t
+                  (setf arg-info (make-list n-args))
+                  (setf ret-info (make-list n-args))))
+           ;;(format t "calling ~A~%" fun-name)
+           ;;(format t " finfo = ~A~%" finfo)
+           (mapcar #'(lambda (expr a-info r-info)
+                       ;;(format t "expr = ~A~%" expr)
+                       (cond ((and (listp expr)
+                                   (eq (first expr) 'fref))
+                              #+nil
+                              (format t " expr = ~A~%" expr)
+                              #+nil
+                              (format t "  a-info, r-info, SLICE-P = ~A ~A ~A~%"
+                                      a-info r-info (or (subtypep a-info 'array) r-info))
+                              ;; If the declared type is an array,
+                              ;; slice it.  Otherwise, grab just the
+                              ;; element.
+                              (if (subtypep a-info 'array)
+                                  `(array-slice ,(second expr) ,(lookup-vble-type (second expr)) ,@(cddr expr))
+                                  expr))
+                             (t
+                              expr)))
+                   arg-list arg-info ret-info)))
+        (t
+         arg-list)))
 
       
 ;------------------------------------------------------------------------------
 (defun parse-subroutine-call (x)
   ;; X looks like (CALL SUBNAME (comma-separated list of args, if any))
   (let ((arglist (if (third x)
-		     (mapcar #'id-expression
-			     (list-split '|,| (check_new_vbles (third x))))
-		     nil)))
+                     (mapcar #'id-expression
+                             (list-split '|,| (check_new_vbles (third x))))
+                     nil)))
     ;; Note that this is not a variable and is, in fact, a subroutine.
     (update-called-functions-list (list (second x) :subroutine) arglist)
 
@@ -2418,31 +2418,31 @@ correctly"
     (setf arglist (maybe-convert-array-ref-to-slice arglist (second x)))
 
     (cond ((null arglist)
-	   ;; No args to the subroutine
-	   `((,(second x))))
-	  (t
-	   ;; This is the more complicated case where we need to be
-	   ;; more careful.  M-v-bind is used to get all of the return
-	   ;; values.  Then we go and set the parameters according to
-	   ;; the returned values.  If the parameter is a simple
-	   ;; variable or an array reference, set the value.
-	   ;; Otherwise, we do nothing.
-	   ;;
-	   ;; The user will have to check to make sure this is right.
-	   ;; Array references can also be a slice of an array that is
-	   ;; passed to the subroutine, and that isn't handled here!
-	   ;;
-	   (let ((fname (second x)))
-	     (generate-call-to-routine
-	      (cond ((member fname *subprog-arglist*)
-		     ;; We want to use funcall only if the external function
-		     ;; was passed in as a parameter.  If not, then we don't
-		     ;; need to funcall it.  The user was just telling us that
-		     ;; it was external function instead an intrinsic.
-		     `(funcall ,fname)) 
-		    (t 
-		     `(,fname)))
-	      arglist))))))
+           ;; No args to the subroutine
+           `((,(second x))))
+          (t
+           ;; This is the more complicated case where we need to be
+           ;; more careful.  M-v-bind is used to get all of the return
+           ;; values.  Then we go and set the parameters according to
+           ;; the returned values.  If the parameter is a simple
+           ;; variable or an array reference, set the value.
+           ;; Otherwise, we do nothing.
+           ;;
+           ;; The user will have to check to make sure this is right.
+           ;; Array references can also be a slice of an array that is
+           ;; passed to the subroutine, and that isn't handled here!
+           ;;
+           (let ((fname (second x)))
+             (generate-call-to-routine
+              (cond ((member fname *subprog-arglist*)
+                     ;; We want to use funcall only if the external function
+                     ;; was passed in as a parameter.  If not, then we don't
+                     ;; need to funcall it.  The user was just telling us that
+                     ;; it was external function instead an intrinsic.
+                     `(funcall ,fname)) 
+                    (t 
+                     `(,fname)))
+              arglist))))))
 
 ;------------------------------------------------------------------------------
 (defun parse-do-loop (x)
@@ -2453,11 +2453,11 @@ correctly"
   (when (eq (third x) '|,|)
     ;; Copy the list and remove the extra comma
     (setf x (list* (first x)
-		   (second x)
-		   (cdddr x))))
+                   (second x)
+                   (cdddr x))))
   (let* ((limits (list-split '|,| (cddddr x)))
-	 (step (third limits))
-	 (loop-var (check-reserved-lisp-names (third x))))
+         (step (third limits))
+         (loop-var (check-reserved-lisp-names (third x))))
     #+nil
     (progn
       (format t "x = ~A~%" x)
@@ -2465,12 +2465,12 @@ correctly"
       (format t "step   = ~A~%" step)
       (format t "var    = ~A~%" loop-var))
     `((fdo (,loop-var
-	    ,(id-expression (first limits))
-	    (+ ,loop-var ,(if (null step) 1 (id-expression step))))
+            ,(id-expression (first limits))
+            (+ ,loop-var ,(if (null step) 1 (id-expression step))))
        ((> ,loop-var ,(id-expression (second limits))) nil)
        ,(read-from-string 
-	 (concatenate 'string (symbol-name :fdo_body_label)
-		      (princ-to-string (second x))) nil)
+         (concatenate 'string (symbol-name :fdo_body_label)
+                      (princ-to-string (second x))) nil)
        ))))
 
 ; (let* ((limits (list-split '|,| (cddddr x)))
@@ -2527,10 +2527,10 @@ correctly"
 
    ;;(format t "~&split x = ~A~%" x)
    (setq *key_params*
-	 (append *key_params* 
-		 (mapcar #'(lambda (l)
-			     (list (first l) (id-expression (rest l))))
-			 x)))
+         (append *key_params* 
+                 (mapcar #'(lambda (l)
+                             (list (first l) (id-expression (rest l))))
+                         x)))
    nil)
 
 ;; restrict SAVE stmts to
@@ -2544,96 +2544,96 @@ correctly"
   ;; we're safe.
   (if (rest x)
       (setq *save_vbles*
-	    (append *save_vbles*
-		    (mapcar #'check-reserved-lisp-names
-			    (remove '|,| (if (eq (first (cdr x)) '/) (cddddr x) (cdr x))))))
+            (append *save_vbles*
+                    (mapcar #'check-reserved-lisp-names
+                            (remove '|,| (if (eq (first (cdr x)) '/) (cddddr x) (cdr x))))))
       (setq *save_vbles* '%save-all-locals%))
    nil) 
   
 (defun parse-common (common-statement)
   (let ((x (if (member 'f2cl-// common-statement)
-	       ;; In preprocessing '//' got converted to f2cl-//.  We undo that
-	       ;; here by converting f2cl-// to '(/ /).
-	       (let ((result '()))
-		 (dolist (item common-statement)
-		   (cond ((eq item 'f2cl-//)
-			  (push '/ result)
-			  (push '/ result))
-			 (t
-			  (push item result))))
-		 (nreverse result))
-	       common-statement)))
-	  
+               ;; In preprocessing '//' got converted to f2cl-//.  We undo that
+               ;; here by converting f2cl-// to '(/ /).
+               (let ((result '()))
+                 (dolist (item common-statement)
+                   (cond ((eq item 'f2cl-//)
+                          (push '/ result)
+                          (push '/ result))
+                         (t
+                          (push item result))))
+                 (nreverse result))
+               common-statement)))
+          
     (setq x (mapcar #'(lambda (l)
-			(remove '|,| l))
-		    (list-split '|/| (cdr x))))
+                        (remove '|,| l))
+                    (list-split '|/| (cdr x))))
     (setq x (if (null (car x))
-		(cdr x)
-		(cons nil x)))
+                (cdr x)
+                (cons nil x)))
     ;; x now in form (cb nlist cb nlist ... )
 
     ;; Pick out the common blocks and variables and put them in a hash
     ;; table for later use.  We want to associate the variables with
     ;; the common block.
     (do ((list x (cddr list)))
-	((endp list))
+        ((endp list))
       (let ((varlist (second list))
-	    (block-name (or (caar list) '%blank%)))
-	;; Check to see if this is another instance.  If so, Fortran
-	;; says these elements are a member of the common block.
-	(multiple-value-bind (val found)
-	    (gethash block-name *common-blocks*)
-	  (declare (ignore found))
-	  ;;(format t "block = ~S~%" block-name)
-	  ;;(format t "  val = ~S~%" val)
-	  ;;(format t "  vars = ~S~%" varlist)
-	  ;;(format t "  varlst = ~S~%" (append val (remove-if-not #'symbolp varlist)))
-	  (setf (gethash block-name *common-blocks*)
-		(append val (mapcar #'check-reserved-lisp-names
-				    (remove-if-not #'symbolp varlist)))))))
+            (block-name (or (caar list) '%blank%)))
+        ;; Check to see if this is another instance.  If so, Fortran
+        ;; says these elements are a member of the common block.
+        (multiple-value-bind (val found)
+            (gethash block-name *common-blocks*)
+          (declare (ignore found))
+          ;;(format t "block = ~S~%" block-name)
+          ;;(format t "  val = ~S~%" val)
+          ;;(format t "  vars = ~S~%" varlist)
+          ;;(format t "  varlst = ~S~%" (append val (remove-if-not #'symbolp varlist)))
+          (setf (gethash block-name *common-blocks*)
+                (append val (mapcar #'check-reserved-lisp-names
+                                    (remove-if-not #'symbolp varlist)))))))
 
    
     ;; pick out lists of vblenames and add to *subprog_common_vars*
     (setq *subprog_common_vars* 
-	  (append *subprog_common_vars*
-		  (do ((list x (cddr list))
-		       (ret nil (append (extract-atoms (cadr list))
-					ret)))
-		      ((endp list)
-		       (mapcar #'check-reserved-lisp-names ret))
-		    ;; look for common arrays and store dimensions of
-		    ;; new common vars
-		    (do ((nlist (cadr list) (cdr nlist)))
-			((endp nlist))
-		      (cond ((and (cdr nlist)
-				  (listp (cadr nlist)))
-			     ;; array dimensioned in COMMON stmt
-			     (update_cm_array_dims (car nlist)
-						   (cadr nlist))
-			     (setq nlist (cdr nlist)))
-			    ;; check if array dimensioned elsewhere
-			    ((member (car nlist) *declared_vbles*)
-			     (do ((decls *explicit_vble_decls* (cdr decls)))
-				 ((null decls) nil)
-			       (do ((vbles (cdar decls) (cdr vbles)))
-				   ((null vbles) nil)
-				 (if (and (eq (car nlist) (caar vbles))
-					  (cdar vbles))
-				     ;; Array has been dimensioned
-				     ;; elsewhere.  Update the
-				     ;; dimensions.  The dimensions
-				     ;; have already been parsed, so
-				     ;; "unparse" them by putting a :
-				     ;; between the dimensions.
-				     ;; FIXME: This is really gross!
-				     (update_cm_array_dims
-				      (car nlist)
-				      (car (mapcar #'(lambda (v)
-						       (list (first v)
-							     '|:|
-							     (second v)))
-						   (cdar vbles))))))))
-			    )))))
+          (append *subprog_common_vars*
+                  (do ((list x (cddr list))
+                       (ret nil (append (extract-atoms (cadr list))
+                                        ret)))
+                      ((endp list)
+                       (mapcar #'check-reserved-lisp-names ret))
+                    ;; look for common arrays and store dimensions of
+                    ;; new common vars
+                    (do ((nlist (cadr list) (cdr nlist)))
+                        ((endp nlist))
+                      (cond ((and (cdr nlist)
+                                  (listp (cadr nlist)))
+                             ;; array dimensioned in COMMON stmt
+                             (update_cm_array_dims (car nlist)
+                                                   (cadr nlist))
+                             (setq nlist (cdr nlist)))
+                            ;; check if array dimensioned elsewhere
+                            ((member (car nlist) *declared_vbles*)
+                             (do ((decls *explicit_vble_decls* (cdr decls)))
+                                 ((null decls) nil)
+                               (do ((vbles (cdar decls) (cdr vbles)))
+                                   ((null vbles) nil)
+                                 (if (and (eq (car nlist) (caar vbles))
+                                          (cdar vbles))
+                                     ;; Array has been dimensioned
+                                     ;; elsewhere.  Update the
+                                     ;; dimensions.  The dimensions
+                                     ;; have already been parsed, so
+                                     ;; "unparse" them by putting a :
+                                     ;; between the dimensions.
+                                     ;; FIXME: This is really gross!
+                                     (update_cm_array_dims
+                                      (car nlist)
+                                      (car (mapcar #'(lambda (v)
+                                                       (list (first v)
+                                                             '|:|
+                                                             (second v)))
+                                                   (cdar vbles))))))))
+                            )))))
     ;;(format t "*common_array_dims* = ~A~%" *common_array_dims*)
     nil))
 
@@ -2641,19 +2641,19 @@ correctly"
 ; when vble in list check dims match with that stored
 (defun update_cm_array_dims (vble dims)
   (let ((stored-dims (member vble *common_array_dims*))
-	(parsed-dims (parse_dimension_specs dims)))
+        (parsed-dims (parse_dimension_specs dims)))
     (if stored-dims
-	(when (not (equal (cadr stored-dims) parsed-dims))
-	  (error "common array ~A dimensions not equivalent between subprograms" vble))
-	(setq *common_array_dims*
-	      (append (list vble parsed-dims)
-		      *common_array_dims*)))))
+        (when (not (equal (cadr stored-dims) parsed-dims))
+          (error "common array ~A dimensions not equivalent between subprograms" vble))
+        (setq *common_array_dims*
+              (append (list vble parsed-dims)
+                      *common_array_dims*)))))
 
 (defun extract-atoms (x)
    (do ((l x (cdr l))
         (ret nil (if (atom (car l))
-		     (cons (car l) ret)
-		     ret)))
+                     (cons (car l) ret)
+                     ret)))
        ((endp l) ret)))
 
 ;; Parse Fortran character declarations. These are rather complicated
@@ -2677,44 +2677,44 @@ correctly"
 (defun parse-char-decl (x)
   ;; x is the line.
   (cond ((eq (second x) '*)
-	 ;; The length was given explicitly as part of the
-	 ;; character declaration.
-	 (push `((character ,(third x))
-		 ,@(mapcar #'(lambda (decl)
-			       (let ((dcl (remove '* decl)))
-				 ;; (format t "  decl = ~A~%" dcl)
-				 (destructuring-bind (name &optional dim-or-len)
-				     dcl
-				   (if dim-or-len
-				       ;; An array of characters
-				       `(,name ,@(parse_dimension_specs dim-or-len))
-				       ;; A simple character string
-				       dcl))))
-			   (list-split '|,| (cdddr x))))
-	       *explicit_vble_decls*))
-	(t
-	 ;; The length may have been given as part of the variable.
-	 ;; Put the length with the variable type.
-	 (mapc #'(lambda (decl)
-		   (cond
-		     ((eq (second decl) '*)
-		      ;; Decl is something like name*(*) so we had
-		      ;; something like
-		      ;;   character name*(*)
-		      ;; This is a character string of unknown length
-		      (push `((character ,(or (third decl) 1)) (,(first decl)))
-			    *explicit_vble_decls*))
-		     (t
-		      (destructuring-bind (name &optional dim-or-len &rest len)
-			  (remove '* decl)
-			(push
-			 (if (and dim-or-len (listp dim-or-len))
-			     ;; An array
-			     `((character ,@len) (,name ,@(parse_dimension_specs dim-or-len)))
-			     ;; A simple character string
-			     `((character ,(or dim-or-len 1)) (,name)))
-			 *explicit_vble_decls*)))))
-	       (list-split '|,| (cdr x)))))
+         ;; The length was given explicitly as part of the
+         ;; character declaration.
+         (push `((character ,(third x))
+                 ,@(mapcar #'(lambda (decl)
+                               (let ((dcl (remove '* decl)))
+                                 ;; (format t "  decl = ~A~%" dcl)
+                                 (destructuring-bind (name &optional dim-or-len)
+                                     dcl
+                                   (if dim-or-len
+                                       ;; An array of characters
+                                       `(,name ,@(parse_dimension_specs dim-or-len))
+                                       ;; A simple character string
+                                       dcl))))
+                           (list-split '|,| (cdddr x))))
+               *explicit_vble_decls*))
+        (t
+         ;; The length may have been given as part of the variable.
+         ;; Put the length with the variable type.
+         (mapc #'(lambda (decl)
+                   (cond
+                     ((eq (second decl) '*)
+                      ;; Decl is something like name*(*) so we had
+                      ;; something like
+                      ;;   character name*(*)
+                      ;; This is a character string of unknown length
+                      (push `((character ,(or (third decl) 1)) (,(first decl)))
+                            *explicit_vble_decls*))
+                     (t
+                      (destructuring-bind (name &optional dim-or-len &rest len)
+                          (remove '* decl)
+                        (push
+                         (if (and dim-or-len (listp dim-or-len))
+                             ;; An array
+                             `((character ,@len) (,name ,@(parse_dimension_specs dim-or-len)))
+                             ;; A simple character string
+                             `((character ,(or dim-or-len 1)) (,name)))
+                         *explicit_vble_decls*)))))
+               (list-split '|,| (cdr x)))))
      
   ;;(format t "explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
   )
@@ -2726,28 +2726,28 @@ correctly"
     (dolist (item x)
       ;;(format t "item = ~S~%" item)
       (cond ((and (listp item)
-		  (eq (second item) '*))
-	     ;; Sometimes we get things like
-	     ;;
-	     ;; (3 * 1.1) or (3 * - 1.1)
-	     ;;
-	     ;; So we need to be a little careful in extracting the value.
-	     (let ((val (if (eq (third item) '-)
-			    `(- ,(nthcdr 3 item))
-			    (third item)))
-		   ;; Figure out how many repetitions.  The number of
-		   ;; reps can be a value from a parameter statement,
-		   ;; so we use EVAL to compute it for us.
-		   (nreps (if (numberp (first item))
-			      (first item)
-			      (eval `(let ,*key_params* ,(first item))))))
-	       (dotimes (k nreps)
-		 (push val result))))
-	    ((and (listp item)
-		  (null (cdr item)))
-	     (push (car item) result))
-	    (t
-	     (push item result))))
+                  (eq (second item) '*))
+             ;; Sometimes we get things like
+             ;;
+             ;; (3 * 1.1) or (3 * - 1.1)
+             ;;
+             ;; So we need to be a little careful in extracting the value.
+             (let ((val (if (eq (third item) '-)
+                            `(- ,(nthcdr 3 item))
+                            (third item)))
+                   ;; Figure out how many repetitions.  The number of
+                   ;; reps can be a value from a parameter statement,
+                   ;; so we use EVAL to compute it for us.
+                   (nreps (if (numberp (first item))
+                              (first item)
+                              (eval `(let ,*key_params* ,(first item))))))
+               (dotimes (k nreps)
+                 (push val result))))
+            ((and (listp item)
+                  (null (cdr item)))
+             (push (car item) result))
+            (t
+             (push item result))))
     ;;(format t "result = ~A~%" x)
     (nreverse result)))
 
@@ -2759,7 +2759,7 @@ correctly"
 ;   clist either a alist or a repetition (not a combination of both)
 
 ;; rlt:  also handles
-;;	data var1, var2, var3/val1, val2, val3/
+;;      data var1, var2, var3/val1, val2, val3/
 
 (defun find-data-var (var)
   (if (atom var)
@@ -2771,52 +2771,52 @@ correctly"
   ;;(setq x (list-split '|/| (cdr x)))
   ;;(format t "parse-data post-split:  ~S~%" x)
   (do ((list (list-split '|/| (cdr x))
-	     (cddr list))
+             (cddr list))
        (ret nil
-	    (let ((var (remove nil (list-split '|,| (car list))))
-		  (vals (list-split '|,| (cadr list))))
-	      ;;(format t "list = ~a~%" list)
-	      ;;(format t "var = ~a~%" var)
-	      ;;(format t "vals = ~a~%" vals)
-	      
-	      ;; Need to be careful here.  We might be doing either
-	      ;;
-	      ;; data x / 1 , 2 , 3 /
-	      ;;
-	      ;; or
-	      ;;
-	      ;; data x(1) / 1 /.
-	      ;;
-	      ;; So we check the var is an array without dimensions.
-	      ;; If so, the VALS list is really all the values for the
-	      ;; array.
-	      ;;
-	      ;; We also might have an implied do loop, in which case,
-	      ;; we want VALS to be all the values.
-	      ;;
-	      ;; (FIXME:  This area probably needs a lot of rework!)
-	      #+nil
-	      (format t "var = ~A~%" var)
-	      (let* ((is-array
-		      (or (and (vble-is-array-p
-				(check-reserved-lisp-names
-				 (find-data-var var)))
-			       (null (cdar var)))
-			  (and (listp var) (listp vals)
-			       (listp (caar var))
-			       (member '= (caar var)))))
-		     (rep-vals (handle-data-reps vals))
-		     (result (progn
-			       #+nil
-			       (format t "is-array ~A= ~A~%" var is-array)
-			       (mapcar #'parse-data1 var
-				     (if is-array (list rep-vals) rep-vals)))))
-		;;(format t "result = ~a~%" result)
-		(setf *data-init* (append *data-init* (if (consp (first result))
-							result
-							(list result)))))
-	      ;;(format t "*data-init*:  ~A~%" *data-init*)
-	      )))
+            (let ((var (remove nil (list-split '|,| (car list))))
+                  (vals (list-split '|,| (cadr list))))
+              ;;(format t "list = ~a~%" list)
+              ;;(format t "var = ~a~%" var)
+              ;;(format t "vals = ~a~%" vals)
+              
+              ;; Need to be careful here.  We might be doing either
+              ;;
+              ;; data x / 1 , 2 , 3 /
+              ;;
+              ;; or
+              ;;
+              ;; data x(1) / 1 /.
+              ;;
+              ;; So we check the var is an array without dimensions.
+              ;; If so, the VALS list is really all the values for the
+              ;; array.
+              ;;
+              ;; We also might have an implied do loop, in which case,
+              ;; we want VALS to be all the values.
+              ;;
+              ;; (FIXME:  This area probably needs a lot of rework!)
+              #+nil
+              (format t "var = ~A~%" var)
+              (let* ((is-array
+                      (or (and (vble-is-array-p
+                                (check-reserved-lisp-names
+                                 (find-data-var var)))
+                               (null (cdar var)))
+                          (and (listp var) (listp vals)
+                               (listp (caar var))
+                               (member '= (caar var)))))
+                     (rep-vals (handle-data-reps vals))
+                     (result (progn
+                               #+nil
+                               (format t "is-array ~A= ~A~%" var is-array)
+                               (mapcar #'parse-data1 var
+                                     (if is-array (list rep-vals) rep-vals)))))
+                ;;(format t "result = ~a~%" result)
+                (setf *data-init* (append *data-init* (if (consp (first result))
+                                                        result
+                                                        (list result)))))
+              ;;(format t "*data-init*:  ~A~%" *data-init*)
+              )))
       ((null (cdr list)))))
 
 #+nil
@@ -2824,60 +2824,60 @@ correctly"
   (let ((loops nil))
     (loop
        (cond ((and (listp (car v))
-		   (find '= (car v)))
-	      (let ((split (list-split '|,| (car v))))
-		(format t "split comma = ~S~%" split)
-		(format t "split =     = ~S~%" (list-split '= (car v)))
-		(destructuring-bind (info (loopvar = start) (stop))
-		    split
-		  (declare (ignore =))
-		  (setf loopvar (check-reserved-lisp-names loopvar))
-		  (push `(,loopvar ,start ,stop) loops)
-		  (setf v info))))
-	     (t (return))))
+                   (find '= (car v)))
+              (let ((split (list-split '|,| (car v))))
+                (format t "split comma = ~S~%" split)
+                (format t "split =     = ~S~%" (list-split '= (car v)))
+                (destructuring-bind (info (loopvar = start) (stop))
+                    split
+                  (declare (ignore =))
+                  (setf loopvar (check-reserved-lisp-names loopvar))
+                  (push `(,loopvar ,start ,stop) loops)
+                  (setf v info))))
+             (t (return))))
     (destructuring-bind (var indices)
-	v
+        v
       ;; We probably need to run check-reserved-lisp-names over the indices
       (setf indices (remove '|,| indices))
       (setf var (check-reserved-lisp-names var))
       (setf v `(,var ,indices))
       (let ((result v))
-	(setf result `((,v) ,@loops))
-	`(data-implied-do ,result (,var) ,l)))))
+        (setf result `((,v) ,@loops))
+        `(data-implied-do ,result (,var) ,l)))))
 
 (defun parse-data-implied-do (v l)
   (let ((loops nil))
     (loop
        (cond ((and (listp (car v))
-		   (find '= (car v)))
-	      (let ((split (list-split '|,| (car v)))
-		    (split= (list-split '= (car v))))
-		;;(format t "split comma = ~S~%" split)
-		;;(format t "split =     = ~S~%" split=)
-		(let ((loopvar (car (last (car split=))))
-		      (start (first (second split=)))
-		      (stop (third (second split=)))
-		      (info (butlast (car split=) 2)))
-		  (setf loopvar (check-reserved-lisp-names loopvar))
-		  (push `(,loopvar ,start ,stop) loops)
-		  (setf v info))))
-	     (t (return))))
+                   (find '= (car v)))
+              (let ((split (list-split '|,| (car v)))
+                    (split= (list-split '= (car v))))
+                ;;(format t "split comma = ~S~%" split)
+                ;;(format t "split =     = ~S~%" split=)
+                (let ((loopvar (car (last (car split=))))
+                      (start (first (second split=)))
+                      (stop (third (second split=)))
+                      (info (butlast (car split=) 2)))
+                  (setf loopvar (check-reserved-lisp-names loopvar))
+                  (push `(,loopvar ,start ,stop) loops)
+                  (setf v info))))
+             (t (return))))
     ;;(format t "v = ~S~%" v)
     ;;(format t "loops = ~S~%" loops)
     (let (body var-list)
       (dolist (data-var (list-split '|,| v))
-	(destructuring-bind (var indices)
-	    data-var
-	  ;; We probably need to run check-reserved-lisp-names over the indices
-	  ;;(format t "indices = ~S~%" indices)
-	  (setf indices (if (member '|,| indices)
-			    (mapcar #'parse-expression
-				    (mapcar #'list (remove '|,| indices)))
-			    (list (parse-expression indices))))
-	  ;;(format t "indices = ~S~%" indices)
-	  (setf var (check-reserved-lisp-names var))
-	  (push `(,var ,indices) body)
-	  (push var var-list)))
+        (destructuring-bind (var indices)
+            data-var
+          ;; We probably need to run check-reserved-lisp-names over the indices
+          ;;(format t "indices = ~S~%" indices)
+          (setf indices (if (member '|,| indices)
+                            (mapcar #'parse-expression
+                                    (mapcar #'list (remove '|,| indices)))
+                            (list (parse-expression indices))))
+          ;;(format t "indices = ~S~%" indices)
+          (setf var (check-reserved-lisp-names var))
+          (push `(,var ,indices) body)
+          (push var var-list)))
       (setf body (nreverse body))
       (setf var-list (nreverse var-list))
       ;;(format t "body = ~S~%" body)
@@ -2889,99 +2889,99 @@ correctly"
   ;;(format t "parse-data1:  v = ~S~%" v)
   ;;(format t "parse-data1:  l = ~S~%" l)
   (labels ((fix-up-negative-number (x)
-	     (cond ((numberp x)
-		    x)
-		   (t
-		    (let ((ex (id-expression (if (atom x) (list x) x))))
-		      (if (listp ex)
-			  (- (second ex))
-			  ex)))))
-	   (fix-up-data-reps (data)
-	     (let ((result '()))
-	       (dolist (item data (nreverse result))
-		 ;;(format t "data-reps item = ~S~%" item)
-		 (cond ((and (listp item)
-			     (>= (length item) 3)
-			     (eq (second item) '*))
-			;;(format t "~a reps of ~S~%" (first item) (rest (rest item)))
-			(let ((num (fix-up-negative-number (rest (rest item)))))
-			  (dotimes (k (first item))
-			    (push num result))))
-		       (t
-			(push (fix-up-negative-number item) result))))))
-	     (data-var (v)
-	       (cond ((atom v)
-		      v)
-		     ((listp v)
-		      (mapcar #'car v))
-		     (t
-		      nil))))
+             (cond ((numberp x)
+                    x)
+                   (t
+                    (let ((ex (id-expression (if (atom x) (list x) x))))
+                      (if (listp ex)
+                          (- (second ex))
+                          ex)))))
+           (fix-up-data-reps (data)
+             (let ((result '()))
+               (dolist (item data (nreverse result))
+                 ;;(format t "data-reps item = ~S~%" item)
+                 (cond ((and (listp item)
+                             (>= (length item) 3)
+                             (eq (second item) '*))
+                        ;;(format t "~a reps of ~S~%" (first item) (rest (rest item)))
+                        (let ((num (fix-up-negative-number (rest (rest item)))))
+                          (dotimes (k (first item))
+                            (push num result))))
+                       (t
+                        (push (fix-up-negative-number item) result))))))
+             (data-var (v)
+               (cond ((atom v)
+                      v)
+                     ((listp v)
+                      (mapcar #'car v))
+                     (t
+                      nil))))
 
     (cond ((and (listp l) (listp (car l))
-		(eq (second (car l)) '*))
-	   ;;(format t "parse-data1 1 l = ~A~%" l)
-	   `(fill ,(check-reserved-lisp-names (first v))
-	          ,(fix-up-negative-number (cddar l))
-	          :end ,(first (car l))))
-	  ((and (listp v) ;;(not (listp l))
-		(listp (second v))
-		(numberp (first (second v))))
-	   ;; Initializing one element of an array.
+                (eq (second (car l)) '*))
+           ;;(format t "parse-data1 1 l = ~A~%" l)
+           `(fill ,(check-reserved-lisp-names (first v))
+                  ,(fix-up-negative-number (cddar l))
+                  :end ,(first (car l))))
+          ((and (listp v) ;;(not (listp l))
+                (listp (second v))
+                (numberp (first (second v))))
+           ;; Initializing one element of an array.
 
-	   ;;(format t "parse-data1 array~%")
-	   (let* ((vname (check-reserved-lisp-names (first v)))
-		  (dims (lookup-array-bounds vname)))
-	     ;; FIXME: DO NOT change this to SETF.  Other code uses
-	     ;; this FSET to figure out how to initialize the DATA
-	     ;; array nicely.  When this is fixed, we can use plain
-	     ;; SETF.
-	     `(fset (fref ,vname
-		          ,(remove '|,| (second v))
-		          ,dims)
-	       ,(fix-up-negative-number l))))
-	  ((and (listp v) (listp l)
-		(listp (first v))
-		(member '= (first v)))
-	   ;; Implied do loop.  Extract out the important parts of the
-	   ;; implied do and construct what we need from it.
-	     (parse-data-implied-do v (fix-up-data-reps l)))
-	  ((and (listp v) (listp l)
-		(= (length v) (length l))
-		(> (length v) 1))
-	   ;;(format t "parse-data1 op~%")
-	   (mapcar #'(lambda (var val)
-		       `(setq ,(check-reserved-lisp-names var)
-			      ,(fix-up-negative-number val)))
-		   v (handle-data-reps l)))
-	  (t
-	   ;;(format t "parse-data1 else: v, l = ~S ~S~%" v l)
-	   ;; (format t "parse-data1 else:  v is array:  ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
-	   (cond ((subtypep (lookup-vble-type (check-reserved-lisp-names (first v)))
-			    'string)
-		  ;; Need to initialize a string carefully.
-		  ;;
-		  ;; FIXME: We should probably do this when we declare
-		  ;; the array instead.
-		  `(replace ,(check-reserved-lisp-names (first v)) ,l)
-		  )
-		 ((and (vble-is-array-p (check-reserved-lisp-names (first v)))
-		       (null (rest v)))
-		  #+nil
-		  (progn
-		    (format t "v = ~A~%" v)
-		    (format t "vble-is-array = ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
-		    (format t "replace case ~%")
-		    (format t "l = ~A~%" l)
-		    (format t "*declared = ~A~%" *declared_vbles*)
-		    (format t "*explicit = ~A~%" *explicit_vble_decls*)
-		    (format t "*common   = ~A~%" *common_array_dims*))
-		  `(replace ,(check-reserved-lisp-names (first v))
-			    ',(mapcar #'fix-up-negative-number
-				      (handle-data-reps l))))
-		 (t
-		  ;;(format t "t case~%")
-		  `(setq ,(check-reserved-lisp-names (first v))
-		      ,(fix-up-negative-number l))))))))
+           ;;(format t "parse-data1 array~%")
+           (let* ((vname (check-reserved-lisp-names (first v)))
+                  (dims (lookup-array-bounds vname)))
+             ;; FIXME: DO NOT change this to SETF.  Other code uses
+             ;; this FSET to figure out how to initialize the DATA
+             ;; array nicely.  When this is fixed, we can use plain
+             ;; SETF.
+             `(fset (fref ,vname
+                          ,(remove '|,| (second v))
+                          ,dims)
+               ,(fix-up-negative-number l))))
+          ((and (listp v) (listp l)
+                (listp (first v))
+                (member '= (first v)))
+           ;; Implied do loop.  Extract out the important parts of the
+           ;; implied do and construct what we need from it.
+             (parse-data-implied-do v (fix-up-data-reps l)))
+          ((and (listp v) (listp l)
+                (= (length v) (length l))
+                (> (length v) 1))
+           ;;(format t "parse-data1 op~%")
+           (mapcar #'(lambda (var val)
+                       `(setq ,(check-reserved-lisp-names var)
+                              ,(fix-up-negative-number val)))
+                   v (handle-data-reps l)))
+          (t
+           ;;(format t "parse-data1 else: v, l = ~S ~S~%" v l)
+           ;; (format t "parse-data1 else:  v is array:  ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
+           (cond ((subtypep (lookup-vble-type (check-reserved-lisp-names (first v)))
+                            'string)
+                  ;; Need to initialize a string carefully.
+                  ;;
+                  ;; FIXME: We should probably do this when we declare
+                  ;; the array instead.
+                  `(replace ,(check-reserved-lisp-names (first v)) ,l)
+                  )
+                 ((and (vble-is-array-p (check-reserved-lisp-names (first v)))
+                       (null (rest v)))
+                  #+nil
+                  (progn
+                    (format t "v = ~A~%" v)
+                    (format t "vble-is-array = ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
+                    (format t "replace case ~%")
+                    (format t "l = ~A~%" l)
+                    (format t "*declared = ~A~%" *declared_vbles*)
+                    (format t "*explicit = ~A~%" *explicit_vble_decls*)
+                    (format t "*common   = ~A~%" *common_array_dims*))
+                  `(replace ,(check-reserved-lisp-names (first v))
+                            ',(mapcar #'fix-up-negative-number
+                                      (handle-data-reps l))))
+                 (t
+                  ;;(format t "t case~%")
+                  `(setq ,(check-reserved-lisp-names (first v))
+                      ,(fix-up-negative-number l))))))))
 
 ; parse EXTERNAL f1, f2, ...
 ; by adding the function names to *external-function-names*
@@ -3000,24 +3000,24 @@ correctly"
   (format t "equivalence ~A~%" x)
   (let ((pairs (mapcar #'car (list-split '|,| (cdr x)))))
     (setf *equivalenced-vars* (mapcar #'(lambda (l)
-					  (list-split '|,| l))
-				      pairs))
+                                          (list-split '|,| l))
+                                      pairs))
     (format t "~A~%" *equivalenced-vars*)
     nil))
 
 (defun parse-equivalence (x)
   ;;(format t "equivalence ~A~%" x)
   (let ((vars (mapcar #'(lambda (l)
-			  (list-split '|,| l))
-		      (mapcar #'car (list-split '|,| (cdr x))))))
+                          (list-split '|,| l))
+                      (mapcar #'car (list-split '|,| (cdr x))))))
     ;;(format t "~A~%" *equivalenced-vars*)
     ;;(setf *equivalenced-vars* vars)
     (setf *equivalenced-vars*
-	  (append *equivalenced-vars*
-		  (mapcar #'(lambda (l)
-			      `(,(parse-expression (first l))
-				 ,(parse-expression (second l))))
-			  vars)))
+          (append *equivalenced-vars*
+                  (mapcar #'(lambda (l)
+                              `(,(parse-expression (first l))
+                                 ,(parse-expression (second l))))
+                          vars)))
     ;;(format t "~A~%" *equivalenced-vars*)
     nil))
 
@@ -3061,10 +3061,10 @@ correctly"
 
 (defun concat (&rest syms)
   (cond ((null syms)
-	 "")
-	(t
-	 (concatenate 'string (symbol-name (first syms))
-		      (apply #'concat (rest syms))))))
+         "")
+        (t
+         (concatenate 'string (symbol-name (first syms))
+                      (apply #'concat (rest syms))))))
 
 
 (defun list-split-multi (op lis)
@@ -3100,92 +3100,92 @@ Senac syntax:... | op '| ...|)))
   ;; that were split up but really should be one.
   (let (done)
     (do* ((this (car x) (first rest))
-	  (rest (cdr x) (cdr rest)))
-	 ((null rest)
-	  (return (nreverse (push this done))))
+          (rest (cdr x) (cdr rest)))
+         ((null rest)
+          (return (nreverse (push this done))))
       (let ((next (car rest)))
-	(cond ((and (eq this '*)
-		    (eq next '*))
-	       ;; Exponentiation operator
-	       (pop rest)
-	       (push '^ done))
-	      ((and (eq this '>)
-		    (eq next '=))
-	       ;; >=
-	       (pop rest)
-	       (push '>= done))
-	      ((and (eq this '>)
-		    (eq next '<))
-	       ;; >< (not equal)
-	       (pop rest)
-	       (push '>< done))
-	      ((and (eq this '<)
-		    (eq next '=))
-	       ;; <=
-	       (pop rest)
-	       (push '<= done))
-	      ((and (eq this '/)
-		    (eq next '/))
-	       ;; Fortran string concat operator
-	       (pop rest)
-	       (push 'f2cl-// done))
-	      (t
-	       (push this done)))))))
+        (cond ((and (eq this '*)
+                    (eq next '*))
+               ;; Exponentiation operator
+               (pop rest)
+               (push '^ done))
+              ((and (eq this '>)
+                    (eq next '=))
+               ;; >=
+               (pop rest)
+               (push '>= done))
+              ((and (eq this '>)
+                    (eq next '<))
+               ;; >< (not equal)
+               (pop rest)
+               (push '>< done))
+              ((and (eq this '<)
+                    (eq next '=))
+               ;; <=
+               (pop rest)
+               (push '<= done))
+              ((and (eq this '/)
+                    (eq next '/))
+               ;; Fortran string concat operator
+               (pop rest)
+               (push 'f2cl-// done))
+              (t
+               (push this done)))))))
 
 (defun convert-data-type (x)
   (cond ((not (listp x)) 
-	 (car (convert-data-type (list x))))
-	((equalp (subsequence x 0 2) '(double precision))
-	 (append '(double-float) (cdr x)))
-	((equalp (subsequence x 0 3) '(real * 8))
-	 (append '(double-float) (subsequence x 3)))
-	((equalp (subsequence x 0 3) '(integer * 1))
-	 (append '(integer1) (subsequence x 3)))
-	((equalp (subsequence x 0 3) '(integer * 2))
-	 (append '(integer2) (subsequence x 3)))
-	((equalp (subsequence x 0 3) '(integer * 4))
-	 (append '(integer4) (subsequence x 3)))
-	((eq (car x) 'real)   
-	 (append '(single-float) (cdr x)))
-	((eq (car x) 'integer)
-	 (append '(integer4) (cdr x)))
-	((equalp (subsequence x 0 3) '(complex * 8))
-	 (append (list (maybe-promote-type 'complex8)) (subsequence x 3)))
-	((equalp (subsequence x 0 3) '(complex * 16))
-	 (append '(complex16) (subsequence x 3)))
-	((and (listp (car x)) (eq (caar x) 'complex))
-	 (append (list (maybe-promote-type 'complex8)) (cdr x)))
-	((and (listp (car x)) (eq (caar x) 'character))
-	 (append `(character ,(third (car x))) (cdr x)))
-	((and (listp (car x)) (eq (caar x) 'real))
-	 (append (list (maybe-promote-type 'single-float)) (cdr x)))
-	((and (listp (car x)) (eq (caar x) 'integer))
-	 (append '(integer4) (cdr x)))
-	((eq (car x) 'double) 
-	 (append '(double-float) (cdr x)))
-	((eq (car x) 'logical) 
-	 (append '(logical) (cdr x)))
-	(t x)))
+         (car (convert-data-type (list x))))
+        ((equalp (subsequence x 0 2) '(double precision))
+         (append '(double-float) (cdr x)))
+        ((equalp (subsequence x 0 3) '(real * 8))
+         (append '(double-float) (subsequence x 3)))
+        ((equalp (subsequence x 0 3) '(integer * 1))
+         (append '(integer1) (subsequence x 3)))
+        ((equalp (subsequence x 0 3) '(integer * 2))
+         (append '(integer2) (subsequence x 3)))
+        ((equalp (subsequence x 0 3) '(integer * 4))
+         (append '(integer4) (subsequence x 3)))
+        ((eq (car x) 'real)   
+         (append '(single-float) (cdr x)))
+        ((eq (car x) 'integer)
+         (append '(integer4) (cdr x)))
+        ((equalp (subsequence x 0 3) '(complex * 8))
+         (append (list (maybe-promote-type 'complex8)) (subsequence x 3)))
+        ((equalp (subsequence x 0 3) '(complex * 16))
+         (append '(complex16) (subsequence x 3)))
+        ((and (listp (car x)) (eq (caar x) 'complex))
+         (append (list (maybe-promote-type 'complex8)) (cdr x)))
+        ((and (listp (car x)) (eq (caar x) 'character))
+         (append `(character ,(third (car x))) (cdr x)))
+        ((and (listp (car x)) (eq (caar x) 'real))
+         (append (list (maybe-promote-type 'single-float)) (cdr x)))
+        ((and (listp (car x)) (eq (caar x) 'integer))
+         (append '(integer4) (cdr x)))
+        ((eq (car x) 'double) 
+         (append '(double-float) (cdr x)))
+        ((eq (car x) 'logical) 
+         (append '(logical) (cdr x)))
+        (t x)))
 
 (defun reduce-data-type (x)
   (let ((subseq3 (subsequence x 0 3)))
     (cond ((equalp (subsequence x 0 2) '(double precision))
-	   (remove 'precision x))
-	  ((equalp (subsequence x 0 2) '(double complex))
-	   (append '(complex16) (subsequence x 2)))
-	  ((equalp subseq3 '(real * 4))
-	   (append '(real) (subsequence x 3)))
-	  ((equalp subseq3 '(real * 8))
-	   (append '(double) (subsequence x 3)))
-	  ((equalp subseq3 '(complex * 16))
-	   (append '(complex16) (subsequence x 3)))
-	  ((equalp subseq3 '(integer * 4))
-	   (append '(integer4) (subsequence x 3)))
-	  ((equalp subseq3 '(integer * 2))
-	   (append '(integer2) (subsequence x 3)))
-	  ((equalp subseq3 '(integer * 1))
-	   (append '(integer1) (subsequence x 3)))
-	  (t x))))
+           (remove 'precision x))
+          ((equalp (subsequence x 0 2) '(double complex))
+           (append '(complex16) (subsequence x 2)))
+          ((equalp subseq3 '(real * 4))
+           (append '(real) (subsequence x 3)))
+          ((equalp subseq3 '(real * 8))
+           (append '(double) (subsequence x 3)))
+          ((equalp subseq3 '(complex * 16))
+           (append '(complex16) (subsequence x 3)))
+          ((equalp subseq3 '(integer * 4))
+           (append '(integer4) (subsequence x 3)))
+          ((equalp subseq3 '(integer * 2))
+           (append '(integer2) (subsequence x 3)))
+          ((equalp subseq3 '(integer * 1))
+           (append '(integer1) (subsequence x 3)))
+          (t x))))
   
 
 ;=============================================================================
@@ -3243,14 +3243,14 @@ Senac syntax:... | op '| ...|)))
   (prog (ans rans next-char)
 loop1 
     (setq ans (cons 
-	       (read-preserving-whitespace stream nil 'eof nil) ans))
+               (read-preserving-whitespace stream nil 'eof nil) ans))
 loop2  
     (setq next-char (peek-char nil stream nil 'eof nil))
     (cond ((eql next-char #\Space)
-	   (read-char stream nil 'eof t) (go loop2)))
+           (read-char stream nil 'eof t) (go loop2)))
     (cond ((member next-char '(#\Newline eof) :test #'eql)
-	   (setq rans (nreverse ans))
-	   (return rans)))
+           (setq rans (nreverse ans))
+           (return rans)))
     (go loop1)))
 
 ;------------------------------------------------------------------------------
@@ -3264,12 +3264,12 @@ loop2
        (read-char stream nil 'eof t)
        (read-char stream nil 'eof t)))
 
-;------------------------------------------------------------------------------	
+;------------------------------------------------------------------------------ 
 
 (defun const (x n)
   (make-list n :initial-element x))
 
-;;------------------------------------------------------------------------------	
+;;------------------------------------------------------------------------------        
 ;;
 ;; A useful utility to take the parsed tokens and produce the original
 ;; Fortran code.
@@ -3294,7 +3294,7 @@ loop2
         (setf prev tok)
         (incf count)))))
 
-;------------------------------------------------------------------------------	
+;------------------------------------------------------------------------------ 
 (defun brackets-check (x)
   (prog (path-stack ce check-list ret-list)
  
@@ -3315,48 +3315,48 @@ loop2
      ;; for any non-trivial input, so we signal an error showing the
      ;; offending statement to help locate the source line.
      (cond ((null check-list)
-	    (cond 
-	      ((greaterp (caar path-stack) 0)
-	       (error "f2cl: missing right parenthesis \")\" in statement:~%~6T~A"
+            (cond 
+              ((greaterp (caar path-stack) 0)
+               (error "f2cl: missing right parenthesis \")\" in statement:~%~6T~A"
                       (render-tokens-as-fortran x)))
-	      ((greaterp (cadar path-stack) 0)
-	       (error "f2cl: missing right bracket \"]\" in statement:~%~6T~A"
+              ((greaterp (cadar path-stack) 0)
+               (error "f2cl: missing right bracket \"]\" in statement:~%~6T~A"
                       (render-tokens-as-fortran x)))
-	      ((greaterp (caddar path-stack) 0)
-	       (error "f2cl: missing right brace \"}\" in statement:~%~6T~A"
+              ((greaterp (caddar path-stack) 0)
+               (error "f2cl: missing right brace \"}\" in statement:~%~6T~A"
                       (render-tokens-as-fortran x)))
-	      (t (return ret-list)))))
+              (t (return ret-list)))))
 
      (cond 
        ((equal ce '|(|) 
-	(push (mapcar 'plus '(1 0 0) (car path-stack)) path-stack)
-	(setq ret-list (gen-append ret-list nil (caadr path-stack))))
+        (push (mapcar 'plus '(1 0 0) (car path-stack)) path-stack)
+        (setq ret-list (gen-append ret-list nil (caadr path-stack))))
        ((equal ce '|[|) 
-	(push (mapcar 'plus '(0 1 0) (car path-stack)) path-stack)
-	(setq ret-list (gen-append ret-list '|[| (caar path-stack))))
+        (push (mapcar 'plus '(0 1 0) (car path-stack)) path-stack)
+        (setq ret-list (gen-append ret-list '|[| (caar path-stack))))
        ((equal ce '|{|) 
-	(push (mapcar 'plus '(0 0 1) (car path-stack)) path-stack)
-	(setq ret-list (gen-append ret-list '|{| (caar path-stack))))
+        (push (mapcar 'plus '(0 0 1) (car path-stack)) path-stack)
+        (setq ret-list (gen-append ret-list '|{| (caar path-stack))))
        ((and (equal ce '|)|) (or (nequal (mapcar 'diff (pop path-stack) '(1 0 0))
-					 (car path-stack))
-				 (lessp (caar path-stack) 0)))
-	(princ-reset 
-	 '|Syntax error: right parenthesis ")" in an invalid position or unmatched|))
+                                         (car path-stack))
+                                 (lessp (caar path-stack) 0)))
+        (princ-reset 
+         '|Syntax error: right parenthesis ")" in an invalid position or unmatched|))
        ((equal ce '|)|))
        ((and (equal ce '|]|) (or (nequal (mapcar 'diff (pop path-stack) '(0 1 0))
-					 (car path-stack))
-				 (lessp (caar path-stack) 0)))
-	(princ-reset 
-	 '|Syntax error: right bracket "]" in an invalid position or unmatched|))
+                                         (car path-stack))
+                                 (lessp (caar path-stack) 0)))
+        (princ-reset 
+         '|Syntax error: right bracket "]" in an invalid position or unmatched|))
        ((equal ce '|]|)
-	(setq ret-list (gen-append ret-list ce (caar path-stack))))
+        (setq ret-list (gen-append ret-list ce (caar path-stack))))
        ((and (equal ce '|}|) (or (nequal (mapcar 'diff (pop path-stack) '(0 0 1))
-					 (car path-stack))
-				 (lessp (caar path-stack) 0)))
-	(princ-reset 
-	 '|Syntax error: right brace "}" in an invalid position or unmatched|))
+                                         (car path-stack))
+                                 (lessp (caar path-stack) 0)))
+        (princ-reset 
+         '|Syntax error: right brace "}" in an invalid position or unmatched|))
        ((equal ce '|]|)
-	(setq ret-list (gen-append ret-list ce (caar path-stack))))
+        (setq ret-list (gen-append ret-list ce (caar path-stack))))
        (t (setq ret-list (gen-append ret-list ce (caar path-stack))))
 
        )
@@ -3473,9 +3473,9 @@ loop2
 (progn
   (set-pprint-dispatch '(cons (member f2cl-lib:fdo)) #'pprint-fdo 0 *f2cl-pprint-dispatch*)
   (set-pprint-dispatch '(cons (member f2cl-lib:with-array-data))
-		       #'pprint-with-array-data 0 *f2cl-pprint-dispatch*)
+                       #'pprint-with-array-data 0 *f2cl-pprint-dispatch*)
   (set-pprint-dispatch '(cons (member f2cl-lib:with-multi-array-data))
-		       #'pprint-with-multi-array-data 0 *f2cl-pprint-dispatch*)
+                       #'pprint-with-multi-array-data 0 *f2cl-pprint-dispatch*)
   (set-pprint-dispatch '(cons (member f2cl-lib:implied-do-collect))
                        #'pprint-implied-do-collect 0 *f2cl-pprint-dispatch*))
 
@@ -4121,24 +4121,24 @@ loop2
 ;;; the correct args for them.  Do this by adding a hash table to hold
 ;;; info about statement functions.
 ;;;
-;;; 	(*f2cl-statement-finfo*): New variable holding the hash-table for
-;;; 	of function info for statement functions.
-;;; 	(f2cl): Give better descriptions of some options in the docstring.
-;;; 	(translate-and-write-subprog): Clear out the hash-table for the
-;;; 	statement function info.
-;;; 	(parse-arrayref-or-stmtfn): Save away function info when we find a
-;;; 	statement function.
-;;; 	(maybe-convert-array-ref-to-slice): If the function is in the
-;;; 	arglist, we can't do anything special about it.  Otherwise, try to
-;;; 	find the function in the global database or the statement-function
-;;; 	database so we can generate the correct array references.
+;;;     (*f2cl-statement-finfo*): New variable holding the hash-table for
+;;;     of function info for statement functions.
+;;;     (f2cl): Give better descriptions of some options in the docstring.
+;;;     (translate-and-write-subprog): Clear out the hash-table for the
+;;;     statement function info.
+;;;     (parse-arrayref-or-stmtfn): Save away function info when we find a
+;;;     statement function.
+;;;     (maybe-convert-array-ref-to-slice): If the function is in the
+;;;     arglist, we can't do anything special about it.  Otherwise, try to
+;;;     find the function in the global database or the statement-function
+;;;     database so we can generate the correct array references.
 ;;;
 ;;; Revision 1.129  2003/11/14 02:55:54  rtoy
-;;; 	* src/f2cl1.l (maybe-convert-array-ref-to-slice): When looking up
-;;; 	the function name to get the argument types, we need to be
-;;; 	careful.  If the function is an EXTERNAL function (i.e., a
-;;; 	parameter to the function we're compiling), it doesn't necessarily
-;;; 	have the same types as a global function with the same name.
+;;;     * src/f2cl1.l (maybe-convert-array-ref-to-slice): When looking up
+;;;     the function name to get the argument types, we need to be
+;;;     careful.  If the function is an EXTERNAL function (i.e., a
+;;;     parameter to the function we're compiling), it doesn't necessarily
+;;;     have the same types as a global function with the same name.
 ;;;
 ;;; Revision 1.128  2003/11/13 22:37:08  rtoy
 ;;; Oops.  We want subtypep, not typep!
@@ -4193,8 +4193,8 @@ loop2
 ;;; Revision 1.120  2003/01/08 18:19:00  rtoy
 ;;; Was incorrectly converting things like
 ;;;
-;;; 	character*8 s
-;;; 	data s/'z'/
+;;;     character*8 s
+;;;     data s/'z'/
 ;;;
 ;;; to
 ;;;
@@ -4500,7 +4500,7 @@ loop2
 ;;; because // in a COMMON statement really means the blank common block.
 ;;; For example:
 ;;;
-;;; 	COMMON /c1/a, b//d, e
+;;;     COMMON /c1/a, b//d, e
 ;;;
 ;;; The variables d and e are in the blank common block.  The file
 ;;; val/commontest.for should now be converted correctly.
@@ -4602,8 +4602,8 @@ loop2
 ;;; Revision 1.47  2000/07/21 21:14:21  rtoy
 ;;; The last change to PARSE-DATA broke the case of
 ;;;
-;;; 	dimension x(3)
-;;; 	data x/1, 2, 3/
+;;;     dimension x(3)
+;;;     data x/1, 2, 3/
 ;;;
 ;;; Make sure we are really initializing an array and not just one element
 ;;; of the array.
@@ -4611,14 +4611,14 @@ loop2
 ;;; Revision 1.46  2000/07/21 17:39:27  rtoy
 ;;; PARSE-DATA and friends were mishandling the case
 ;;;
-;;; 	DATA array/1,2,3,4/
+;;;     DATA array/1,2,3,4/
 ;;;
 ;;; where array was an array.
 ;;;
 ;;; Revision 1.45  2000/07/20 13:40:52  rtoy
 ;;; o PARSE-DATA was not correctly handling data statements of the form:
 ;;;
-;;; 	data x(1),x(2),x(3)/n1, n2, n3/
+;;;     data x(1),x(2),x(3)/n1, n2, n3/
 ;;;
 ;;; o FIX-UP-NEGATIVE-NUMBER in PARSE-DATA1 didn't handle the case when
 ;;;   passed a value like 1.0d%1 which f2cl had converted from 1.0d-1.
@@ -4651,8 +4651,8 @@ loop2
 ;;; o Added keyword :array-slicing to f2cl to support array slicing.
 ;;; o Preliminary support for array slicing.  That is,
 ;;;
-;;; 	real x(100)
-;;; 	call sub(x(4))
+;;;     real x(100)
+;;;     call sub(x(4))
 ;;;
 ;;;   means the subroutine sub actually gets an array of size 96 starting
 ;;;   from x(4).
@@ -4664,12 +4664,12 @@ loop2
 ;;;   To work around this problem, either run f2cl with :array-slicing set
 ;;;   to NIL, or change the call to something like:
 ;;;
-;;; 	real x(100)
-;;; 	real tmp
+;;;     real x(100)
+;;;     real tmp
 ;;;
-;;; 	tmp = x(4)
-;;; 	call sub(tmp)
-;;; 	x(4) = tmp
+;;;     tmp = x(4)
+;;;     call sub(tmp)
+;;;     x(4) = tmp
 ;;;
 ;;;   (That last assignment needed only if sub is modifies the parameter.)
 ;;;

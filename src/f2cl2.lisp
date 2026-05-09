@@ -5,11 +5,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; functions
-;	id-expression 
-;	parse
-;	symbol-listp
-;	id-term
-;	id-factor 
+;       id-expression 
+;       parse
+;       symbol-listp
+;       id-term
+;       id-factor 
 ;       id-factor1
 ;------------------------------------------------------------------------------
 (in-package :f2cl)
@@ -18,8 +18,8 @@
 
 (eval-when (compile load eval)
   (proclaim '(special *intrinsic-function-names* *external-function-names*
-	      *subprog_name* *subprog-stmt-fns*
-	      *functions-used*)))
+              *subprog_name* *subprog-stmt-fns*
+              *functions-used*)))
 
 (defparameter *f2cl2-version*
   "$Id$")
@@ -121,23 +121,23 @@ Tag being parsed:| (cadr x))))
      ;; written as (x) .le. (y*z).
      (dolist (log-op '(or and <= < >= > equal ><))
        (let ((split (list-split-multi log-op l)))
-	 ;;(format t "op = ~A, split = ~A~%" log-op split)
-	 (when (cdr split)
-	   ;; The expression was split into parts for the given
-	   ;; logical op.  Rewrite the expression with appropropriate
-	   ;; parens.
-	   (let ((rewrite nil))
-	     (dolist (s split)
-	       (push s rewrite)
-	       (push log-op rewrite))
-	     ;; The first element of rewrite is the operator.  Need to
-	     ;; remove it.
-	     (setf l (nreverse (cdr rewrite)))))))
-	       
+         ;;(format t "op = ~A, split = ~A~%" log-op split)
+         (when (cdr split)
+           ;; The expression was split into parts for the given
+           ;; logical op.  Rewrite the expression with appropropriate
+           ;; parens.
+           (let ((rewrite nil))
+             (dolist (s split)
+               (push s rewrite)
+               (push log-op rewrite))
+             ;; The first element of rewrite is the operator.  Need to
+             ;; remove it.
+             (setf l (nreverse (cdr rewrite)))))))
+               
      (setq x (list-split-multi '+ l))
      (setq x (list x (extract '(+ -) l)))
      (setq y (list-itp (mapcar #'id-term (car x)) 
-		       (cadr x)))
+                       (cadr x)))
      (return y)))
 
 ;-----------------------------------------------------------------------------
@@ -145,13 +145,13 @@ Tag being parsed:| (cadr x))))
 (defun id-term (l)
   (prog (x)
      (setq x (apply #'append (mapcar #'(lambda (x)
-					 (list-split-bin '/ x))
-				     (list-split-multi '* l))))
+                                         (list-split-bin '/ x))
+                                     (list-split-multi '* l))))
      (setq x (list x (extract '(* /) l)))
      (if (and (equal (caar x) '(-1)) (equal (cadr x) '(*)))
          (return `(- ,(id-factor1 (cadar x)))))
      (return (list-itp (mapcar #'id-factor1 (car x)) 
-		       (cadr x)))))
+                       (cadr x)))))
 
 ;-----------------------------------------------------------------------------
 (defun id-factor1 (l)
@@ -159,31 +159,31 @@ Tag being parsed:| (cadr x))))
      (setq x (list-split-multi-string '(^ f2cl-//) l))
      (setq x (list x (extract '(^ f2cl-//) l)))
      (return (list-itp (mapcar #'id-factor (car x)) 
-		       (subst 'expt  '^ (cadr x))))))
+                       (subst 'expt  '^ (cadr x))))))
 
 ;------------------------------------------------------------------------------
 (defun lookup-array-bounds (v)
   ;; Lookup the variable in the explicitly declared variables list.
   (map nil #'(lambda (e)
-	       (let ((res (find v (rest e) :key #'car)))
-		 (when (and res
-			    (not (null (rest res))))
-		   ;; If this entry has dimensions, we're done!
-		   (return-from lookup-array-bounds
-		     ;; Arrays, including character strings, look
-		     ;; something like (var (lo-1 hi-1) (lo-2 hi-2)
-		     ;; ...)
-		     (rest res)
-		     #+nil
-		     (if (listp (first (second res)))
-			 (second res)
-			 (rest res))))))
+               (let ((res (find v (rest e) :key #'car)))
+                 (when (and res
+                            (not (null (rest res))))
+                   ;; If this entry has dimensions, we're done!
+                   (return-from lookup-array-bounds
+                     ;; Arrays, including character strings, look
+                     ;; something like (var (lo-1 hi-1) (lo-2 hi-2)
+                     ;; ...)
+                     (rest res)
+                     #+nil
+                     (if (listp (first (second res)))
+                         (second res)
+                         (rest res))))))
        *explicit_vble_decls*)
   ;; Check to see if the array was declared in a common statement.
   (let ((res (member v *common_array_dims*)))
     (when res
       (return-from lookup-array-bounds
-	(second res))))
+        (second res))))
   (error "Cannot find array bounds for ~S!" v))
 
 
@@ -232,11 +232,11 @@ Tag being parsed:| (cadr x))))
 (defun update-called-functions-list (name args)
   (let ((fcn (find (first name) *functions-used* :key #'caar)))
     (cond (fcn
-	   ;; Found it.  Let's add the arguments to the arg list
-	   (push args (second fcn)))
-	  (t
-	   ;; A new function.  Let's add it and the args to the list.
-	   (push (list name (list args)) *functions-used*)))
+           ;; Found it.  Let's add the arguments to the arg list
+           (push args (second fcn)))
+          (t
+           ;; A new function.  Let's add it and the args to the list.
+           (push (list name (list args)) *functions-used*)))
     *functions-used*))
 
 (defun id-factor (l)
@@ -249,129 +249,129 @@ Tag being parsed:| (cadr x))))
     ((stringp l) l)
     ;; x.xE%x (scientific notation) number - % is used to represent a minus sign:
     ((and (symbolp l)
-	  (let ((suffix (string-trim '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\.) 
-				     (string l))))
-	    (or (string-equal suffix "E%") (string-equal suffix "e%"))))
+          (let ((suffix (string-trim '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\.) 
+                                     (string l))))
+            (or (string-equal suffix "E%") (string-equal suffix "e%"))))
      (setq l
-	   (read-from-string
-	    (concatenate 'string
-			 (string-right-trim 
-			  '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\%) l)
-			 "-"
-			 (string-left-trim '(#\%)
-					   (string-left-trim 
-					    '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\E #\e) l)))))
+           (read-from-string
+            (concatenate 'string
+                         (string-right-trim 
+                          '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\%) l)
+                         "-"
+                         (string-left-trim '(#\%)
+                                           (string-left-trim 
+                                            '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\E #\e) l)))))
      l)
     ;; x.xD%x, like above
     ((and (symbolp l)
-	  (let ((suffix (string-trim '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\.) 
-				     (string l))))
-	    (or (string-equal suffix "D%") (string-equal suffix "d%"))))
+          (let ((suffix (string-trim '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\.) 
+                                     (string l))))
+            (or (string-equal suffix "D%") (string-equal suffix "d%"))))
      (setq l
-	   (read-from-string
-	    (concatenate 'string
-			 (string-right-trim 
-			  '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\%) l)
-			 "-"
-			 (string-left-trim '(#\%)
-					   (string-left-trim 
-					    '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\D #\d) l)))))
+           (read-from-string
+            (concatenate 'string
+                         (string-right-trim 
+                          '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\%) l)
+                         "-"
+                         (string-left-trim '(#\%)
+                                           (string-left-trim 
+                                            '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\D #\d) l)))))
      l)
     
-					; symbol:
+                                        ; symbol:
     ((symbolp l)
      (check-reserved-lisp-names l))
      
-					;number: 
+                                        ;number: 
     ((and (null (cdr l)) (numberp (car l)))
      (car l))
 
 
-					; bracketed symbol or string:
+                                        ; bracketed symbol or string:
     ((and (null (cdr l)) (or (symbolp (car l)) (stringp (car l))))
      (id-factor (car l)))
 
-					; function of no variables:
+                                        ; function of no variables:
     ((and (symbolp (car l)) (eq nil (cadr l)))
      (update-called-functions-list (list (car l)) nil)
      (list (car l)))
 
-					; boolean expression
+                                        ; boolean expression
     ((intersection l '(not equal and or < > <= >= ><))
      (id-logical l))
 
-					; intrinsic function call:
+                                        ; intrinsic function call:
     ((and (symbolp (car l)) 
-	  (listp (cadr l))
-	  (not (member (car l) *non-intrinsic-function-names*))
-	  (member (car l) *intrinsic-function-names*))
+          (listp (cadr l))
+          (not (member (car l) *non-intrinsic-function-names*))
+          (member (car l) *intrinsic-function-names*))
      (cond ((not (null (cddr l)))
-	    (princ-reset
-	     '|f2cl error: missing +, *, /, or ^ operator following a function call.| l)))
+            (princ-reset
+             '|f2cl error: missing +, *, /, or ^ operator following a function call.| l)))
      (update-called-functions-list (list (car l))
-				   (mapcar #'id-expression (list-split '|,| (cadr l))))
+                                   (mapcar #'id-expression (list-split '|,| (cadr l))))
      (cons (case (car l)
-	     ;; Handle some special cases for intrinsic functions
-	     ;; because they conflict with the Lisp functions of the
-	     ;; same name.
-	     (char 'fchar)
-	     (sqrt 'fsqrt)
-	     (log 'flog)
-	     (float 'ffloat)
-	     (real 'freal)
-	     (t (car l)))
-	   (mapcar #'id-expression
-		   (list-split '|,| (cadr l)))))
+             ;; Handle some special cases for intrinsic functions
+             ;; because they conflict with the Lisp functions of the
+             ;; same name.
+             (char 'fchar)
+             (sqrt 'fsqrt)
+             (log 'flog)
+             (float 'ffloat)
+             (real 'freal)
+             (t (car l)))
+           (mapcar #'id-expression
+                   (list-split '|,| (cadr l)))))
     ;; array reference:
     ((and (symbolp (car l))
-	  (listp (cadr l))
-	  (vble-is-array-p (check-reserved-lisp-names (car l))))
+          (listp (cadr l))
+          (vble-is-array-p (check-reserved-lisp-names (car l))))
      (when (cddr l)
        (princ-reset
-	'|f2cl error: missing +, *, /, or ^ operator following a function call.| l))
+        '|f2cl error: missing +, *, /, or ^ operator following a function call.| l))
 
 
      ;; Given the array name and indices, look up the the
      ;; bounds for this array and construct the appropriate
      ;; expression to access the array correctly.
      (let* ((vname (check-reserved-lisp-names (car l)))
-	    (indices (mapcar #'id-expression
-			     (list-split '|,| (cadr l))))
-	    (bounds (lookup-array-bounds vname)))
+            (indices (mapcar #'id-expression
+                             (list-split '|,| (cadr l))))
+            (bounds (lookup-array-bounds vname)))
 
        ;; Decide if we want to access the specified element or return a
        ;; slice of the array.  (Used only in calls to functions and
        ;; subroutines.
        (cond (*apply-array-slice*
-	      ;;(format t "array   = ~A~%" vname)
-	      ;;(format t "indices = ~A~%" indices)
-	      ;;(format t "bounds  = ~A~%" bounds)
-	      `(array-slice ,vname ,(lookup-vble-type vname) ,indices ,bounds))
-	     (t
-	      `(fref ,vname ,indices ,bounds)
-	      ))))
+              ;;(format t "array   = ~A~%" vname)
+              ;;(format t "indices = ~A~%" indices)
+              ;;(format t "bounds  = ~A~%" bounds)
+              `(array-slice ,vname ,(lookup-vble-type vname) ,indices ,bounds))
+             (t
+              `(fref ,vname ,indices ,bounds)
+              ))))
     ;; string (character array) reference 
     ((and (symbolp (car l))
-	  (listp (cadr l))
-	  (subtypep (lookup-vble-type (car l)) 'string))
+          (listp (cadr l))
+          (subtypep (lookup-vble-type (car l)) 'string))
      ;; Substring references look like c(a:b) or c(:b).  For the
      ;; latter, the initial index is an implied 1.
      (let* ((vname (check-reserved-lisp-names (car l)))
-	    (indices (mapcar #'id-expression
-			     (mapcar #'(lambda (index)
-					 ;; If initial index is
-					 ;; missing, supply a default
-					 ;; of 1.
-					 (or index '(1)))
-				     (list-split '|:| (cadr l))))))
+            (indices (mapcar #'id-expression
+                             (mapcar #'(lambda (index)
+                                         ;; If initial index is
+                                         ;; missing, supply a default
+                                         ;; of 1.
+                                         (or index '(1)))
+                                     (list-split '|:| (cadr l))))))
        `(fref-string ,vname ,indices)))
     
     ;; function call:
     ((and (symbolp (car l))
-	  (listp (cadr l)))
+          (listp (cadr l)))
      ;; Should we check for T and PI here?
      (let ((fname (car l))
-	   (args (mapcar #'id-expression (list-split '|,| (cadr l)))))
+           (args (mapcar #'id-expression (list-split '|,| (cadr l)))))
        
        ;; Save the function name and number of arguments so we can
        ;; declare the function appropriately.  We also save the
@@ -391,41 +391,41 @@ Tag being parsed:| (cadr x))))
        ;; is.  If it's on the RHS, it's a real function call so call
        ;; it correctly.
        (if (or *parsing-lhs*
-	       (member fname *subprog-stmt-fns*))
-	   `(,fname ,@args)
-	   (first (generate-call-to-routine
-		   (cond ((member fname *subprog-arglist*)
-			  ;; We want to use funcall only if the external function
-			  ;; was passed in as a parameter.  If not, then we don't
-			  ;; need to funcall it.  The user was just telling us that
-			  ;; it was external function instead an intrinsic.
-			  `(funcall ,fname)) 
-			 (t 
-			  `(,fname)))
-		   args t)))
+               (member fname *subprog-stmt-fns*))
+           `(,fname ,@args)
+           (first (generate-call-to-routine
+                   (cond ((member fname *subprog-arglist*)
+                          ;; We want to use funcall only if the external function
+                          ;; was passed in as a parameter.  If not, then we don't
+                          ;; need to funcall it.  The user was just telling us that
+                          ;; it was external function instead an intrinsic.
+                          `(funcall ,fname)) 
+                         (t 
+                          `(,fname)))
+                   args t)))
        ))
 
-					; expression:
+                                        ; expression:
     ((and (listp (car l))
-	  (null (cdr l))
-	  (not (member '|,| (car l))))
+          (null (cdr l))
+          (not (member '|,| (car l))))
      (id-expression (car l)))
 
-					; complex number:
+                                        ; complex number:
     #+nil
     ((and (eq (length l) 3) (eq (second l) '|,|))
      (list 'complex (id-factor (first l)) (id-factor (third l))))
     ((and (listp (car l))
-	  (null (cdr l))
-	  (member '|,| (car l)))
+          (null (cdr l))
+          (member '|,| (car l)))
      ;; Not sure this is the test for a complex number, but a Fortran
      ;; complex number looks like (<re>, <im>) where <re> and <im> are
      ;; numbers.  We don't check for that here.
      (let ((split (list-split '|,| (car l))))
        (list 'cmplx
-	     (id-expression (list (first split)))
-	     (id-expression (list (second split))))))
-					; error dropping out the bottom:
+             (id-expression (list (first split)))
+             (id-expression (list (second split))))))
+                                        ; error dropping out the bottom:
     (t 
      (princ-reset '|f2cl syntax error| l))
     ))
