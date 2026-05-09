@@ -53,7 +53,7 @@
   "$Id$")
 
 ;; functions for setting up varaible declarations and initialisations
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (proclaim '(special *intrinsic-function-names* *external-function-names*
               *declared_vbles* *undeclared_vbles* *key_params* *save_vbles*
               *explicit_vble_decls* *implicit_vble_decls* *common_array_dims*
@@ -1834,12 +1834,11 @@
                    arg-fcn-decls
                    common-block-structs
                    key-params
-                   key-params-decls
                    code-key-params
                    code-key-params-decls
                    all-decls
                    #+nil additional-args
-                   entry-points equivalences
+                   entry-points
          unused-arg-names)
 
      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
@@ -2854,7 +2853,7 @@
                         `(,vble_name 
                           ,(make_make-array_stmt
                             (cdar decl)
-                            (get_array_type (caar decl) nil)
+                            (get_array_type (caar decl))
                             init-val
                             vble_name)))))
                  ((eq type 'logical)
@@ -3061,8 +3060,7 @@
               ((eq type 'array)
                (when (setq decl (member vble (cdar type-clauses) :key #'car))
                    (return `(declare (type (,*array-type*
-                                            ,(get_array_type (caar decl) 
-                                                             vble-is-formal-arg)
+                                            ,(get_array_type (caar decl))
                                             ,(f2cl-array-total-size (cdar decl))
                                             )
                                       ,vble_name)))
@@ -3220,7 +3218,7 @@
              (t
               'single-float)))))
 
-(defun get_array_type (decl vble-is-formal-arg) 
+(defun get_array_type (decl) 
   (prog (type)
       (return
        (cond ((member decl *common_array_dims*)
@@ -3295,7 +3293,7 @@
   (let ((dim (member v *common_array_dims*)))
     (cond                               ; check if v is an array 
       (dim
-       `(declare (type (,*array-type* ,(get_array_type v nil)
+       `(declare (type (,*array-type* ,(get_array_type v)
                         ,(f2cl-array-total-size (cadr dim))) 
                   ,(check-reserved-lisp-names v))))
                                         ; else make ordinary declaration
@@ -3503,7 +3501,7 @@
 
 ;----------------------------------------------------------------------------- 
 
-(eval-when (compile load eval)  
+(eval-when (:compile-toplevel :load-toplevel :execute)  
   (proclaim '(special *format_stmts* *current_label* *SP* *dlist-flag*)))
 
 (defun parse-format (x)

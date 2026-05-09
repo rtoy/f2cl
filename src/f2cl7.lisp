@@ -16,7 +16,8 @@
 (in-package :f2cl)
 
 (defvar *prune_labels* t)
-(eval-when (compile load eval) (proclaim '(special *verbose*)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(special *verbose*)))
 ;-----------------------------------------------------------------------
 #+nil
 (defun find-go-labels (x)

@@ -13,10 +13,10 @@
 ;       id-factor1
 ;------------------------------------------------------------------------------
 (in-package :f2cl)
-(eval-when (compile)
+(eval-when (:compile-toplevel)
   (proclaim '(optimize (speed 3) (safety 1))))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (proclaim '(special *intrinsic-function-names* *external-function-names*
               *subprog_name* *subprog-stmt-fns*
               *functions-used*)))
@@ -82,16 +82,6 @@
   (and (listp x)
        (symbolp (car x))
        (null (cdr x))))
-;------------------------------------------------------------------------------
-(defun check-tags-go (x)
-  (prog (tags gos)
-   (setq tags (mapcar #'car (delete nil (mapcar #'(lambda (y) (cond ((symbol-listp y) y)
-                                                     (t nil))) x))))
-   (setq gos (mapcar #'car (find-gos x)))
-
-   (return
-    (cond ((eq (length tags) (length (unique-elements (append gos tags)))) t)
-          (t nil))))) 
 ;------------------------------------------------------------------------------
 (defun find-gos (x)
  (cond ((atom x) nil)
@@ -160,32 +150,6 @@ Tag being parsed:| (cadr x))))
      (setq x (list x (extract '(^ f2cl-//) l)))
      (return (list-itp (mapcar #'id-factor (car x)) 
                        (subst 'expt  '^ (cadr x))))))
-
-;------------------------------------------------------------------------------
-(defun lookup-array-bounds (v)
-  ;; Lookup the variable in the explicitly declared variables list.
-  (map nil #'(lambda (e)
-               (let ((res (find v (rest e) :key #'car)))
-                 (when (and res
-                            (not (null (rest res))))
-                   ;; If this entry has dimensions, we're done!
-                   (return-from lookup-array-bounds
-                     ;; Arrays, including character strings, look
-                     ;; something like (var (lo-1 hi-1) (lo-2 hi-2)
-                     ;; ...)
-                     (rest res)
-                     #+nil
-                     (if (listp (first (second res)))
-                         (second res)
-                         (rest res))))))
-       *explicit_vble_decls*)
-  ;; Check to see if the array was declared in a common statement.
-  (let ((res (member v *common_array_dims*)))
-    (when res
-      (return-from lookup-array-bounds
-        (second res))))
-  (error "Cannot find array bounds for ~S!" v))
-
 
 ;; NAME should be a list.  For functions, it's just a list of the name
 ;; itself.  For subroutines, it should be a list of the name and the

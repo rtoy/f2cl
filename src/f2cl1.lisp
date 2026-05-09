@@ -108,7 +108,7 @@
   `(array string (*)))
 ;;------------------------------------------------------------------------------
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (proclaim '(special *sentable*))
   (proclaim '(special
               *external-function-names*
@@ -218,7 +218,7 @@ incorrect, so use caution.")
 
 ;; For some reason Allegro needs this eval-when because it complains
 ;; about undefined slot accessors without this.
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 (defstruct (f2cl-finfo (:constructor %make-f2cl-finfo))
   arg-types return-values calls)
 )
@@ -359,7 +359,7 @@ correctly"
   :PROMOTE-TO-DOUBLE       Promote REAL and COMPLEX constants, variables, and
                             arrays to REAL*8 and COMPLEX*16 types. 
 "
-
+  (declare (ignorable array-type-p))
 
   ;;(format t "Copyright(c) 92-95 University of Waikato - all rights reserved~%")
   ;;(format t "1997, 1999 Many changes and fixes by Raymond Toy (toy@rtp.ericsson.se)~%")
@@ -523,6 +523,8 @@ correctly"
   :PROMOTE-TO-DOUBLE       Promote REAL and COMPLEX constants, variables, and
                             arrays to REAL*8 and COMPLEX*16 types. 
 "
+  #-(or cmucl scl)
+  (declare (ignore error-file))
   (let ((lisp-file
          (f2cl filename :prune-labels prune-labels :include-comments include-comments
                :auto-save auto-save :relaxed-array-decls relaxed-array-decls
@@ -820,14 +822,24 @@ correctly"
 (defun rewrite-extended-do (label line)
   `(,(first line) ,label ,@(rest line)))
 
-(defun rewrite-do-while (label1 label2 line)
-  ;; "do while (cond)" becomes
-  ;; "label1 if (.not. (cond)) goto <label2>"
+(defun rewrite-do-while (label2 line)
+  ;; Handles Fortran (extended) do-while loop.
   ;;
-  ;; But
+  ;;       do while (cond)
+  ;;         <code>
+  ;;       end do
   ;;
-  ;; "do <l1> while (cond) becomes
-  ;; "label1 if (.not. (cond)) goto <l1>"
+  ;; and
+  ;;
+  ;;       do label while (cond)
+  ;;         <code>
+  ;; label continue (or other statement)
+  ;;
+  ;; In either case, the rewrite is a goto label2 if COND fails.
+  ;;
+  ;; LINE is the tokenized source line: (DO [LABEL] WHILE (COND)).
+  ;; The second element is either a label (integer) or the symbol
+  ;; WHILE.  (Label is optional in do-while statements.)
   (if (integerp (second line))
       `(if |(| not ,@(cdddr line) |)| goto ,label2)
       `(if |(| not ,@(cddr line) |)| goto ,label2)))
@@ -920,7 +932,7 @@ correctly"
                                (incf extended-label))))
                (incf extended-label)
                (push (list label1 label2) extended-do-label-stack)
-               (push `(,label1 ,(rewrite-do-while label1 label2 input-list))
+               (push `(,label1 ,(rewrite-do-while label2 input-list))
                      output-list)))
             ((id-end-do input-list)
              ;; The end of the extended DO statement.  This can either
@@ -1376,7 +1388,7 @@ correctly"
        (return (parse-save x)))
      ;;intrinsic
      (when (eq (car x) 'intrinsic)
-       (return (parse-intrinsic x)))
+       (return (parse-intrinsic)))
      ;;external
      (when (eq (car x) 'external)
        (return (parse-external x)))
@@ -1449,10 +1461,10 @@ correctly"
 
      ;; Fortran 90 extensions:
      (when (eq (car x) 'exit)
-       (return (parse-exit x)))
+       (return (parse-exit)))
 
      (when (eq (car x) 'cycle)
-       (return (parse-cycle x)))
+       (return (parse-cycle)))
      
      ;;fall out the bottom:
      (warn "F2CL did not translate: ~S" (write-to-string (check_new_vbles x)))
@@ -2382,6 +2394,7 @@ correctly"
            ;;(format t "calling ~A~%" fun-name)
            ;;(format t " finfo = ~A~%" finfo)
            (mapcar #'(lambda (expr a-info r-info)
+                       (declare (ignorable r-info))
                        ;;(format t "expr = ~A~%" expr)
                        (cond ((and (listp expr)
                                    (eq (first expr) 'fref))
@@ -2849,9 +2862,7 @@ correctly"
     (loop
        (cond ((and (listp (car v))
                    (find '= (car v)))
-              (let ((split (list-split '|,| (car v)))
-                    (split= (list-split '= (car v))))
-                ;;(format t "split comma = ~S~%" split)
+              (let ((split= (list-split '= (car v))))
                 ;;(format t "split =     = ~S~%" split=)
                 (let ((loopvar (car (last (car split=))))
                       (start (first (second split=)))
@@ -2990,7 +3001,7 @@ correctly"
    nil)
 
 ;; parse INTRINSIC f1, f2
-(defun parse-intrinsic (x)
+(defun parse-intrinsic ()
   nil)
 
 ;; parse EQUIVALENCE (x1,y1), (x2, y2), ...
@@ -3020,10 +3031,10 @@ correctly"
     ;;(format t "~A~%" *equivalenced-vars*)
     nil))
 
-(defun parse-exit (x)
+(defun parse-exit ()
   '((go f2cl-lib::exit)))
 
-(defun parse-cycle (x)
+(defun parse-cycle ()
   '((go f2cl-lib::continue)))
 
 ;=============================================================================
