@@ -1834,12 +1834,11 @@
                    arg-fcn-decls
                    common-block-structs
                    key-params
-                   key-params-decls
                    code-key-params
                    code-key-params-decls
                    all-decls
                    #+nil additional-args
-                   entry-points equivalences
+                   entry-points
          unused-arg-names)
 
      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
