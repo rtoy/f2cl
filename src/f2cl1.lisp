@@ -1377,7 +1377,7 @@ correctly"
        (return (parse-save x)))
      ;;intrinsic
      (when (eq (car x) 'intrinsic)
-       (return (parse-intrinsic x)))
+       (return (parse-intrinsic)))
      ;;external
      (when (eq (car x) 'external)
        (return (parse-external x)))
@@ -2990,7 +2990,7 @@ correctly"
    nil)
 
 ;; parse INTRINSIC f1, f2
-(defun parse-intrinsic (x)
+(defun parse-intrinsic ()
   nil)
 
 ;; parse EQUIVALENCE (x1,y1), (x2, y2), ...
