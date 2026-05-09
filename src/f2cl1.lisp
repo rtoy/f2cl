@@ -2850,8 +2850,7 @@ correctly"
     (loop
        (cond ((and (listp (car v))
                    (find '= (car v)))
-              (let ((split (list-split '|,| (car v)))
-                    (split= (list-split '= (car v))))
+              (let ((split= (list-split '= (car v))))
                 ;;(format t "split comma = ~S~%" split)
                 ;;(format t "split =     = ~S~%" split=)
                 (let ((loopvar (car (last (car split=))))
