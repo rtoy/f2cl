@@ -13,10 +13,10 @@
 ;       id-factor1
 ;------------------------------------------------------------------------------
 (in-package :f2cl)
-(eval-when (compile)
+(eval-when (:compile-toplevel)
   (proclaim '(optimize (speed 3) (safety 1))))
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (proclaim '(special *intrinsic-function-names* *external-function-names*
               *subprog_name* *subprog-stmt-fns*
               *functions-used*)))

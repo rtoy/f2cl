@@ -53,7 +53,7 @@
   "$Id$")
 
 ;; functions for setting up varaible declarations and initialisations
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (proclaim '(special *intrinsic-function-names* *external-function-names*
               *declared_vbles* *undeclared_vbles* *key_params* *save_vbles*
               *explicit_vble_decls* *implicit_vble_decls* *common_array_dims*
@@ -3503,7 +3503,7 @@
 
 ;----------------------------------------------------------------------------- 
 
-(eval-when (compile load eval)  
+(eval-when (:compile-toplevel :load-toplevel :execute)  
   (proclaim '(special *format_stmts* *current_label* *SP* *dlist-flag*)))
 
 (defun parse-format (x)

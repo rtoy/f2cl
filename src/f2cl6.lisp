@@ -25,7 +25,8 @@
 ;       write-comment-line
 ;--------------------------------------------------------------------------
 (in-package :f2cl)
-(eval-when (compile load eval) (proclaim '(special *verbose* *comments*)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (proclaim '(special *verbose* *comments*)))
 
 (defparameter *f2cl6-version*
   "$Id$")

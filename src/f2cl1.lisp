@@ -109,7 +109,7 @@
   `(array string (*)))
 ;;------------------------------------------------------------------------------
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (proclaim '(special *sentable*))
   (proclaim '(special
               *external-function-names*
@@ -219,7 +219,7 @@ incorrect, so use caution.")
 
 ;; For some reason Allegro needs this eval-when because it complains
 ;; about undefined slot accessors without this.
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 (defstruct (f2cl-finfo (:constructor %make-f2cl-finfo))
   arg-types return-values calls)
 )
