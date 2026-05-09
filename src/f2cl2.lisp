@@ -161,32 +161,6 @@ Tag being parsed:| (cadr x))))
      (return (list-itp (mapcar #'id-factor (car x)) 
                        (subst 'expt  '^ (cadr x))))))
 
-;------------------------------------------------------------------------------
-(defun lookup-array-bounds (v)
-  ;; Lookup the variable in the explicitly declared variables list.
-  (map nil #'(lambda (e)
-               (let ((res (find v (rest e) :key #'car)))
-                 (when (and res
-                            (not (null (rest res))))
-                   ;; If this entry has dimensions, we're done!
-                   (return-from lookup-array-bounds
-                     ;; Arrays, including character strings, look
-                     ;; something like (var (lo-1 hi-1) (lo-2 hi-2)
-                     ;; ...)
-                     (rest res)
-                     #+nil
-                     (if (listp (first (second res)))
-                         (second res)
-                         (rest res))))))
-       *explicit_vble_decls*)
-  ;; Check to see if the array was declared in a common statement.
-  (let ((res (member v *common_array_dims*)))
-    (when res
-      (return-from lookup-array-bounds
-        (second res))))
-  (error "Cannot find array bounds for ~S!" v))
-
-
 ;; NAME should be a list.  For functions, it's just a list of the name
 ;; itself.  For subroutines, it should be a list of the name and the
 ;; keyword :subroutine.
