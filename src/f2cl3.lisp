@@ -1,3 +1,8 @@
+;;; NOT used anymore
+;;;
+;;; We leave this in the repo in case we ever want to do pattern
+;;; matching.
+;;;
 
 ; f2cl3.l
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
