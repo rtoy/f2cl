@@ -202,3 +202,36 @@ JFUN RETURNS    5.50000
 ;;; lets the suite exit clean while still keeping them visible in
 ;;; the test list.
 (setf rt:*expected-failures* '(solvde tst-parse))
+
+;; INTRINSIC declaration for a standard 77 intrinsic, called
+;; directly.  Verifies that parse-intrinsic's no-op handling of
+;; INTRINSIC declarations doesn't break translation when the named
+;; intrinsic is also exercised in the same file.
+(rt:deftest tst-intrinsic-direct
+    (f2cl-regression:run-program "val/tst-intrinsic-direct.f" "tstintdirect")
+  " sin(1.57) =  1.00
+")
+
+;; INTRINSIC declaration for an intrinsic passed as an actual
+;; argument.  f2cl translates this without error; the translated
+;; code does not run correctly (the intrinsic name becomes a local
+;; float variable rather than #'SIN), but that is a pre-existing
+;; bug in the call-site translator, not a parse-intrinsic issue.
+;; Convert-only so we still notice if translation itself regresses.
+(rt:deftest tst-intrinsic-arg
+    (f2cl-regression:convert "val/tst-intrinsic-arg.f") t)
+
+;; INTRINSIC vs EXTERNAL with a user-defined function shadowing an
+;; intrinsic.  Two routines call AINT(3.7): one declares it
+;; INTRINSIC (so the standard requires the truncation intrinsic,
+;; result 3.00); one declares it EXTERNAL (so the standard requires
+;; the user function defined below, which returns 2*3.7 = 7.40).
+;; gfortran agrees with these expected values.  The output
+;; differentiates the two paths, so the test fails noisily if any
+;; future change collapses INTRINSIC and EXTERNAL into the same
+;; behaviour.  AINT is used rather than SIN because it has no CL
+;; counterpart and so doesn't trigger SBCL package locks.
+(rt:deftest tst-intrinsic-shadow
+    (f2cl-regression:run-program "val/tst-intrinsic-shadow.f" "tstintshadow")
+  " int =  3.00  ext =  7.40
+")
