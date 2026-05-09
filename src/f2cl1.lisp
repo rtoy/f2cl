@@ -823,14 +823,24 @@ correctly"
 (defun rewrite-extended-do (label line)
   `(,(first line) ,label ,@(rest line)))
 
-(defun rewrite-do-while (label1 label2 line)
-  ;; "do while (cond)" becomes
-  ;; "label1 if (.not. (cond)) goto <label2>"
+(defun rewrite-do-while (label2 line)
+  ;; Handles Fortran (extended) do-while loop.
   ;;
-  ;; But
+  ;;       do while (cond)
+  ;;         <code>
+  ;;       end do
   ;;
-  ;; "do <l1> while (cond) becomes
-  ;; "label1 if (.not. (cond)) goto <l1>"
+  ;; and
+  ;;
+  ;;       do label while (cond)
+  ;;         <code>
+  ;; label continue (or other statement)
+  ;;
+  ;; In either case, the rewrite is a goto label2 if COND fails.
+  ;;
+  ;; LINE is the tokenized source line: (DO LABEL* WHILE (COND)).  The
+  ;; second element is either a label (integer) or the the symbol
+  ;; WHILE.  (Label is optional in do-while statements.)
   (if (integerp (second line))
       `(if |(| not ,@(cdddr line) |)| goto ,label2)
       `(if |(| not ,@(cddr line) |)| goto ,label2)))
@@ -923,7 +933,7 @@ correctly"
                                (incf extended-label))))
                (incf extended-label)
                (push (list label1 label2) extended-do-label-stack)
-               (push `(,label1 ,(rewrite-do-while label1 label2 input-list))
+               (push `(,label1 ,(rewrite-do-while label2 input-list))
                      output-list)))
             ((id-end-do input-list)
              ;; The end of the extended DO statement.  This can either
