@@ -2993,12 +2993,22 @@ correctly"
                   `(setq ,(check-reserved-lisp-names (first v))
                       ,(fix-up-negative-number l))))))))
 
-; parse EXTERNAL f1, f2, ...
-; by adding the function names to *external-function-names*
+;; parse EXTERNAL f1, f2, ...
+;;
+;; Add the function names to *external-function-names*.  Any name that
+;; shadows a Fortran intrinsic also goes on
+;; *non-intrinsic-function-names* so id-application's intrinsic
+;; dispatch routes the call to the user function rather than the
+;; intrinsic.  Without this, EXTERNAL-vs-intrinsic resolution relies
+;; on fixup-f2cl-lib's name-matching cleanup, which only covers
+;; intrinsics that have an f2cl-lib export -- not the cl: ones like
+;; sin, cos, abs.
 (defun parse-external (x)
-   (setq *external-function-names*
-         (append *external-function-names* (remove '|,| (cdr x))))
-   nil)
+  (dolist (ext-function-name (remove '|,| (cdr x)))
+    (pushnew ext-function-name *external-function-names*)
+    (when (member ext-function-name *intrinsic-function-names*)
+      (pushnew ext-function-name *non-intrinsic-function-names*)))
+  nil)
 
 ;; parse INTRINSIC f1, f2
 (defun parse-intrinsic ()
