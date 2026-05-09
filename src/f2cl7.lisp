@@ -5,13 +5,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; optimization post processing phase
 ; functions:
-;	find-go-labels 
-;	count-go-end
-;	labelp
-;	find-all-labels
-;	remove-from-tree
-;	prune-labels
-;	cond-remove-end-label
+;       find-go-labels 
+;       count-go-end
+;       labelp
+;       find-all-labels
+;       remove-from-tree
+;       prune-labels
+;       cond-remove-end-label
 
 (in-package :f2cl)
 
@@ -28,14 +28,14 @@
 
 (defun find-go-labels (x)
   (cond ((atom x) nil)
-	((eq (car x) 'go)
-	 (cons (cadr x) (find-go-labels (cdr x))))
-	((eq (first x) 'computed-goto)
-	 (append (second x)
-		 (find-go-labels (cdr x))))
-	(t
-	 (append (find-go-labels (car x))
-		 (find-go-labels (cdr x))))))
+        ((eq (car x) 'go)
+         (cons (cadr x) (find-go-labels (cdr x))))
+        ((eq (first x) 'computed-goto)
+         (append (second x)
+                 (find-go-labels (cdr x))))
+        (t
+         (append (find-go-labels (car x))
+                 (find-go-labels (cdr x))))))
 ;-----------------------------------------------------------------------
 (defun count-go-end (x)
   (cond

@@ -5,17 +5,17 @@
 ;; This doesn't work yet.
 (defun make-cmucl-ffi (name info)
   (let ((arg-info (mapcar #'(lambda (arg ret)
-			      (if ret
-				  `(,arg :in-out)
-				  `(,arg)))
-			  (f2cl-finfo-arg-types info)
-			  (f2cl-finfo-return-values info))))
+                              (if ret
+                                  `(,arg :in-out)
+                                  `(,arg)))
+                          (f2cl-finfo-arg-types info)
+                          (f2cl-finfo-return-values info))))
     (format t "~A -> ~A~%" name arg-info)))
 
 (defun make-ffi (&key (style :cmucl))
   (let ((maker-fun (ecase style
-		     (:cmucl
-		      #'make-cmucl-ffi))))
+                     (:cmucl
+                      #'make-cmucl-ffi))))
     (maphash maker-fun *f2cl-function-info*)))
 
 
@@ -32,21 +32,21 @@
   (when (plusp (hash-table-count *f2cl-function-info*))
     (let ((file-list nil))
       (maphash #'(lambda (k v)
-		   (let ((file (string-downcase (symbol-name k)))
-			 (deps (mapcar #'(lambda (name)
-					   (string-downcase (symbol-name name)))
-				       (f2cl-finfo-calls v))))
-		     ;; Since d1mach and i1mach are builtin to f2cl, remove those dependencies.
-		     (setf deps (remove-if #'(lambda (x)
-					       (member x '("d1mach" "i1mach") :test #'string=))
-					   deps))
-		     (setf deps (sort deps #'string-lessp))
-		     ;; Skip over the d1mach and i1mach routines too.
-		     (unless (member file '("d1mach" "i1mach") :test #'string=)
-		       (push (if deps
-				 `(:file ,file :depends-on ,deps)
-				 `(:file ,file))
-			     file-list))))
-	       *f2cl-function-info*)
+                   (let ((file (string-downcase (symbol-name k)))
+                         (deps (mapcar #'(lambda (name)
+                                           (string-downcase (symbol-name name)))
+                                       (f2cl-finfo-calls v))))
+                     ;; Since d1mach and i1mach are builtin to f2cl, remove those dependencies.
+                     (setf deps (remove-if #'(lambda (x)
+                                               (member x '("d1mach" "i1mach") :test #'string=))
+                                           deps))
+                     (setf deps (sort deps #'string-lessp))
+                     ;; Skip over the d1mach and i1mach routines too.
+                     (unless (member file '("d1mach" "i1mach") :test #'string=)
+                       (push (if deps
+                                 `(:file ,file :depends-on ,deps)
+                                 `(:file ,file))
+                             file-list))))
+               *f2cl-function-info*)
       (setf file-list (sort file-list #'string-lessp :key #'second))
       `(,@file-list))))

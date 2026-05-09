@@ -22,7 +22,7 @@
 ;     parse-logl-op
 ;     replace-str
 ;     parse-number
-;	write-comment-line
+;       write-comment-line
 ;--------------------------------------------------------------------------
 (in-package :f2cl)
 (eval-when (compile load eval) (proclaim '(special *verbose* *comments*)))
@@ -55,16 +55,16 @@
     (incf k)
     (loop
        (when (char-equal (aref line k) #\')
-	 ;; End of string or quoted quote character?
-	 (if (and (< k len) (char-equal (aref line (1+ k)) #\'))
-	     (incf k)
-	     (return)))
+         ;; End of string or quoted quote character?
+         (if (and (< k len) (char-equal (aref line (1+ k)) #\'))
+             (incf k)
+             (return)))
        (when (>= k len)
-	 (return))
+         (return))
        (when (char-equal (aref line k) #\")
-	 ;; Quote any double-quote characters because we're writing
-	 ;; out a Lisp string.
-	 (write-char #\\ out))
+         ;; Quote any double-quote characters because we're writing
+         ;; out a Lisp string.
+         (write-char #\\ out))
        (write-char (aref line k) out)
        (incf k))
     (write-char #\" out)
@@ -77,65 +77,65 @@
   ;; strings look like a number followed by H (or h).  Skip over any
   ;; strings that might be there.
   (let ((k 0)
-	(line-len (length line))
-	(out (make-string-output-stream)))
+        (line-len (length line))
+        (out (make-string-output-stream)))
     (loop
-	;; Done if there's no data left!
-	(when (>= k line-len)
-	  (return (get-output-stream-string out)))
-	(let ((ch (aref line k)))
-	  (cond ((char-equal ch #\')
-		 ;; Find the next quote
-		 (write-char #\" out)
-		 (setf k (find-quote k line out)))
-		((digit-char-p ch)
-		 ;; Got a digit.  Look for the next non-digit.
-		 (let ((posn (1+ k)))
-		   (loop while (digit-char-p (aref line posn)) do
-			 (incf posn))
-		   (if (char-equal (aref line posn) #\H)
+        ;; Done if there's no data left!
+        (when (>= k line-len)
+          (return (get-output-stream-string out)))
+        (let ((ch (aref line k)))
+          (cond ((char-equal ch #\')
+                 ;; Find the next quote
+                 (write-char #\" out)
+                 (setf k (find-quote k line out)))
+                ((digit-char-p ch)
+                 ;; Got a digit.  Look for the next non-digit.
+                 (let ((posn (1+ k)))
+                   (loop while (digit-char-p (aref line posn)) do
+                         (incf posn))
+                   (if (char-equal (aref line posn) #\H)
 
-		       ;; A Hollerith!  Compute the length of the
-		       ;; Hollerith string and where the number ends.
-		       
-		       (let ((len
-			      (parse-integer line :start k :junk-allowed t)))
-			 ;; Copy this many characters to the output
-			 (incf posn)
-			 (write-char #\" out)
-			 (dotimes (n len)
-			   ;; Need to quote any double-quote
-			   ;; characters because we print out Lisp
-			   ;; strings!
-			   (when (char-equal (aref line posn) #\")
-			     (write-char #\\ out))
-			   (write-char (aref line posn) out)
-			   (incf posn))
-			 (write-char #\" out)
-			 ;; Output a comma to separate the Hollerith
-			 ;; from any following stuff.  I think it's ok
-			 ;; to have extra commas in the output, so we
-			 ;; con't need to check.
-			 (write-char #\, out)
-			 (setf k posn))
-		       ;; Not a hollerith.  Copy the digits out
-		       (loop while (< k posn) do
-			     (write-char (aref line k) out)
-			     (incf k)))))
-		(t
-		 (write-char ch out)
-		 (incf k)))))))
+                       ;; A Hollerith!  Compute the length of the
+                       ;; Hollerith string and where the number ends.
+                       
+                       (let ((len
+                              (parse-integer line :start k :junk-allowed t)))
+                         ;; Copy this many characters to the output
+                         (incf posn)
+                         (write-char #\" out)
+                         (dotimes (n len)
+                           ;; Need to quote any double-quote
+                           ;; characters because we print out Lisp
+                           ;; strings!
+                           (when (char-equal (aref line posn) #\")
+                             (write-char #\\ out))
+                           (write-char (aref line posn) out)
+                           (incf posn))
+                         (write-char #\" out)
+                         ;; Output a comma to separate the Hollerith
+                         ;; from any following stuff.  I think it's ok
+                         ;; to have extra commas in the output, so we
+                         ;; con't need to check.
+                         (write-char #\, out)
+                         (setf k posn))
+                       ;; Not a hollerith.  Copy the digits out
+                       (loop while (< k posn) do
+                             (write-char (aref line k) out)
+                             (incf k)))))
+                (t
+                 (write-char ch out)
+                 (incf k)))))))
 
 (defun match-include (s)
   ;; Does the string S look like an include line:
   ;;
   ;; INCLUDE 'file'
   (when (string-equal s "include"
-		      :end1 (min 7 (length s)))
+                      :end1 (min 7 (length s)))
     ;; Got "INCLUDE".  Look for file name
     (with-input-from-string (stream s :start 7)
       (let ((c (peek-char t stream)))
-	(member c '(#\' #\"))))))
+        (member c '(#\' #\"))))))
 
 (defun preprocess (file &key (outfile-name nil))
   (when *verbose*
@@ -144,106 +144,106 @@
     ;; Pick some suitable default based on FILE.
     (let ((compiled-path (compile-file-pathname file)))
       (setf outfile-name
-	    (merge-pathnames (make-pathname :host (pathname-host compiled-path)
-					    :type "p")
-			     compiled-path))))
+            (merge-pathnames (make-pathname :host (pathname-host compiled-path)
+                                            :type "p")
+                             compiled-path))))
   (with-open-file (inport file :direction :input)
     (with-open-file (outport outfile-name
-			     :direction :output
-			     :if-exists :rename-and-delete)
+                             :direction :output
+                             :if-exists :rename-and-delete)
       ;; Set *default-pathname-defaults* to be where our file is, in
       ;; case there are INCLUDE statements.  We (currently?) 
       ;; arbitrarily assume the include file is in the same directory
       ;; as the file that wants to include it.
       (let ((*default-pathname-defaults*
-	     (merge-pathnames
-	      (make-pathname :directory
-			     (pathname-directory file))
-	      ;; Get the current directory for ECL since
-	      ;; *d-p-d* appears to default to #P"",
-	      ;; which isn't helpful for merging.
-	      #+ecl (si:getcwd))))
-	(preprocess-streams inport outport)))))
+             (merge-pathnames
+              (make-pathname :directory
+                             (pathname-directory file))
+              ;; Get the current directory for ECL since
+              ;; *d-p-d* appears to default to #P"",
+              ;; which isn't helpful for merging.
+              #+ecl (si:getcwd))))
+        (preprocess-streams inport outport)))))
   
 (defun preprocess-streams (inport outport)
   (let ((*package* (find-package :f2cl))
-	(collected-comments nil))
+        (collected-comments nil))
     (do ((prev-line nil)
-	 (line (read-line inport nil 'eof)
-	       (read-line inport nil 'eof)))
-	((eq line 'eof)
-	 (when prev-line
-	   (write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
-	 outport)
+         (line (read-line inport nil 'eof)
+               (read-line inport nil 'eof)))
+        ((eq line 'eof)
+         (when prev-line
+           (write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
+         outport)
       ;; Hmm, technically it might not be right to trim spaces from
       ;; the end of the line.  Consider what happens we are trying
       ;; to continue a string with trailing spaces.  The resulting
       ;; string is wrong.
       (let ((line (string-right-trim '(#\Space) (subseq line 0 (min 72 (length line))))))
-	(cond 
-	  ((string= line "") nil)	; we leave out blank lines
-	  ((member (char line 0) *comment-line-characters*)
-	   (when *comments*
-	     ;; If we don't have anything buffered, we can print
-	     ;; out the comment now.  Otherwise, we need to save
-	     ;; the comment and print it out later, after we've
-	     ;; accumulated the continuation line, if any.
-	     (if prev-line
-		 (push line collected-comments)
-		 (write-comment-line line outport))))
-	  (t
-	   (when *verbose* (princ line) (terpri))
-	   ;; Handle tabs.  If the line begins with a tab, replace it with 6
-	   ;; spaces.
-	   (when (char-equal (aref line 0) #\Tab)
-	     (setf line (concatenate 'string "      " (subseq line 1))))
-	   ;; Do we really want to do this?  What if the tab is in a
-	   ;; string?  I think tabs are illegal in Fortran, though.
-	   (setf line (substitute #\Space #\Tab line))
-	   ;; If line is a continuation line, append it.  If not,
-	   ;; print out our buffered line.
-	   (cond ((or (< (length line) 6)
-		      (char-equal (aref line 5) #\Space))
-		  ;; Not continuation.  Print out the buffered line, if
-		  ;; any, and save this line for later.
-		  (when prev-line
-		    ;;(format t "~S~%" (adjust_nrs (replace_logl_ops prev-line)))
-		    ;;(format t "prev-line = ~S~%" prev-line)
+        (cond 
+          ((string= line "") nil)       ; we leave out blank lines
+          ((member (char line 0) *comment-line-characters*)
+           (when *comments*
+             ;; If we don't have anything buffered, we can print
+             ;; out the comment now.  Otherwise, we need to save
+             ;; the comment and print it out later, after we've
+             ;; accumulated the continuation line, if any.
+             (if prev-line
+                 (push line collected-comments)
+                 (write-comment-line line outport))))
+          (t
+           (when *verbose* (princ line) (terpri))
+           ;; Handle tabs.  If the line begins with a tab, replace it with 6
+           ;; spaces.
+           (when (char-equal (aref line 0) #\Tab)
+             (setf line (concatenate 'string "      " (subseq line 1))))
+           ;; Do we really want to do this?  What if the tab is in a
+           ;; string?  I think tabs are illegal in Fortran, though.
+           (setf line (substitute #\Space #\Tab line))
+           ;; If line is a continuation line, append it.  If not,
+           ;; print out our buffered line.
+           (cond ((or (< (length line) 6)
+                      (char-equal (aref line 5) #\Space))
+                  ;; Not continuation.  Print out the buffered line, if
+                  ;; any, and save this line for later.
+                  (when prev-line
+                    ;;(format t "~S~%" (adjust_nrs (replace_logl_ops prev-line)))
+                    ;;(format t "prev-line = ~S~%" prev-line)
 
-		    ;; Handle FORMAT statements carefully.  If we
-		    ;; have a format statement, we want to replace
-		    ;; any Hollerith strings in it with real
-		    ;; strings.
-		    (let ((maybe-format (string-left-trim " " (subseq prev-line 6))))
-		      (cond
-			((string-equal maybe-format "format"
-				       :end1 (min 6 (length maybe-format)))
-			 (write-line (process-format-line prev-line) outport))
-			((match-include maybe-format)
-			 ;; Handle INCLUDE files.
-			 (let* ((start (position #\' maybe-format))
-				(end (if start
-					 (position #\' maybe-format :start (1+ start)))))
-			   (when (and start end)
-			     (let ((file (subseq maybe-format (1+ start) end)))
-			       (with-open-file (f (merge-pathnames file)
-						  :direction :input
-						  :if-does-not-exist :error)
-				 (preprocess-streams f outport))))))
-			(t
-			  (write-line (adjust_nrs (replace_logl_ops prev-line)) outport)))))
-		  (setf prev-line (copy-seq line))
-		  ;; Print out the collected comments, if any
-		  (when collected-comments
-		    (dolist (c (nreverse collected-comments))
-		      (write-comment-line c outport))
-		    (setf collected-comments nil)))
-		 (t
-		  ;; A continuation line!  Append the line to our
-		  ;; buffer, after removing any line number or
-		  ;; continuation character.
-		  (setf prev-line (concatenate 'string prev-line
-					       (subseq line 6)))))))))))
+                    ;; Handle FORMAT statements carefully.  If we
+                    ;; have a format statement, we want to replace
+                    ;; any Hollerith strings in it with real
+                    ;; strings.
+                    (let ((maybe-format (string-left-trim " " (subseq prev-line 6))))
+                      (cond
+                        ((string-equal maybe-format "format"
+                                       :end1 (min 6 (length maybe-format)))
+                         (write-line (process-format-line prev-line) outport))
+                        ((match-include maybe-format)
+                         ;; Handle INCLUDE files.
+                         (let* ((start (position #\' maybe-format))
+                                (end (if start
+                                         (position #\' maybe-format :start (1+ start)))))
+                           (when (and start end)
+                             (let ((file (subseq maybe-format (1+ start) end)))
+                               (with-open-file (f (merge-pathnames file)
+                                                  :direction :input
+                                                  :if-does-not-exist :error)
+                                 (preprocess-streams f outport))))))
+                        (t
+                          (write-line (adjust_nrs (replace_logl_ops prev-line)) outport)))))
+                  (setf prev-line (copy-seq line))
+                  ;; Print out the collected comments, if any
+                  (when collected-comments
+                    (dolist (c (nreverse collected-comments))
+                      (write-comment-line c outport))
+                    (setf collected-comments nil)))
+                 (t
+                  ;; A continuation line!  Append the line to our
+                  ;; buffer, after removing any line number or
+                  ;; continuation character.
+                  (setf prev-line (concatenate 'string prev-line
+                                               (subseq line 6)))))))))))
 
 
 ;--------------------------------------------------------------------------
@@ -301,55 +301,55 @@
 
 (defun adjust_nrs (line)
   (let ((prev-char #\Space)
-	(*inp* (make-string-input-stream line))
-	(outport (make-string-output-stream)))
+        (*inp* (make-string-input-stream line))
+        (outport (make-string-output-stream)))
     ;; Read the first 6 characters and write them out.
     ;; (Don't want PARSE-NUMBER to mangle the spacing.)
     (let ((maybe-line-number (read-six-chars *inp*)))
       (dolist (char maybe-line-number)
-	(when (not (eq char 'eof))
-	  (write-char char outport)))
+        (when (not (eq char 'eof))
+          (write-char char outport)))
       (when (member 'eof maybe-line-number)
-	(return-from adjust_nrs (get-output-stream-string outport))))
+        (return-from adjust_nrs (get-output-stream-string outport))))
     (loop
-	(let ((char (read-char *inp* nil 'eof)))
-	  (cond ((eql char 'eof)
-		 (return-from adjust_nrs (get-output-stream-string outport)))
+        (let ((char (read-char *inp* nil 'eof)))
+          (cond ((eql char 'eof)
+                 (return-from adjust_nrs (get-output-stream-string outport)))
 
-		;; check for single quote and pass over all characters
-		;; until next one.  But a single quote followed by a
-		;; single quote quotes the quote and doesn't terminate
-		;; the quoted string.
-		((char= char #\')
-		 (setq prev-char #\space)
-		 (write-char #\" outport)
-		 (loop
-		     (setf char (read-char *inp* nil 'eof))
-		     (let ((nxt (peek-char nil *inp* nil nil)))
-		       (cond ((and (char= char #\')
-				   (and nxt (char= nxt #\')))
-			      (write-char #\' outport)
-			      ;; Skip over the quote
-			      (read-char *inp* nil 'eof t))
-			     ((char= char #\')
-			      (write-char #\" outport)
-			      (return))
-			     (t
-			      (when (char= char #\")
-				;; Need to quote any double-quote
-				;; characters!
-				(write-char #\\ outport))
-			      (write-char char outport))))))
+                ;; check for single quote and pass over all characters
+                ;; until next one.  But a single quote followed by a
+                ;; single quote quotes the quote and doesn't terminate
+                ;; the quoted string.
+                ((char= char #\')
+                 (setq prev-char #\space)
+                 (write-char #\" outport)
+                 (loop
+                     (setf char (read-char *inp* nil 'eof))
+                     (let ((nxt (peek-char nil *inp* nil nil)))
+                       (cond ((and (char= char #\')
+                                   (and nxt (char= nxt #\')))
+                              (write-char #\' outport)
+                              ;; Skip over the quote
+                              (read-char *inp* nil 'eof t))
+                             ((char= char #\')
+                              (write-char #\" outport)
+                              (return))
+                             (t
+                              (when (char= char #\")
+                                ;; Need to quote any double-quote
+                                ;; characters!
+                                (write-char #\\ outport))
+                              (write-char char outport))))))
 
-		;; check for non-complex number 
-		((parse-number prev-char char outport)
-		 (setq prev-char '#\space))
+                ;; check for non-complex number 
+                ((parse-number prev-char char outport)
+                 (setq prev-char '#\space))
 
-		(t
-		 (write-char char outport)
-		 (if (digit-char-p char)
-		     (setq prev-char '#\?)
-		     (setq prev-char char))))))))
+                (t
+                 (write-char char outport)
+                 (if (digit-char-p char)
+                     (setq prev-char '#\?)
+                     (setq prev-char char))))))))
 ;------------------------------------------------------------------------------
 
 (defun parse-logl-op (inport outport)
@@ -372,7 +372,7 @@
              (write logl-op :stream outport) ; write the converted string with spaces
              (write-char '#\space outport))
             (t
-	     (write-char '#\. outport) ; put the dot back
+             (write-char '#\. outport) ; put the dot back
                (write  str :stream outport :escape nil))))) ; put everything else back
 
 ;------------------------------------------------------------------------------
@@ -398,262 +398,262 @@
 #+nil
 (defun parse-number (prev-char char outport)
   (flet ((my-digit-char-p (char)
-	   (and (characterp char)
-		(digit-char-p char)))
-	 (my-char= (char1 char2)
-	   (and (characterp char1)
-		(characterp char2)
-		(char= char1 char2))))
+           (and (characterp char)
+                (digit-char-p char)))
+         (my-char= (char1 char2)
+           (and (characterp char1)
+                (characterp char2)
+                (char= char1 char2))))
     #-clisp(declare (inline my-digit-char-p my-char=))
     (prog (str nxt-char)
        ;; first check prev-char suitable to precede a number
        (if (not (member prev-char 
-			'(#\newline #\space #\. #\= #\+ #\- #\* #\/ #\( #\, )))
-	   (return nil))
+                        '(#\newline #\space #\. #\= #\+ #\- #\* #\/ #\( #\, )))
+           (return nil))
        (setq str (make-string-output-stream))
        ;; examine first char and peek at second to ascertain this is a number
        (setq nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t))
        ;; (format t "prev, char, nxt = ~S ~S ~S~%" prev-char char nxt-char)
        (cond ((and (my-digit-char-p char) 
-		   (or (and (not (eql nxt-char 'eof)) 
-			    (my-digit-char-p nxt-char))
-		       (member nxt-char '(#\. #\D #\d #\E #\e))))
-	      (write-char char str) )
-	     ((and (or (my-char= char '#\+) (my-char= char '#\-))
-		   (my-char= nxt-char '#\.))
-	      (write-char char str) (write-char '#\0 str) )
-	     ((and (or (my-char= char '#\+) (my-char= char '#\-))
-		   (my-digit-char-p nxt-char))
-	      (write-char char str))
-	     ((and (my-char= char '#\.) (my-digit-char-p nxt-char))
-	      (write-char '#\0 str) (write-char '#\. str) )
-	     (t (return nil)))
+                   (or (and (not (eql nxt-char 'eof)) 
+                            (my-digit-char-p nxt-char))
+                       (member nxt-char '(#\. #\D #\d #\E #\e))))
+              (write-char char str) )
+             ((and (or (my-char= char '#\+) (my-char= char '#\-))
+                   (my-char= nxt-char '#\.))
+              (write-char char str) (write-char '#\0 str) )
+             ((and (or (my-char= char '#\+) (my-char= char '#\-))
+                   (my-digit-char-p nxt-char))
+              (write-char char str))
+             ((and (my-char= char '#\.) (my-digit-char-p nxt-char))
+              (write-char '#\0 str) (write-char '#\. str) )
+             (t (return nil)))
        ;; parse rest of number;eof
        loop
        (setq char (read-char *inp* nil 'eof t)
-	     nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t))
+             nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t))
        (when (eql nxt-char 'eof)
-	 (setq nxt-char `#\space))
+         (setq nxt-char `#\space))
        ;; (format t "char, nxt-char = ~S ~S~%" char nxt-char)
        (cond ((eql char 'eof)
-	      ;; Assume number is complete.
-	      (write (get-output-stream-string str) :stream outport :escape nil)
-	      (write-char '#\space outport)
-	      (return t))
-	     ((my-digit-char-p char)
-	      (write-char char str) 
-	      (go loop))
-	     ((and (my-char= char '#\.)
-		   (not (or (my-digit-char-p nxt-char)
-			    (my-char= nxt-char '#\D)
-			    (my-char= nxt-char '#\e)
-			    (my-char= nxt-char '#\E)
-			    (my-char= nxt-char '#\e))))
-	      ;; Convert "0." to "0.0"
-	      (write-char '#\. str) (write-char '#\0 str)
-	      (go loop))
-	     ((and (my-char= char '#\.)
-		   (my-digit-char-p nxt-char))
-	      ;; We have "n.n"
-	      (write-char '#\. str) 
-	      (go loop))
-	     ((and (my-char= char '#\.)
-		   (not (my-digit-char-p nxt-char)))
-	      ;; We have "." followed by some non digit.  Append a 0
-	      ;; to the number.
-	      (write-char '#\. str) (write-char '#\0 str)
-	      (go loop))
-	     ((or (char-equal char '#\E) (char-equal char '#\e))
-	      (write-char '#\e str)
-	      (cond ((my-char= nxt-char '#\+) (read-char *inp* nil 'eof t))
-		    ((my-char= nxt-char '#\-) (read-char *inp* nil 'eof t)
-		     (write-char '#\% str)))
-	      (go loop))
-	     ((or (char-equal char '#\D) (char-equal char '#\d))
-	      (write-char '#\d str)
-	      (cond ((my-char= nxt-char '#\+) (read-char *inp* nil 'eof t))
-		    ((my-char= nxt-char '#\-) (read-char *inp* nil 'eof t)
-		     (write-char '#\% str)))
-	      (go loop))
-	     ((or (my-char= char '#\-) (my-char= char '#\+))
-	      (write-char char str) 
-	      (go loop))
-	     ((my-char= char #\Space)
-	      ;; Spaces embedded within a number don't terminate the
-	      ;; number so skip over the space.  (Spaces in Fortran
-	      ;; are "invisible".)
-	      (go loop))
-	     (t				;number complete
-	      #+clisp 
-	      (if (equal (peek-char nil *inp* nil 'eof t) 'eof)
-		  (setq *inp* (make-string-input-stream (string char)))
-		  (setq *inp* 
-			(make-string-input-stream
-			 (concatenate 'string (string char) (read-line *inp*)))))
-	      #-clisp (unread-char char *inp*)
-	      (write (get-output-stream-string str) :stream outport :escape nil)
-	      (write-char '#\space outport)
-	      (return t))))))
+              ;; Assume number is complete.
+              (write (get-output-stream-string str) :stream outport :escape nil)
+              (write-char '#\space outport)
+              (return t))
+             ((my-digit-char-p char)
+              (write-char char str) 
+              (go loop))
+             ((and (my-char= char '#\.)
+                   (not (or (my-digit-char-p nxt-char)
+                            (my-char= nxt-char '#\D)
+                            (my-char= nxt-char '#\e)
+                            (my-char= nxt-char '#\E)
+                            (my-char= nxt-char '#\e))))
+              ;; Convert "0." to "0.0"
+              (write-char '#\. str) (write-char '#\0 str)
+              (go loop))
+             ((and (my-char= char '#\.)
+                   (my-digit-char-p nxt-char))
+              ;; We have "n.n"
+              (write-char '#\. str) 
+              (go loop))
+             ((and (my-char= char '#\.)
+                   (not (my-digit-char-p nxt-char)))
+              ;; We have "." followed by some non digit.  Append a 0
+              ;; to the number.
+              (write-char '#\. str) (write-char '#\0 str)
+              (go loop))
+             ((or (char-equal char '#\E) (char-equal char '#\e))
+              (write-char '#\e str)
+              (cond ((my-char= nxt-char '#\+) (read-char *inp* nil 'eof t))
+                    ((my-char= nxt-char '#\-) (read-char *inp* nil 'eof t)
+                     (write-char '#\% str)))
+              (go loop))
+             ((or (char-equal char '#\D) (char-equal char '#\d))
+              (write-char '#\d str)
+              (cond ((my-char= nxt-char '#\+) (read-char *inp* nil 'eof t))
+                    ((my-char= nxt-char '#\-) (read-char *inp* nil 'eof t)
+                     (write-char '#\% str)))
+              (go loop))
+             ((or (my-char= char '#\-) (my-char= char '#\+))
+              (write-char char str) 
+              (go loop))
+             ((my-char= char #\Space)
+              ;; Spaces embedded within a number don't terminate the
+              ;; number so skip over the space.  (Spaces in Fortran
+              ;; are "invisible".)
+              (go loop))
+             (t                         ;number complete
+              #+clisp 
+              (if (equal (peek-char nil *inp* nil 'eof t) 'eof)
+                  (setq *inp* (make-string-input-stream (string char)))
+                  (setq *inp* 
+                        (make-string-input-stream
+                         (concatenate 'string (string char) (read-line *inp*)))))
+              #-clisp (unread-char char *inp*)
+              (write (get-output-stream-string str) :stream outport :escape nil)
+              (write-char '#\space outport)
+              (return t))))))
 
 (defun parse-number (prev-char char outport)
   (labels ((my-digit-char-p (char)
-	     (and (characterp char)
-		  (digit-char-p char)))
-	   (my-char= (char1 char2)
-	     (and (characterp char1)
-		  (characterp char2)
-		  (char= char1 char2)))
-	   (skip-spaces ()
-	     (do ((nxt (peek-char nil *inp* nil 'eof)
-		       (peek-char nil *inp* nil 'eof)))
-		 ((not (my-char= nxt #\Space))
-		  nxt)
-	       (read-char *inp* nil 'eof))))
+             (and (characterp char)
+                  (digit-char-p char)))
+           (my-char= (char1 char2)
+             (and (characterp char1)
+                  (characterp char2)
+                  (char= char1 char2)))
+           (skip-spaces ()
+             (do ((nxt (peek-char nil *inp* nil 'eof)
+                       (peek-char nil *inp* nil 'eof)))
+                 ((not (my-char= nxt #\Space))
+                  nxt)
+               (read-char *inp* nil 'eof))))
     #-clisp(declare (inline my-digit-char-p my-char=))
     (let ((in-number-p nil))
       ;; first check prev-char suitable to precede a number
       (unless (member prev-char 
-		      '(#\newline #\space #\. #\= #\+ #\- #\* #\/ #\( #\, ))
-	(return-from parse-number nil))
+                      '(#\newline #\space #\. #\= #\+ #\- #\* #\/ #\( #\, ))
+        (return-from parse-number nil))
       (let ((str (make-string-output-stream))
-	    ;; examine first char and peek at second to ascertain this
-	    ;; is a number.  Don't try to skip over spaces here because
-	    ;; it confuses later stages of the parser.  (In particular,
-	    ;; the Fortran "6.or." gets mangled into the symbol "6OR".)
-	    (nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t)))
-	;;(format t "prev, char, nxt = ~S ~S ~S~%" prev-char char nxt-char)
-	(cond ((and (my-digit-char-p char) 
-		    (or (and (not (eql nxt-char 'eof))
-			     (my-digit-char-p nxt-char))
-			(member nxt-char '(#\. #\D #\E #\d #\e))))
-	       (write-char char str))
-	      ((and (or (my-char= char '#\+)
-			(my-char= char '#\-))
-		    (my-char= nxt-char '#\.))
-	       (write-char char str)
-	       (write-char '#\0 str))
-	      ((and (or (my-char= char '#\+)
-			(my-char= char '#\-))
-		    (my-digit-char-p nxt-char))
-	       (write-char char str))
-	      ((and (my-char= char '#\.)
-		    (my-digit-char-p nxt-char))
-	       (write-char '#\0 str)
-	       (write-char '#\. str) )
-	      (t
-	       ;;(format t "parse-number done!?~%")
-	       (return-from parse-number nil)))
-	;; parse rest of number;eof
-	(loop
-	    (skip-spaces)
-	   (setq char (read-char *inp* nil 'eof)
-	         nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t))
-	   ;;(format t "    char, nxt-char = ~S ~S~%" char nxt-char)
-	  ;; Skip over spaces if the current character is a part of a number.
-	  (when (and (eql nxt-char #\Space)
-		     (or (my-digit-char-p char)
-			 (member char (if in-number-p
-					  '(#\E #\D #\e #\d)
-					  '(#\E #\D #\- #\+ #\e #\d #\.)))))
-	    (skip-spaces)
-	    (setq nxt-char (peek-char nil *inp* nil 'eof))
-	    ;;(format t "nxt-char = ~S~%" nxt-char)
-	    )
-	  (when (eql nxt-char 'eof)
-	    (setq nxt-char `#\space))
-	   ;;(format t "new char, nxt-char = ~S ~S~%" char nxt-char)
-	  (cond ((eql char 'eof)
-		 ;; Assume number is complete.
-		 (write (get-output-stream-string str) :stream outport :escape nil)
-		 (write-char '#\space outport)
-		 (return-from parse-number t))
-		((my-digit-char-p char)
-		 (setf in-number-p t)
-		 (write-char char str))
-		((and (my-char= char '#\.)
-		      (not (or (my-digit-char-p nxt-char)
-			       (my-char= nxt-char '#\D)
-			       (my-char= nxt-char '#\d)
-			       (my-char= nxt-char '#\E)
-			       (my-char= nxt-char '#\e))))
-		 ;; Convert "n." to "n.0" if there's no following number.
+            ;; examine first char and peek at second to ascertain this
+            ;; is a number.  Don't try to skip over spaces here because
+            ;; it confuses later stages of the parser.  (In particular,
+            ;; the Fortran "6.or." gets mangled into the symbol "6OR".)
+            (nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t)))
+        ;;(format t "prev, char, nxt = ~S ~S ~S~%" prev-char char nxt-char)
+        (cond ((and (my-digit-char-p char) 
+                    (or (and (not (eql nxt-char 'eof))
+                             (my-digit-char-p nxt-char))
+                        (member nxt-char '(#\. #\D #\E #\d #\e))))
+               (write-char char str))
+              ((and (or (my-char= char '#\+)
+                        (my-char= char '#\-))
+                    (my-char= nxt-char '#\.))
+               (write-char char str)
+               (write-char '#\0 str))
+              ((and (or (my-char= char '#\+)
+                        (my-char= char '#\-))
+                    (my-digit-char-p nxt-char))
+               (write-char char str))
+              ((and (my-char= char '#\.)
+                    (my-digit-char-p nxt-char))
+               (write-char '#\0 str)
+               (write-char '#\. str) )
+              (t
+               ;;(format t "parse-number done!?~%")
+               (return-from parse-number nil)))
+        ;; parse rest of number;eof
+        (loop
+            (skip-spaces)
+           (setq char (read-char *inp* nil 'eof)
+                 nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t))
+           ;;(format t "    char, nxt-char = ~S ~S~%" char nxt-char)
+          ;; Skip over spaces if the current character is a part of a number.
+          (when (and (eql nxt-char #\Space)
+                     (or (my-digit-char-p char)
+                         (member char (if in-number-p
+                                          '(#\E #\D #\e #\d)
+                                          '(#\E #\D #\- #\+ #\e #\d #\.)))))
+            (skip-spaces)
+            (setq nxt-char (peek-char nil *inp* nil 'eof))
+            ;;(format t "nxt-char = ~S~%" nxt-char)
+            )
+          (when (eql nxt-char 'eof)
+            (setq nxt-char `#\space))
+           ;;(format t "new char, nxt-char = ~S ~S~%" char nxt-char)
+          (cond ((eql char 'eof)
+                 ;; Assume number is complete.
+                 (write (get-output-stream-string str) :stream outport :escape nil)
+                 (write-char '#\space outport)
+                 (return-from parse-number t))
+                ((my-digit-char-p char)
+                 (setf in-number-p t)
+                 (write-char char str))
+                ((and (my-char= char '#\.)
+                      (not (or (my-digit-char-p nxt-char)
+                               (my-char= nxt-char '#\D)
+                               (my-char= nxt-char '#\d)
+                               (my-char= nxt-char '#\E)
+                               (my-char= nxt-char '#\e))))
+                 ;; Convert "n." to "n.0" if there's no following number.
 
-		 ;;(format t "inserting 0: char, nxt = ~S ~S~%" char nxt-char)
-		 (setf in-number-p t)
-		 (write-char '#\. str)
-		 (write-char '#\0 str))
-		((and (my-char= char '#\.)
-		      (my-digit-char-p nxt-char))
-		 ;; We have "n.n"
-		 (setf in-number-p t)
-		 (write-char '#\. str))
-		((and (my-char= char '#\.)
-		      (not (my-digit-char-p nxt-char)))
-		 ;; We have "." followed by some non-digit or non-space.
-		 ;; Append a 0 to the number.
+                 ;;(format t "inserting 0: char, nxt = ~S ~S~%" char nxt-char)
+                 (setf in-number-p t)
+                 (write-char '#\. str)
+                 (write-char '#\0 str))
+                ((and (my-char= char '#\.)
+                      (my-digit-char-p nxt-char))
+                 ;; We have "n.n"
+                 (setf in-number-p t)
+                 (write-char '#\. str))
+                ((and (my-char= char '#\.)
+                      (not (my-digit-char-p nxt-char)))
+                 ;; We have "." followed by some non-digit or non-space.
+                 ;; Append a 0 to the number.
 
-		 ;;(format t "inserting 0: char, nxt = ~S ~S~%" char nxt-char)
+                 ;;(format t "inserting 0: char, nxt = ~S ~S~%" char nxt-char)
 
-		 (setf in-number-p t)
-		 (write-char '#\. str)
-		 (write-char '#\0 str))
-		((or (char-equal char #\E) (char-equal char #\e)
-		     (char-equal char #\D) (char-equal char #\d))
-		 ;;(format t "got exponent ~S~%" char)
-		 (setf in-number-p t)
-		 ;; Process exponent, skip over white space.
-		 (when (my-char= nxt-char #\Space)
-		   (skip-spaces)
-		   (setf nxt-char (peek-char nil *inp* nil 'eof)))
-		 ;;(format t " nxt = ~S~%" nxt-char)
-		 (cond ((my-char= nxt-char '#\+)
-			;; Write the exponent char out, read and
-			;; discard the "+" char
-			(write-char char str)
-			(read-char *inp* nil 'eof))
-		       ((my-char= nxt-char '#\-)
-			;; Write the exponent char out, read and
-			;; discard "-" char, and send a "%" out
-			;; instead.
-			(write-char char str)
-			(read-char *inp* nil 'eof)
-			(write-char '#\% str))
-		       ((my-digit-char-p nxt-char)
-			;; Exponent followed by a digit.  Write the
-			;; exponent out.
-			(write-char char str))
-		       (t
-			(let ((s (get-output-stream-string str)))
-			  ;;(format t "number is ~a~%" s)
-			  (write s :stream outport :escape nil))
-			;; The exponent char we got isn't really part
-			;; of the number.  Push back the char.
-			(setq *inp*
-			      (make-string-input-stream
-			       (concatenate 'string " "
-					    (string char)
-					    (read-line *inp*))))
-			(return-from parse-number t))))
-		(t			;number complete
-		 ;;(format t "complete char, nxt = ~S ~S~%" char nxt-char)
-		 ;; We want to unread CHAR, but, according to the CLHS,
-		 ;; unread-char must push back the last character that
-		 ;; was read.  Because of skip-spaces above, this CHAR
-		 ;; is not necessarily the last character read anymore.
-		 ;; We have to modify the stream directly now.
-		 ;;
-		 ;; Do we want recursive-p to be T here or not?
-		 (let ((p (peek-char nil *inp* nil 'eof #+nil t)))
-		   (if (equal p 'eof)
-		       (setq *inp* (make-string-input-stream (string char)))
-		       (setq *inp* 
-			     (make-string-input-stream
-			      (concatenate 'string (string char) (read-line *inp*))))))
-		 (let ((s (get-output-stream-string str)))
-		   ;;(format t "number is ~a~%" s)
-		   (write s :stream outport :escape nil))
-		 (write-char '#\space outport)
-		 (return-from parse-number t))))))))
+                 (setf in-number-p t)
+                 (write-char '#\. str)
+                 (write-char '#\0 str))
+                ((or (char-equal char #\E) (char-equal char #\e)
+                     (char-equal char #\D) (char-equal char #\d))
+                 ;;(format t "got exponent ~S~%" char)
+                 (setf in-number-p t)
+                 ;; Process exponent, skip over white space.
+                 (when (my-char= nxt-char #\Space)
+                   (skip-spaces)
+                   (setf nxt-char (peek-char nil *inp* nil 'eof)))
+                 ;;(format t " nxt = ~S~%" nxt-char)
+                 (cond ((my-char= nxt-char '#\+)
+                        ;; Write the exponent char out, read and
+                        ;; discard the "+" char
+                        (write-char char str)
+                        (read-char *inp* nil 'eof))
+                       ((my-char= nxt-char '#\-)
+                        ;; Write the exponent char out, read and
+                        ;; discard "-" char, and send a "%" out
+                        ;; instead.
+                        (write-char char str)
+                        (read-char *inp* nil 'eof)
+                        (write-char '#\% str))
+                       ((my-digit-char-p nxt-char)
+                        ;; Exponent followed by a digit.  Write the
+                        ;; exponent out.
+                        (write-char char str))
+                       (t
+                        (let ((s (get-output-stream-string str)))
+                          ;;(format t "number is ~a~%" s)
+                          (write s :stream outport :escape nil))
+                        ;; The exponent char we got isn't really part
+                        ;; of the number.  Push back the char.
+                        (setq *inp*
+                              (make-string-input-stream
+                               (concatenate 'string " "
+                                            (string char)
+                                            (read-line *inp*))))
+                        (return-from parse-number t))))
+                (t                      ;number complete
+                 ;;(format t "complete char, nxt = ~S ~S~%" char nxt-char)
+                 ;; We want to unread CHAR, but, according to the CLHS,
+                 ;; unread-char must push back the last character that
+                 ;; was read.  Because of skip-spaces above, this CHAR
+                 ;; is not necessarily the last character read anymore.
+                 ;; We have to modify the stream directly now.
+                 ;;
+                 ;; Do we want recursive-p to be T here or not?
+                 (let ((p (peek-char nil *inp* nil 'eof #+nil t)))
+                   (if (equal p 'eof)
+                       (setq *inp* (make-string-input-stream (string char)))
+                       (setq *inp* 
+                             (make-string-input-stream
+                              (concatenate 'string (string char) (read-line *inp*))))))
+                 (let ((s (get-output-stream-string str)))
+                   ;;(format t "number is ~a~%" s)
+                   (write s :stream outport :escape nil))
+                 (write-char '#\space outport)
+                 (return-from parse-number t))))))))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
@@ -783,11 +783,11 @@
 ;;; Revision 1.29  2002/02/07 20:14:12  rtoy
 ;;; f2cl was incorrectly parsing
 ;;;
-;;; 	character*10 dig
+;;;     character*10 dig
 ;;;
 ;;; as
 ;;;
-;;; 	character * 10d ig
+;;;     character * 10d ig
 ;;;
 ;;; because we weren't handling the case where the exponent character
 ;;; wasn't really an exponent character.
@@ -819,11 +819,11 @@
 ;;; Revision 1.23  2001/09/08 21:41:37  rtoy
 ;;; parse-number was mangling
 ;;;
-;;; 	y = 1.5d0 - exp(-x)*top
+;;;     y = 1.5d0 - exp(-x)*top
 ;;;
 ;;; into the invalid
 ;;;
-;;; 	y = 1.5d0 - e xp(-x)*top
+;;;     y = 1.5d0 - e xp(-x)*top
 ;;;
 ;;; Fix this.
 ;;;
@@ -881,18 +881,18 @@
 ;;; line ends with punctuation, or the current line begins with
 ;;; punctuation.  This is intended to handle cases like:
 ;;;
-;;; 	double precision
+;;;     double precision
 ;;;        & x
 ;;;
 ;;; from being converted to
 ;;;
-;;; 	double precisionx
+;;;     double precisionx
 ;;;
 ;;; which is wrong.  We want a space before the x.
 ;;;
 ;;; We want to handle these cases to, though:
 ;;;
-;;; 	x = y .le
+;;;     x = y .le
 ;;;        &. 42
 ;;;
 ;;; which shouldn't get a space between lines because we want "x = y

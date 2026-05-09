@@ -5,11 +5,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;----------------------------------------------------------------------------
 ; functions:
-;	id-logical
-;	id-logical-and 
-;	id-logical-not
-;	id-relational
-;	memberq
+;       id-logical
+;       id-logical-and 
+;       id-logical-not
+;       id-relational
+;       memberq
 ;-----------------------------------------------------------------------------
 (in-package :f2cl)
 

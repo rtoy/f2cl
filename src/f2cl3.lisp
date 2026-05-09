@@ -7,20 +7,20 @@
 ; pattern matching for the syntax checker
 
 ; functions:
-;	restrict-test
-;	exact-match
-;	match-atoms
-;	match-atoms-lists
-;	match-store-atoms
+;       restrict-test
+;       exact-match
+;       match-atoms
+;       match-atoms-lists
+;       match-store-atoms
 ;       match-store - for atoms and lists
-;	match-restrict - restricts atoms and matches for lists
+;       match-restrict - restricts atoms and matches for lists
 ;             - to use insert (restrict >var predicate) instead of >var or >
-;	atomcar, atomcdr
-;	match-separated - matches (a1 s1 a2 s2 ...... an) where the si are 
-;	      separators , it delivers a list of two lists, the first being
-;	      a list of lists of the ai and the second a list of the separators
-;	      or returns nil if an ai is missing - this could be used to
-;	      produce a syntax error.
+;       atomcar, atomcdr
+;       match-separated - matches (a1 s1 a2 s2 ...... an) where the si are 
+;             separators , it delivers a list of two lists, the first being
+;             a list of lists of the ai and the second a list of the separators
+;             or returns nil if an ai is missing - this could be used to
+;             produce a syntax error.
 ;-----------------------------------------------------------------------------
 (in-package :f2cl)
 
@@ -113,15 +113,15 @@
 (defun restrict-test (predicates argument)
  (prog ()
        loop
-	(cond ((null predicates) (return t)))   ; all tests t?
+        (cond ((null predicates) (return t)))   ; all tests t?
         (cond ((funcall (car predicates) argument) ; this test t?
-	       (setq predicates (cdr predicates))
+               (setq predicates (cdr predicates))
                (go loop))                         ; then repeat
                (t (return nil)))))                ; else fail
 
 (defun match-restrict (p d)
-	(cond
-		((and (null p) (null d)) t)
+        (cond
+                ((and (null p) (null d)) t)
                 ((or (null p) (null d)) nil)
 ; restricted >
                 ((and (not (atom (car p)))         
@@ -130,7 +130,7 @@
                       (restrict-test (cddar p) (car d)))
                  (match-restrict (cdr p) (cdr d)))
 ; restricted >var
-		((and (not (atom (car p)))
+                ((and (not (atom (car p)))
                       (equal (caar p) 'restrict)
                       (equal (atomcar (cadar p)) '>)
                       (restrict-test (cddar p) (car d))
@@ -138,21 +138,21 @@
                  (set (atomcdr (cadar p)) (car d))
                  t)
 ; equality or >
-		((or (equal (car p) '>)
+                ((or (equal (car p) '>)
                     (equal (car p) (car d)))
                  (match-restrict (cdr p) (cdr d)))
 ; >var
-		((and (atom (car p))
+                ((and (atom (car p))
                       (equal (atomcar (car p)) '>)
                       (match-restrict (cdr p) (cdr d)))
                  (set (atomcdr (car p)) (car d))
                 t)
 ; +
-		((equal (car p) '+)
+                ((equal (car p) '+)
                  (cond ((match-restrict (cdr p) (cdr d)))
                        ((match-restrict p (cdr d)))))
 ; +var
-		((and (atom (car p)) (equal (atomcar (car p)) '+))
+                ((and (atom (car p)) (equal (atomcar (car p)) '+))
                  (cond ((match-restrict (cdr p) (cdr d))
                         (set (atomcdr (car p)) (list (car d)))
                         t)
