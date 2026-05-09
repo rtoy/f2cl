@@ -1,0 +1,56 @@
+# GitHub Actions CI for the f2cl regression suite.
+#
+# Runs the ASDF flow under SBCL on a stock ubuntu-latest runner.
+# (The GitLab CI side, in .gitlab-ci.yml, exercises both ASDF and
+# mk-defsystem under CMUCL; this workflow covers the SBCL side.
+# mk-defsystem isn't tested here because SBCL doesn't bundle it and
+# pulling it in via Quicklisp would risk Quicklisp's older "rt"
+# system shadowing our vendored copy.)
+#
+# The job exits non-zero when the test runner signals on unexpected
+# outcomes -- both by SBCL's --non-interactive default behavior on
+# unhandled errors and by the explicit (sb-ext:exit :code 1) in the
+# handler-case branch.
+
+name: CI
+
+on:
+  push:
+    branches: [ master, "issue-*" ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  asdf-tests:
+    name: ASDF / SBCL
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SBCL
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y sbcl
+
+      - name: Show SBCL version
+        run: sbcl --version
+
+      # Run the ASDF flow.  The eval-when block at the top of f2cl.asd
+      # self-registers our vendored "rt" system and adds packages/ to
+      # asdf:*central-registry*, so only the repo root needs to be on
+      # the registry.
+      - name: Run regression suite
+        run: |
+          sbcl --non-interactive --no-sysinit --no-userinit \
+            --eval '(require :asdf)' \
+            --eval '(handler-case
+                       (progn
+                         (setf asdf:*compile-file-warnings-behaviour* :ignore
+                               asdf:*compile-file-failure-behaviour*  :ignore)
+                         (push (truename "./") asdf:*central-registry*)
+                         (asdf:test-system :f2cl)
+                         (sb-ext:exit :code 0))
+                     (error (c)
+                       (format *error-output* "~&FAIL: ~A~%" c)
+                       (sb-ext:exit :code 1)))'
