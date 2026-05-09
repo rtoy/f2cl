@@ -360,7 +360,7 @@ correctly"
   :PROMOTE-TO-DOUBLE       Promote REAL and COMPLEX constants, variables, and
                             arrays to REAL*8 and COMPLEX*16 types. 
 "
-
+  (declare (ignorable array-type-p))
 
   ;;(format t "Copyright(c) 92-95 University of Waikato - all rights reserved~%")
   ;;(format t "1997, 1999 Many changes and fixes by Raymond Toy (toy@rtp.ericsson.se)~%")
@@ -524,6 +524,8 @@ correctly"
   :PROMOTE-TO-DOUBLE       Promote REAL and COMPLEX constants, variables, and
                             arrays to REAL*8 and COMPLEX*16 types. 
 "
+  #-(or cmucl scl)
+  (declare (ignore error-file))
   (let ((lisp-file
          (f2cl filename :prune-labels prune-labels :include-comments include-comments
                :auto-save auto-save :relaxed-array-decls relaxed-array-decls
