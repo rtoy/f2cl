@@ -1450,10 +1450,10 @@ correctly"
 
      ;; Fortran 90 extensions:
      (when (eq (car x) 'exit)
-       (return (parse-exit x)))
+       (return (parse-exit)))
 
      (when (eq (car x) 'cycle)
-       (return (parse-cycle x)))
+       (return (parse-cycle)))
      
      ;;fall out the bottom:
      (warn "F2CL did not translate: ~S" (write-to-string (check_new_vbles x)))
@@ -3021,10 +3021,10 @@ correctly"
     ;;(format t "~A~%" *equivalenced-vars*)
     nil))
 
-(defun parse-exit (x)
+(defun parse-exit ()
   '((go f2cl-lib::exit)))
 
-(defun parse-cycle (x)
+(defun parse-cycle ()
   '((go f2cl-lib::continue)))
 
 ;=============================================================================
