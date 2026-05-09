@@ -838,8 +838,8 @@ correctly"
   ;;
   ;; In either case, the rewrite is a goto label2 if COND fails.
   ;;
-  ;; LINE is the tokenized source line: (DO LABEL* WHILE (COND)).  The
-  ;; second element is either a label (integer) or the the symbol
+  ;; LINE is the tokenized source line: (DO [LABEL] WHILE (COND)).
+  ;; The second element is either a label (integer) or the symbol
   ;; WHILE.  (Label is optional in do-while statements.)
   (if (integerp (second line))
       `(if |(| not ,@(cdddr line) |)| goto ,label2)
