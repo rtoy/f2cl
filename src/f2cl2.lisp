@@ -83,16 +83,6 @@
        (symbolp (car x))
        (null (cdr x))))
 ;------------------------------------------------------------------------------
-(defun check-tags-go (x)
-  (prog (tags gos)
-   (setq tags (mapcar #'car (delete nil (mapcar #'(lambda (y) (cond ((symbol-listp y) y)
-                                                     (t nil))) x))))
-   (setq gos (mapcar #'car (find-gos x)))
-
-   (return
-    (cond ((eq (length tags) (length (unique-elements (append gos tags)))) t)
-          (t nil))))) 
-;------------------------------------------------------------------------------
 (defun find-gos (x)
  (cond ((atom x) nil)
        ((eq (car x) 'go) 
