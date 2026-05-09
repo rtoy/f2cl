@@ -814,30 +814,6 @@
     (setf used-keys (nreverse used-keys))
     (values used-keys)))
 
-(defun remove-unused-locals (local-vbles vble-decls body keep-always)
-  "Drop bindings in LOCAL-VBLES whose name doesn't appear in BODY and is
-  not in KEEP-ALWAYS.  Filter VBLE-DECLS — a singleton list holding
-  one combined (DECLARE (TYPE T v...) ...) — the same way."
-  (labels ((name-of (b) (if (consp b) (car b) b))
-           (used-p (name)
-             (or (member name keep-always)
-                 (find-sym name body))))
-    (let* ((kept-vbles
-            (remove-if-not (lambda (b) (used-p (name-of b))) local-vbles))
-           (decl-form (first vble-decls))      ; (declare (type T vs...) ...)
-           (kept-clauses
-            (when decl-form
-              (mapcan
-               (lambda (clause)
-                 (cond ((and (consp clause) (eq (car clause) 'type))
-                        (let ((kept (remove-if-not #'used-p (cddr clause))))
-                          (when kept (list `(type ,(cadr clause) ,@kept)))))
-                       (t (list clause))))
-               (cdr decl-form))))
-           (kept-decls
-            (if kept-clauses (list `(declare ,@kept-clauses)) nil)))
-      (values kept-vbles kept-decls))))
-
 (defun create-sym-macros (prog-bit)
   (let ((sym-mlets '())
         (sym-lets ()))
