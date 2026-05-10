@@ -2167,16 +2167,23 @@ correctly"
           (let ((checked (check-reserved-lisp-names (first routine))))
             (values (list checked)
                     (gethash checked *f2cl-function-info*))))
-    (if (and finfo (f2cl-finfo-return-values finfo))
-        (let ((this (gethash *subprog_name* *f2cl-function-info*)))
-          (unless this
-            (setf (gethash *subprog_name* *f2cl-function-info*)
-                  (make-f2cl-finfo)))
-          ;; Add this function to the list of called functions
-          (pushnew (first routine-name)
-                   (f2cl-finfo-calls (gethash *subprog_name*
-                                              *f2cl-function-info*))))
-        (warn "Generating call to unknown function ~A.  Check generated call!" routine-name))
+    (cond
+      ((and finfo (f2cl-finfo-return-values finfo))
+       (let ((this (gethash *subprog_name* *f2cl-function-info*)))
+         (unless this
+           (setf (gethash *subprog_name* *f2cl-function-info*)
+                 (make-f2cl-finfo)))
+         ;; Add this function to the list of called functions
+         (pushnew (first routine-name)
+                  (f2cl-finfo-calls (gethash *subprog_name*
+                                             *f2cl-function-info*)))))
+      ;; (funcall <name>) means a call through a function value -- a
+      ;; formal parameter declared EXTERNAL.  We know it's a function
+      ;; call by construction, so no "unknown function" warning.
+      ((eq (first routine) 'funcall))
+      (t
+       (warn "In ~A: generating call to unknown function ~A.  Check generated call!"
+             *subprog_name* routine-name)))
 
     (let ((ret-finfo (if (and *use-function-info* finfo)
                          (f2cl-finfo-return-values finfo)
