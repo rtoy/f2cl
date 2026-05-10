@@ -8,13 +8,13 @@ C
 C Behaviour expected after the fixes:
 C
 C * Comments OUTSIDE any subprogram (these here at the top of the
-C   file, gaps between subprograms, and any trailing comments after
-C   the last END) are silently DROPPED.  None of them must appear in
-C   the generated .lisp file.
-C * Comments INSIDE a subprogram are emitted as fortran_comment forms
-C   (i.e., quoted strings in the translated body).  Their original
-C   character case is preserved, and lines longer than column 72 are
-C   not truncated.
+C   file, gaps between subprograms, and trailing comments after the
+C   last END) are emitted as plain top-level Lisp ;;-style comment
+C   lines, in source order.  They are not wrapped in a *MAIN* defun.
+C * Comments INSIDE a subprogram are emitted as fortran_comment
+C   forms (i.e., quoted strings in the translated body).
+C * Original character case is preserved in both cases, and lines
+C   longer than column 72 are not truncated.
 C =====================================================================
       SUBROUTINE FOO(X, IFLAG)
       REAL X
@@ -47,9 +47,7 @@ C
       RETURN
       END
 C
-C This block of comments lives between two subprograms.  None of these
-C lines should appear in the generated .lisp file.  It also contains
-C "double" and 'single' quotes that should not confuse the dropper.
+C This block of comments lives between two subprograms.
 C
       SUBROUTINE BAR(Y)
       REAL Y
@@ -60,7 +58,6 @@ C must appear in the translation, with the quotes intact.
       END
 C
 C Trailing comments at end-of-file.  These come after the last END of
-C the last subprogram and must NOT appear in the generated .lisp file.
-C They contain "double" and 'single' quotes too, just to be sure.
+C the last subprogram.
 C
-C   --- LAST LINE OF THE FILE; MUST NOT APPEAR IN THE LISP OUTPUT ---
+C   --- LAST LINE OF THE FILE ---

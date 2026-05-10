@@ -707,23 +707,34 @@ correctly"
           (setq *format_stmts* nil)
           (setq *statement-labels* nil)
           (let ((*print-level* nil)
-                (*print-length* nil)
-                (prog-list (readsubprog-extract-format-stmts inport)))
-            ;; READSUBPROG can return NIL if all that remained in the
-            ;; file was outside-subprogram comments (which it drops).
-            ;; In that case there is nothing to translate; just go
-            ;; back to the top of the loop and let PEEK-CHAR see EOF.
-            (when prog-list
-              ;; Print a header to the file indicating when this was
-              ;; compiled and the version of f2cl used to compile it.
-              ;; Include the options used to compile the file.
-              (translate-and-write-subprog 
-               (introduce-continue prog-list)
-               outport
-               ofile
-               declaim
-               package
-               options)))))))
+                (*print-length* nil))
+            (multiple-value-bind (prog-list leading-comments)
+                (readsubprog-extract-format-stmts inport)
+              ;; Emit any outside-subprogram comments (header
+              ;; comments before the first subprogram, comments
+              ;; between two subprograms, or trailing comments
+              ;; after the last END) as plain top-level Lisp
+              ;; comments, in source order.  ";;" lines are
+              ;; preserved as documentation but disappear at
+              ;; compile time, which is what we want for
+              ;; non-attached comments.  Each fortran_comment came
+              ;; from a single Fortran source line, so the text
+              ;; contains no embedded newlines and needs no
+              ;; escaping.
+              (dolist (c leading-comments)
+                (format outport ";;~A~%" (second c)))
+              ;; READSUBPROG returns NIL for PROG-LIST when there
+              ;; was no real subprogram (only outside-subprogram
+              ;; comments, which we just wrote).  Skip translation
+              ;; in that case.
+              (when prog-list
+                (translate-and-write-subprog 
+                 (introduce-continue prog-list)
+                 outport
+                 ofile
+                 declaim
+                 package
+                 options))))))))
   t)
 
 ;---------------------------------------------------------------------------
@@ -878,7 +889,7 @@ correctly"
 (defun readsubprog-extract-format-stmts (inport)
   (let ((extended-label 100000)         ; Must be bigger than any possible valid Fortran label.
         (extended-do-label-stack '())
-        input-list output-list margin *current_label*)
+        input-list output-list leading-comments margin *current_label*)
     (when *verbose*
       (format t "~&extracting format statements ...~%"))
     (loop
@@ -905,7 +916,7 @@ correctly"
       ;; happens on a perfectly valid Fortran file when the
       ;; preprocessor has emitted some trailing fortran_comment
       ;; lines after the file's last END (the source file ended
-      ;; with comments) and the comment-dropping clause below has
+      ;; with comments) and the comment-collecting clause below has
       ;; just consumed the last one.  Without this clause the loop
       ;; would spin forever re-reading EOF, since the (END) check
       ;; further down does not match.  LINEREAD signals EOF by
@@ -914,24 +925,30 @@ correctly"
       (when (and (consp input-list)
                  (eq (car input-list) 'eof)
                  (null (cdr input-list)))
-        (return (nreverse output-list)))
-      ;; Drop comments emitted by the preprocessor for source
+        (return (values (nreverse output-list)
+                        (nreverse leading-comments))))
+      ;; Collect comments emitted by the preprocessor for source
       ;; comments outside any subprogram (leading comments before
       ;; the first SUBROUTINE/FUNCTION/PROGRAM, comments between
       ;; one END and the next subprogram's start, and trailing
       ;; comments after the last END).  We recognise them by
       ;; OUTPUT-LIST being empty: at that point we have not yet
       ;; seen a real statement of any subprogram, so a comment
-      ;; cannot belong inside one.  Comments seen after the first
+      ;; cannot belong inside one.  Such comments are returned to
+      ;; the caller as a second value so they can be emitted as
+      ;; top-level forms in the .lisp file rather than wrapped
+      ;; into a bogus *MAIN* defun.  Comments seen after the first
       ;; real statement fall through to the T branch below and are
       ;; preserved as part of the subprogram body.
-      (unless (and (null output-list)
-                   (consp input-list)
-                   (eq (car input-list) 'fortran_comment))
-        ;; extract format-stmts
-        ;;(format t "extract format-stmts~%")
+      (cond ((and (null output-list)
+                  (consp input-list)
+                  (eq (car input-list) 'fortran_comment))
+             (push input-list leading-comments))
+            (t
+             ;; extract format-stmts
+             ;;(format t "extract format-stmts~%")
                
-        (cond ((id-extended-do input-list)
+             (cond ((id-extended-do input-list)
              ;; Handle extended DO statements.  These are DO
              ;; statements that do not have a line number.  The DO
              ;; statement is ended with an END-DO statement.
@@ -1019,13 +1036,14 @@ correctly"
             ((eq (car input-list) 'format)
              (parse-format (brackets-check (concat-operators input-list))))
             (t
-             (push (list *current_label* input-list) output-list))))
+             (push (list *current_label* input-list) output-list)))))
         
       ;; Check for end of subprogram
       (when (and (eq (car input-list) 'end) (null (cdr input-list)))
         (when extended-do-label-stack
           (warn "An extended DO statement is missing its matching ENDDO statement"))
-        (return (nreverse output-list))))))
+        (return (values (nreverse output-list)
+                        (nreverse leading-comments)))))))
 
 ;------------------------------------------------------------------------------
 (defun introduce-continue (prog-list) ; ((margin line) (margin line) ...)
