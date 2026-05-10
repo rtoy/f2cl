@@ -2749,6 +2749,12 @@ correctly"
 
 (defun parse-char-decl (x)
   ;; x is the line.
+  ;;
+  ;; Variable names must be passed through CHECK-RESERVED-LISP-NAMES
+  ;; before being stored in *EXPLICIT_VBLE_DECLS*.  If we don't and
+  ;; it's a reserved lisp name, *EXPLICIT_VBLE_DECLS* will have the
+  ;; wrong name and declarations and/or initializations will be
+  ;; handled incorrectly.
   (cond ((eq (second x) '*)
          ;; The length was given explicitly as part of the
          ;; character declaration.
@@ -2758,11 +2764,12 @@ correctly"
                                  ;; (format t "  decl = ~A~%" dcl)
                                  (destructuring-bind (name &optional dim-or-len)
                                      dcl
-                                   (if dim-or-len
-                                       ;; An array of characters
-                                       `(,name ,@(parse_dimension_specs dim-or-len))
-                                       ;; A simple character string
-                                       dcl))))
+                                   (let ((name (check-reserved-lisp-names name)))
+                                     (if dim-or-len
+                                         ;; An array of characters
+                                         `(,name ,@(parse_dimension_specs dim-or-len))
+                                         ;; A simple character string
+                                         (list name))))))
                            (list-split '|,| (cdddr x))))
                *explicit_vble_decls*))
         (t
@@ -2775,18 +2782,20 @@ correctly"
                       ;; something like
                       ;;   character name*(*)
                       ;; This is a character string of unknown length
-                      (push `((character ,(or (third decl) 1)) (,(first decl)))
+                      (push `((character ,(or (third decl) 1))
+                              (,(check-reserved-lisp-names (first decl))))
                             *explicit_vble_decls*))
                      (t
                       (destructuring-bind (name &optional dim-or-len &rest len)
                           (remove '* decl)
-                        (push
-                         (if (and dim-or-len (listp dim-or-len))
-                             ;; An array
-                             `((character ,@len) (,name ,@(parse_dimension_specs dim-or-len)))
-                             ;; A simple character string
-                             `((character ,(or dim-or-len 1)) (,name)))
-                         *explicit_vble_decls*)))))
+                        (let ((name (check-reserved-lisp-names name)))
+                          (push
+                           (if (and dim-or-len (listp dim-or-len))
+                               ;; An array
+                               `((character ,@len) (,name ,@(parse_dimension_specs dim-or-len)))
+                               ;; A simple character string
+                               `((character ,(or dim-or-len 1)) (,name)))
+                           *explicit_vble_decls*))))))
                (list-split '|,| (cdr x)))))
      
   ;;(format t "explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
