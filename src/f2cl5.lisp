@@ -3314,7 +3314,8 @@
            x)
           ((or (and found-it
                     (not (eq access :internal))
-                    (fboundp found-it)))
+                    (fboundp found-it))
+               (member x +reserved-lisp-names+))
            ;; We want to append "$" for certain cases to prevent
            ;; collisions.  (Any character can be used.  But we can't
            ;; prepend because f2cl wants to look at the first
