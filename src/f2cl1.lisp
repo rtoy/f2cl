@@ -695,6 +695,9 @@ correctly"
     (with-open-file (inport file :direction :input)
       (with-open-file (outport ofile :direction :output 
                                :if-exists :rename-and-delete)
+        (let ((*print-level* nil)
+              (*print-length* nil))
+          (print-header outport declaim package options))
         (setq *common_array_dims* nil)
         (do ((char (peek-char nil inport nil 'eof) 
                    (peek-char nil inport nil 'eof)))
@@ -1141,7 +1144,6 @@ correctly"
         *common_array_dims*
         *non-intrinsic-function-names*)
 
-    (print-header outport declaim package options)
      (setq fort-fun
            (do ((lines prog-list (cdr lines)) 
                 (fort-fun nil (append fort-fun
