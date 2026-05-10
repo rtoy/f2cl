@@ -1,3 +1,9 @@
+      real function aint(x)
+      real x
+      aint = 2.0 * x
+      return
+      end
+
       subroutine callint(y)
       real y
       intrinsic aint
@@ -10,12 +16,6 @@
       external aint
       real aint
       y = aint(3.7)
-      return
-      end
-
-      real function aint(x)
-      real x
-      aint = 2.0 * x
       return
       end
 
