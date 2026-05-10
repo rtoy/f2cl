@@ -1,3 +1,10 @@
+      real function apply(f, x)
+      external f
+      real f, x
+      apply = f(x)
+      return
+      end
+
       program tstintarg
 c     INTRINSIC declaration for a standard 77 intrinsic, passed as
 c     an actual argument.  This is the canonical reason INTRINSIC
@@ -14,9 +21,3 @@ c     and prints 1.00.
    10 format(' apply(sin, 1.57) =', f6.2)
       end
 
-      real function apply(f, x)
-      external f
-      real f, x
-      apply = f(x)
-      return
-      end

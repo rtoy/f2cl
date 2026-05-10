@@ -1,3 +1,24 @@
+      subroutine callint(y)
+      real y
+      intrinsic sin
+      y = sin(1.57)
+      return
+      end
+
+      subroutine callext(y)
+      real y
+      external sin
+      real sin
+      y = sin(1.57)
+      return
+      end
+
+      real function sin(x)
+      real x
+      sin = 2.0 * x
+      return
+      end
+
       program tstintsin
 c     A user-defined function named SIN that returns 2*x.  The
 c     program calls SIN(1.57) twice -- once from a routine that
@@ -21,23 +42,3 @@ c     EXTERNAL have collapsed into the same behaviour.
    10 format(' int =', f6.2, '  ext =', f6.2)
       end
 
-      subroutine callint(y)
-      real y
-      intrinsic sin
-      y = sin(1.57)
-      return
-      end
-
-      subroutine callext(y)
-      real y
-      external sin
-      real sin
-      y = sin(1.57)
-      return
-      end
-
-      real function sin(x)
-      real x
-      sin = 2.0 * x
-      return
-      end
