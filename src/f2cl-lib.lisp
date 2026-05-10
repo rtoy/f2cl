@@ -1044,27 +1044,49 @@ causing all pending operations to be flushed"
     (error "F2CL-LIB does not support FORM ~S" form))
   (let ((s (and status (string-right-trim " " status))))
     (finish-output)
-    (handler-case
-        (cond ((or (null s) (string-equal s "unknown"))
+    (cond ((or (null s) (string-equal s "unknown"))
+           (handler-case
                (open file :direction :io :if-exists :supersede
-                     :if-does-not-exist :create))
-              ((string-equal s "old")
-               (open file :direction :io :if-does-not-exist :error :if-exists :overwrite))
-              ((string-equal s "new")
-               (open file :direction :io :if-exists nil))
-              (t
-               (error "F2CL-LIB does not support this mode for OPEN: ~S~%"
-                      s)))
-      (file-error () nil))))
+                     :if-does-not-exist :create)
+             (file-error () nil)))
+          ((string-equal s "old")
+           ;; Per Fortran semantics, STATUS='OLD' on a missing file is an
+           ;; error.  Let the file-error propagate rather than swallowing it.
+           (open file :direction :io :if-does-not-exist :error :if-exists :overwrite))
+          ((string-equal s "new")
+           (handler-case
+               (open file :direction :io :if-exists nil)
+             (file-error () nil)))
+          (t
+           (error "F2CL-LIB does not support this mode for OPEN: ~S~%"
+                  s)))))
 
 (defmacro open-file (&key unit iostat err file status access form recl blank)
-  (let ((result (gensym)))
-    `(prog ((,result (%open-file :unit ,unit :file ,file :status ,status
-                                 :access ,access :form ,form :recl ,recl :blank ,blank)))
+  (let* ((result (gensym))
+         (call `(%open-file :unit ,unit :file ,file :status ,status
+                            :access ,access :form ,form :recl ,recl :blank ,blank))
+         ;; If the user supplied ERR= or IOSTAT=, they want to handle failure
+         ;; themselves (Fortran semantics).  In that case, catch file-error
+         ;; from %open-file and turn it into a nil result so the existing
+         ;; ERR= / IOSTAT= logic below kicks in.  Otherwise, let the
+         ;; file-error propagate -- e.g. STATUS='OLD' on a missing file
+         ;; without ERR= or IOSTAT= should signal.
+         (call-form (if (or err iostat)
+                        `(handler-case ,call (file-error () nil))
+                        call)))
+    `(prog ((,result ,call-form))
         (when ,result
           (setf (gethash ,unit *lun-hash*) ,result))
-        ,(if err `(unless ,result (go ,(f2cl-lib::make-label err))))
-        ,(if iostat `(setf ,iostat (if ,result 0 1))))))
+        ;; Splice IOSTAT= and ERR= forms in only when they're actually
+        ;; supplied -- bare ,(if iostat ...) leaves stray NIL forms in
+        ;; the tagbody, and TAGBODY treats a NIL atom as a tag, so two
+        ;; absent options become duplicate tags and the compiler errors.
+        ,@(when iostat
+            ;; Set IOSTAT first; ERR= jumps away, so anything after the
+            ;; GO is unreachable.
+            `((setf ,iostat (if ,result 0 1))))
+        ,@(when err
+            `((unless ,result (go ,(f2cl-lib::make-label err))))))))
 
 (defun %rewind (unit)
   (file-position (lun->stream unit) :start))

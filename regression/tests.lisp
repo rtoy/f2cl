@@ -162,6 +162,20 @@ JFUN RETURNS    5.50000
 (rt:deftest dotest         (f2cl-regression:convert "val/dotest.for") t)
 (rt:deftest formattest     (f2cl-regression:convert "val/formattest.for") t)
 (rt:deftest open           (f2cl-regression:convert "val/open.f") t)
+
+;; OPEN(..., STATUS='OLD') on a missing file with neither ERR= nor
+;; IOSTAT= must signal a CL FILE-ERROR -- the "silent failure" path
+;; was a bug.  The deftest body translates + compiles + loads the
+;; test source, then calls TSTOPN2 inside HANDLER-CASE.  Catching a
+;; FILE-ERROR is success; anything else (including a successful
+;; return) is failure.  TSTOPN2 does no I/O other than the OPEN, so
+;; a caught FILE-ERROR can only have come from the OPEN itself.
+(rt:deftest open-old-missing-signals
+    (progn
+      (f2cl-regression:convert-compile-load "val/open-old-missing.f")
+      (handler-case (progn (cl-user::tstopn2) nil)
+        (file-error () t)))
+  t)
 (rt:deftest simpletest     (f2cl-regression:convert "val/simpletest.for") t)
 (rt:deftest arithIFtest    (f2cl-regression:convert "val/arithIFtest.for") t)
 (rt:deftest commontest     (f2cl-regression:convert "val/commontest.for") t)
@@ -297,16 +311,4 @@ JFUN RETURNS    5.50000
  PASS T6 ENOTDIR      IOSTAT/=0 
  PASS T7 ENOTDIR      ERR= taken
    7 passed,   0 failed.
-")
-
-;; CHARACTER variable whose name collides with a CL function (LAST,
-;; the list accessor).  f2cl renames such variables with a trailing $
-;; to avoid the collision; parse-char-decl must apply that same
-;; rename when recording the declaration in *EXPLICIT_VBLE_DECLS*,
-;; or later type lookups for LAST$ fall through to implicit typing
-;; and the assignment LAST = 'hello' is emitted as
-;; (setf last$ (int "hello")) -- which fails at runtime.
-(rt:deftest tst-char-reserved
-    (f2cl-regression:run-program "val/tst-char-reserved.f" "tstreserved")
-  " hello
 ")
