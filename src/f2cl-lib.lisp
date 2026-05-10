@@ -1044,16 +1044,18 @@ causing all pending operations to be flushed"
     (error "F2CL-LIB does not support FORM ~S" form))
   (let ((s (and status (string-right-trim " " status))))
     (finish-output)
-    (cond ((or (null s) (string-equal s "unknown"))
-           (open file :direction :io :if-exists :supersede
-                 :if-does-not-exist :create))
-          ((string-equal s "old")
-           (open file :direction :io :if-does-not-exist nil :if-exists :overwrite))
-          ((string-equal s "new")
-           (open file :direction :io :if-exists nil))
-          (t
-           (error "F2CL-LIB does not support this mode for OPEN: ~S~%"
-                  s)))))
+    (handler-case
+        (cond ((or (null s) (string-equal s "unknown"))
+               (open file :direction :io :if-exists :supersede
+                     :if-does-not-exist :create))
+              ((string-equal s "old")
+               (open file :direction :io :if-does-not-exist :error :if-exists :overwrite))
+              ((string-equal s "new")
+               (open file :direction :io :if-exists nil))
+              (t
+               (error "F2CL-LIB does not support this mode for OPEN: ~S~%"
+                      s)))
+      (file-error () nil))))
 
 (defmacro open-file (&key unit iostat err file status access form recl blank)
   (let ((result (gensym)))

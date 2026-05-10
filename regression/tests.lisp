@@ -259,3 +259,42 @@ JFUN RETURNS    5.50000
     (f2cl-regression:convert-and-compile "val/comment-test.f"
                                          :include-comments t)
   t)
+
+;;;----------------------------------------------------------------------
+;;; OPEN STATUS=OLD / STATUS=NEW with ERR= and IOSTAT= routing.
+;;;
+;;; Exercises f2cl-lib::%open-file via translated Fortran.  Fixture
+;;; files are created in the current directory (assumed to be the f2cl
+;;; tree root), and the missing-file paths are explicitly deleted.
+;;; The Fortran code uses bare 'exists.dat'-style paths which resolve
+;;; against CWD.
+;;;
+;;; Coverage:
+;;;   T1 OLD + existing  -> IOSTAT=0
+;;;   T2 OLD + missing   -> IOSTAT/=0     (was: silently 0)
+;;;   T3 OLD + missing   -> ERR= taken
+;;;   T4 NEW + missing   -> IOSTAT=0
+;;;   T5 NEW + existing  -> IOSTAT/=0
+;;;   T6 ENOTDIR         -> IOSTAT/=0     (was: uncaught Lisp error)
+;;;   T7 ENOTDIR         -> ERR= taken    (was: uncaught Lisp error)
+(rt:deftest tstopn
+    (progn
+      (dolist (entry '(("exists.dat"  "hello")
+                       ("already.dat" "hello")
+                       ("barrier"     "x")))
+        (with-open-file (out (first entry)
+                             :direction :output :if-exists :supersede
+                             :if-does-not-exist :create)
+          (write-string (second entry) out)))
+      (dolist (name '("nope.dat" "nope2.dat" "fresh.dat"))
+        (when (probe-file name) (delete-file name)))
+      (f2cl-regression:run-program "val/tstopn.f" "tstopn"))
+  " PASS T1 OLD existing IOSTAT=0  
+ PASS T2 OLD missing  IOSTAT/=0 
+ PASS T3 OLD missing  ERR= taken
+ PASS T4 NEW missing  IOSTAT=0  
+ PASS T5 NEW existing IOSTAT/=0 
+ PASS T6 ENOTDIR      IOSTAT/=0 
+ PASS T7 ENOTDIR      ERR= taken
+   7 passed,   0 failed.
+")

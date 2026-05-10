@@ -110,7 +110,11 @@
 
 (defun run-program (path entry)
   "Translate, compile, load PATH; call CL-USER::ENTRY with stdout
-  captured.  Return the captured string."
+  captured.  Return the captured string.  If the entry function
+  signals an error mid-run, the partial output captured up to that
+  point is returned with a trailing line describing the error, so
+  RT's expected-vs-actual report shows what executed before the
+  failure rather than an opaque condition object."
   (reset-state)
   (ensure-directories-exist *work-dir*)
   (let ((lisp (lisp-out path)))
@@ -125,4 +129,6 @@
           ;; the *standard-output* we had at top-level.
           (let ((init-io (find-symbol "INIT-FORTRAN-IO" :f2cl-lib)))
             (when (and init-io (fboundp init-io)) (funcall init-io)))
-          (funcall fn))))))
+          (handler-case (funcall fn)
+            (error (c)
+              (format t "~&*** uncaught Lisp error: ~A~%" c))))))))
