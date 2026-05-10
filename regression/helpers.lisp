@@ -23,6 +23,7 @@
   (:use #:cl)
   (:export #:convert
            #:convert-and-compile
+           #:convert-compile-load
            #:run-program))
 
 (in-package #:f2cl-regression)
@@ -106,6 +107,18 @@
                :output-file lisp
                :include-comments include-comments)
     (compile-file lisp :verbose nil :print nil))
+  t)
+
+(defun convert-compile-load (path)
+  "Translate, compile, and LOAD the resulting fasl for PATH.  Used by
+  tests that want to call the translated entry function directly --
+  e.g. inside a HANDLER-CASE in the deftest body -- without going
+  through RUN-PROGRAM's stdout-capture machinery.  Returns T."
+  (reset-state)
+  (ensure-directories-exist *work-dir*)
+  (let ((lisp (lisp-out path)))
+    (f2cl:f2cl (src-path path) :output-file lisp)
+    (load (compile-file lisp :verbose nil :print nil)))
   t)
 
 (defun run-program (path entry)
