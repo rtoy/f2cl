@@ -2420,8 +2420,8 @@ correctly"
 (defun parse-subroutine-call (x)
   ;; X looks like (CALL SUBNAME (comma-separated list of args, if any))
   (let ((arglist (if (third x)
-                     (mapcar #'id-expression
-                             (list-split '|,| (check_new_vbles (third x))))
+                     (id-call-args
+                       (list-split '|,| (check_new_vbles (third x))))
                      nil)))
     ;; Note that this is not a variable and is, in fact, a subroutine.
     (update-called-functions-list (list (second x) :subroutine) arglist)

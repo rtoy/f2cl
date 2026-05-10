@@ -18,11 +18,79 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (proclaim '(special *intrinsic-function-names* *external-function-names*
-              *subprog_name* *subprog-stmt-fns*
+              *non-intrinsic-function-names*
+              *subprog_name* *subprog-stmt-fns* *subprog-arglist*
+              *declared_vbles* *undeclared_vbles* *key_params*
               *functions-used*)))
 
 (defparameter *f2cl2-version*
   "$Id$")
+
+;; Map a Fortran intrinsic name to the Lisp symbol that should appear in
+;; the emitted call form.  Most intrinsics keep their name; a handful
+;; either have an f2cl-lib wrapper (fchar, fsqrt, ...) for type narrowing
+;; or need explicit cl: qualification because the bare name might resolve
+;; to a user-defined shadow at the call site.
+(defun intrinsic-call-emit-symbol (sym)
+  (case sym
+    (char 'fchar)
+    (sqrt 'fsqrt)
+    (log 'flog)
+    (float 'ffloat)
+    (real 'freal)
+    (abs 'cl:abs)
+    (sin 'cl:sin) (cos 'cl:cos) (tan 'cl:tan)
+    (asin 'cl:asin) (acos 'cl:acos) (atan 'cl:atan)
+    (sinh 'cl:sinh) (cosh 'cl:cosh) (tanh 'cl:tanh)
+    (exp 'cl:exp)
+    (max 'cl:max) (min 'cl:min)
+    (mod 'cl:mod)
+    (t sym)))
+
+;; If an actual argument to a Fortran call is a bare symbol that names a
+;; function in the current scope, the emitted call needs a function value
+;; there, not a variable reference.  Return either:
+;;   - a Lisp form to splice in for the argument, or
+;;   - NIL meaning "this is not a function reference; fall back to the
+;;     usual variable/expression handling."
+;;
+;; F77 requires the user to declare an EXTERNAL or INTRINSIC name being
+;; passed, so we discriminate via *external-function-names* and
+;; *intrinsic-function-names*.  A formal parameter declared external is
+;; already a function value at runtime (lexically bound), so we emit it
+;; bare; everything else gets a (function ...) wrapper.
+(defun id-actual-arg-as-function (sym)
+  (cond
+    ;; Formal parameter declared external -- already a function value.
+    ((and (member sym *subprog-arglist*)
+          (member sym *external-function-names*))
+     (check-reserved-lisp-names sym))
+    ;; Recognised intrinsic, not shadowed by any local binding.  An
+    ;; intrinsic name can be reused as a formal parameter, parameter
+    ;; constant, declared variable, or implicitly-typed local
+    ;; variable; in any of those cases, the symbol here refers to
+    ;; that local binding, not the intrinsic.
+    ((and (member sym *intrinsic-function-names*)
+          (not (member sym *non-intrinsic-function-names*))
+          (not (member sym *declared_vbles*))
+          (not (member (check-reserved-lisp-names sym) *undeclared_vbles*))
+          (not (member sym *key_params* :key #'car))
+          (not (member sym *subprog-arglist*)))
+     `(function ,(intrinsic-call-emit-symbol sym)))
+    ;; External top-level user function.
+    ((member sym *external-function-names*)
+     `(function ,(check-reserved-lisp-names sym)))
+    (t nil)))
+
+;; Translate an argument list for a Fortran call.  For each comma-split
+;; argument, if it's a bare-symbol function reference, emit it as such;
+;; otherwise translate as an expression.
+(defun id-call-args (split-args)
+  (mapcar (lambda (arg)
+            (or (and (consp arg) (null (cdr arg)) (symbolp (car arg))
+                     (id-actual-arg-as-function (car arg)))
+                (id-expression arg)))
+          split-args))
 
 ;-----------------------------------------------------------------------------
 ; subst-splice substitutes the list b for the atom a in the list c via splicing
@@ -274,29 +342,7 @@ Tag being parsed:| (cadr x))))
              '|f2cl error: missing +, *, /, or ^ operator following a function call.| l)))
      (update-called-functions-list (list (car l))
                                    (mapcar #'id-expression (list-split '|,| (cadr l))))
-     (cons (case (car l)
-             ;; Handle special cases for intrinsic functions whose
-             ;; names conflict with Lisp functions of the same name.
-             ;; The f-prefixed wrappers (fchar, fsqrt, etc.) live in
-             ;; f2cl-lib and exist mainly for type-narrowing.  The cl:
-             ;; forms point directly at the CL builtin so the emitted
-             ;; call doesn't go through whatever the bare name happens
-             ;; to mean at the use site -- which would be the
-             ;; user-defined function in subprograms that shadow the
-             ;; intrinsic with their own definition.
-             (char 'fchar)
-             (sqrt 'fsqrt)
-             (log 'flog)
-             (float 'ffloat)
-             (real 'freal)
-             (abs 'cl:abs)
-             (sin 'cl:sin) (cos 'cl:cos) (tan 'cl:tan)
-             (asin 'cl:asin) (acos 'cl:acos) (atan 'cl:atan)
-             (sinh 'cl:sinh) (cosh 'cl:cosh) (tanh 'cl:tanh)
-             (exp 'cl:exp)
-             (max 'cl:max) (min 'cl:min)
-             (mod 'cl:mod)
-             (t (car l)))
+     (cons (intrinsic-call-emit-symbol (car l))
            (mapcar #'id-expression
                    (list-split '|,| (cadr l)))))
     ;; array reference:
@@ -351,8 +397,13 @@ Tag being parsed:| (cadr x))))
      ;; the renamed defun (`sin$`).  The intrinsic dispatch above
      ;; emits cl:sin directly and bypasses this branch, so renaming
      ;; here is safe for non-intrinsic calls only.
+     ;;
+     ;; id-call-args, rather than plain id-expression mapping, so a
+     ;; bare-symbol actual argument that refers to a function
+     ;; (intrinsic, external, or a passed-in formal) is emitted as a
+     ;; function reference rather than parsed as a variable.
      (let ((fname (check-reserved-lisp-names (car l)))
-           (args (mapcar #'id-expression (list-split '|,| (cadr l)))))
+           (args (id-call-args (list-split '|,| (cadr l)))))
        
        ;; Save the function name and number of arguments so we can
        ;; declare the function appropriately.  We also save the

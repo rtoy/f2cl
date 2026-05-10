@@ -98,7 +98,11 @@
                (t
                 (pushnew (check-reserved-lisp-names exprs) *undeclared_vbles*))))
         ((listp exprs)
-         (cond ((eq (first exprs) 'multiple-value-bind)
+         (cond ((eq (first exprs) 'function)
+                ;; (function sym) is a resolved function reference;
+                ;; the symbol inside is not a variable.
+                nil)
+               ((eq (first exprs) 'multiple-value-bind)
                 ;; Function calls get turned into a MULTIPLE-VALUE-BIND, so
                 ;; the only possible place for variables is the arg list for
                 ;; the function.
