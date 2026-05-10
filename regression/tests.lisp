@@ -298,3 +298,15 @@ JFUN RETURNS    5.50000
  PASS T7 ENOTDIR      ERR= taken
    7 passed,   0 failed.
 ")
+
+;; CHARACTER variable whose name collides with a CL function (LAST,
+;; the list accessor).  f2cl renames such variables with a trailing $
+;; to avoid the collision; parse-char-decl must apply that same
+;; rename when recording the declaration in *EXPLICIT_VBLE_DECLS*,
+;; or later type lookups for LAST$ fall through to implicit typing
+;; and the assignment LAST = 'hello' is emitted as
+;; (setf last$ (int "hello")) -- which fails at runtime.
+(rt:deftest tst-char-reserved
+    (f2cl-regression:run-program "val/tst-char-reserved.f" "tstreserved")
+  " hello
+")
