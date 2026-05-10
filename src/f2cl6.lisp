@@ -175,12 +175,31 @@
         ((eq line 'eof)
          (when prev-line
            (write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
+         ;; Flush any trailing comments that were collected after the
+         ;; last code line.  Otherwise comments at end-of-file are
+         ;; silently dropped.
+         (when collected-comments
+           (dolist (c (nreverse collected-comments))
+             (write-comment-line c outport))
+           (setf collected-comments nil))
          outport)
       ;; Hmm, technically it might not be right to trim spaces from
       ;; the end of the line.  Consider what happens we are trying
       ;; to continue a string with trailing spaces.  The resulting
       ;; string is wrong.
-      (let ((line (string-right-trim '(#\Space) (subseq line 0 (min 72 (length line))))))
+      ;;
+      ;; For comment lines (column 1 is one of *comment-line-characters*)
+      ;; we keep the full line.  Fortran's column-72 limit applies to
+      ;; statement lines; the comment text itself can extend further,
+      ;; and truncating it silently loses content of the comment.
+      (let* ((raw-line (string-right-trim '(#\Space) line))
+             (comment-line-p (and (plusp (length raw-line))
+                                  (member (char raw-line 0)
+                                          *comment-line-characters*)))
+             (line (if comment-line-p
+                       raw-line
+                       (string-right-trim '(#\Space)
+                                          (subseq line 0 (min 72 (length line)))))))
         (cond 
           ((string= line "") nil)       ; we leave out blank lines
           ((member (char line 0) *comment-line-characters*)
@@ -249,9 +268,14 @@
 
 ;--------------------------------------------------------------------------
 (defun write-comment-line (line outport)
- (if *verbose* 
-   (format t "      fortran_comment ~S~%" (string-downcase (subsequence line 1))))
- (format outport "      fortran_comment ~S~%" (string-downcase (subsequence line 1))))
+ ;; LINE includes the leading comment character (C/c/*/!) at position 0,
+ ;; which we strip.  Preserve the original case of the comment text:
+ ;; comments are human-readable documentation, and downcasing destroys
+ ;; the case of variable names, acronyms, and so on inside the comment.
+ (let ((text (subsequence line 1)))
+   (when *verbose*
+     (format t "      fortran_comment ~S~%" text))
+   (format outport "      fortran_comment ~S~%" text)))
 
 (defun replace_logl_ops  (line)
    (prog (inport outport char)

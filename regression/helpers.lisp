@@ -22,6 +22,7 @@
 (defpackage #:f2cl-regression
   (:use #:cl)
   (:export #:convert
+           #:convert-and-compile
            #:run-program))
 
 (in-package #:f2cl-regression)
@@ -89,6 +90,22 @@
   (reset-state)
   (ensure-directories-exist *work-dir*)
   (f2cl:f2cl (src-path path) :output-file (lisp-out path))
+  t)
+
+(defun convert-and-compile (path &key include-comments)
+  "Translate PATH with f2cl, then COMPILE-FILE the resulting .lisp.
+  Returns T iff both steps complete without signalling an error.
+  Used for tests that need to verify the generated Lisp is itself
+  well-formed - e.g. comment-laden output where a quoting bug could
+  produce a file that f2cl writes happily but the CL reader/compiler
+  rejects."
+  (reset-state)
+  (ensure-directories-exist *work-dir*)
+  (let ((lisp (lisp-out path)))
+    (f2cl:f2cl (src-path path)
+               :output-file lisp
+               :include-comments include-comments)
+    (compile-file lisp :verbose nil :print nil))
   t)
 
 (defun run-program (path entry)
