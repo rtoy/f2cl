@@ -3302,12 +3302,17 @@
 (defparameter +reserved-lisp-names+
   '(t pi nil))
 
+;; Names that should NEVER be renamed by check-reserved-lisp-names,
+;; even when they shadow a CL external symbol.  Empty by design: the
+;; Fortran intrinsics that map onto CL functions (sin, cos, abs, ...)
+;; used to live here, but that prevented user-defined functions of
+;; the same name from being renamed to sin$ / cos$ / etc., so the
+;; def-form (defun sin ...) collided with cl:sin.  Call-site dispatch
+;; for those intrinsics is now done in ID-FACTOR by emitting
+;; cl:sin etc. directly, so check-reserved-lisp-names is free to
+;; rename every occurrence that *isn't* a recognized intrinsic call.
 (defparameter +allowed-lisp-names+
-  '(abs sin cos tan
-    asin acos atan
-    sinh cosh tanh
-    exp max min 
-    mod))
+  '())
 
 ;; Check if the Fortran name would collide with Lisp names like T, PI,
 ;; NIL, FUNCALL, PROG, etc.  If it does, replace it a new name

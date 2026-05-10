@@ -2995,9 +2995,9 @@ correctly"
 
 ;; parse EXTERNAL f1, f2, ...
 ;;
-;; Add the function names to *external-function-names*.  Any name that
+;; Add the function names to *EXTERNAL-FUNCTION-NAMES*.  Any name that
 ;; shadows a Fortran intrinsic also goes on
-;; *non-intrinsic-function-names* so id-application's intrinsic
+;; *NON-INTRINSIC-FUNCTION-NAMES* so ID-FACTOR's intrinsic
 ;; dispatch routes the call to the user function rather than the
 ;; intrinsic.  Without this, EXTERNAL-vs-intrinsic resolution relies
 ;; on fixup-f2cl-lib's name-matching cleanup, which only covers

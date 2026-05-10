@@ -277,12 +277,24 @@ Tag being parsed:| (cadr x))))
      (cons (case (car l)
              ;; Handle some special cases for intrinsic functions
              ;; because they conflict with the Lisp functions of the
-             ;; same name.
+             ;; same name.  The cl: cases below used to be handled
+             ;; implicitly by leaving the names unrenamed via
+             ;; +allowed-lisp-names+; that broke user code that
+             ;; shadowed the same names.  Now we rename every
+             ;; non-call occurrence and emit cl: at the call site
+             ;; so the two paths stay disjoint.
              (char 'fchar)
              (sqrt 'fsqrt)
              (log 'flog)
              (float 'ffloat)
              (real 'freal)
+             (abs 'cl:abs)
+             (sin 'cl:sin) (cos 'cl:cos) (tan 'cl:tan)
+             (asin 'cl:asin) (acos 'cl:acos) (atan 'cl:atan)
+             (sinh 'cl:sinh) (cosh 'cl:cosh) (tanh 'cl:tanh)
+             (exp 'cl:exp)
+             (max 'cl:max) (min 'cl:min)
+             (mod 'cl:mod)
              (t (car l)))
            (mapcar #'id-expression
                    (list-split '|,| (cadr l)))))
@@ -333,8 +345,12 @@ Tag being parsed:| (cadr x))))
     ;; function call:
     ((and (symbolp (car l))
           (listp (cadr l)))
-     ;; Should we check for T and PI here?
-     (let ((fname (car l))
+     ;; Apply check-reserved-lisp-names so a Fortran user function
+     ;; that shadows a CL builtin (e.g. user-defined `sin`) reaches
+     ;; the renamed defun (`sin$`).  The intrinsic dispatch above
+     ;; emits cl:sin directly and bypasses this branch, so renaming
+     ;; here is safe for non-intrinsic calls only.
+     (let ((fname (check-reserved-lisp-names (car l)))
            (args (mapcar #'id-expression (list-split '|,| (cadr l)))))
        
        ;; Save the function name and number of arguments so we can
