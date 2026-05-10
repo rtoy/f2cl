@@ -98,7 +98,11 @@
                (t
                 (pushnew (check-reserved-lisp-names exprs) *undeclared_vbles*))))
         ((listp exprs)
-         (cond ((eq (first exprs) 'multiple-value-bind)
+         (cond ((eq (first exprs) 'function)
+                ;; (function sym) is a resolved function reference;
+                ;; the symbol inside is not a variable.
+                nil)
+               ((eq (first exprs) 'multiple-value-bind)
                 ;; Function calls get turned into a MULTIPLE-VALUE-BIND, so
                 ;; the only possible place for variables is the arg list for
                 ;; the function.
@@ -3302,23 +3306,15 @@
 (defparameter +reserved-lisp-names+
   '(t pi nil))
 
-(defparameter +allowed-lisp-names+
-  '(abs sin cos tan
-    asin acos atan
-    sinh cosh tanh
-    exp max min 
-    mod))
-
 ;; Check if the Fortran name would collide with Lisp names like T, PI,
 ;; NIL, FUNCALL, PROG, etc.  If it does, replace it a new name
 
 (defun check-reserved-lisp-names (x)
   (multiple-value-bind (found-it access)
       (find-symbol (string x) :common-lisp)
-    (cond ((or (member x +allowed-lisp-names+)
-               (member x '(d1mach i1mach %false% %true%)))
-           ;; Don't want to mangle allowed-lisp-names or some special
-           ;; symbols from f2cl or f2cl-lib.
+    (cond ((or (member x '(d1mach i1mach %false% %true%)))
+           ;; Don't want to mangle some special symbols from f2cl or
+           ;; f2cl-lib.
            x)
           ((or (and found-it
                     (not (eq access :internal))

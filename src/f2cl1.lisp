@@ -2420,8 +2420,8 @@ correctly"
 (defun parse-subroutine-call (x)
   ;; X looks like (CALL SUBNAME (comma-separated list of args, if any))
   (let ((arglist (if (third x)
-                     (mapcar #'id-expression
-                             (list-split '|,| (check_new_vbles (third x))))
+                     (id-call-args
+                       (list-split '|,| (check_new_vbles (third x))))
                      nil)))
     ;; Note that this is not a variable and is, in fact, a subroutine.
     (update-called-functions-list (list (second x) :subroutine) arglist)
@@ -2993,12 +2993,22 @@ correctly"
                   `(setq ,(check-reserved-lisp-names (first v))
                       ,(fix-up-negative-number l))))))))
 
-; parse EXTERNAL f1, f2, ...
-; by adding the function names to *external-function-names*
+;; parse EXTERNAL f1, f2, ...
+;;
+;; Add the function names to *EXTERNAL-FUNCTION-NAMES*.  Any name that
+;; shadows a Fortran intrinsic also goes on
+;; *NON-INTRINSIC-FUNCTION-NAMES* so ID-FACTOR's intrinsic
+;; dispatch routes the call to the user function rather than the
+;; intrinsic.  Without this, EXTERNAL-vs-intrinsic resolution relies
+;; on fixup-f2cl-lib's name-matching cleanup, which only covers
+;; intrinsics that have an f2cl-lib export -- not the cl: ones like
+;; sin, cos, abs.
 (defun parse-external (x)
-   (setq *external-function-names*
-         (append *external-function-names* (remove '|,| (cdr x))))
-   nil)
+  (dolist (ext-function-name (remove '|,| (cdr x)))
+    (pushnew ext-function-name *external-function-names*)
+    (when (member ext-function-name *intrinsic-function-names*)
+      (pushnew ext-function-name *non-intrinsic-function-names*)))
+  nil)
 
 ;; parse INTRINSIC f1, f2
 (defun parse-intrinsic ()

@@ -202,3 +202,47 @@ JFUN RETURNS    5.50000
 ;;; lets the suite exit clean while still keeping them visible in
 ;;; the test list.
 (setf rt:*expected-failures* '(solvde tst-parse))
+
+;; INTRINSIC declaration for a standard 77 intrinsic, called
+;; directly.  Verifies that parse-intrinsic's no-op handling of
+;; INTRINSIC declarations doesn't break translation when the named
+;; intrinsic is also exercised in the same file.
+(rt:deftest tst-intrinsic-direct
+    (f2cl-regression:run-program "val/tst-intrinsic-direct.f" "tstintdirect")
+  " sin(1.57) =  1.00
+")
+
+;; INTRINSIC declaration for an intrinsic passed as an actual
+;; argument -- the canonical reason INTRINSIC exists in F77.  The
+;; translator rewrites the bare-symbol actual argument into a
+;; (function ...) form so the value passed to APPLY is the
+;; intrinsic itself, not an undeclared local variable.
+(rt:deftest tst-intrinsic-arg
+    (f2cl-regression:run-program "val/tst-intrinsic-arg.f" "tstintarg")
+  " apply(sin, 1.57) =  1.00
+")
+
+;; INTRINSIC vs EXTERNAL with a user-defined function shadowing an
+;; intrinsic.  Two routines call AINT(3.7): one declares it
+;; INTRINSIC (so the standard requires the truncation intrinsic,
+;; result 3.00); one declares it EXTERNAL (so the standard requires
+;; the user function defined below, which returns 2*3.7 = 7.40).
+;; gfortran agrees with these expected values.  The output
+;; differentiates the two paths, so the test fails noisily if any
+;; future change collapses INTRINSIC and EXTERNAL into the same
+;; behaviour.  AINT is used rather than SIN because it has no CL
+;; counterpart and so doesn't trigger SBCL package locks.
+(rt:deftest tst-intrinsic-shadow
+    (f2cl-regression:run-program "val/tst-intrinsic-shadow.f" "tstintshadow")
+  " int =  3.00  ext =  7.40
+")
+
+;; SIN counterpart to tst-intrinsic-shadow.  Same INTRINSIC-vs-
+;; EXTERNAL distinction, but using SIN, which collides with cl:SIN.
+;; Honouring the shadow correctly requires renaming the user
+;; function (to sin$) and consulting that rename at call sites.
+;;
+(rt:deftest tst-intrinsic-sin
+    (f2cl-regression:run-program "val/tst-intrinsic-sin.f" "tstintsin")
+  " int =  1.00  ext =  3.14
+")
