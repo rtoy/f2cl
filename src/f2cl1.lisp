@@ -707,18 +707,23 @@ correctly"
           (setq *format_stmts* nil)
           (setq *statement-labels* nil)
           (let ((*print-level* nil)
-                (*print-length* nil))
-            ;; Print a header to the file indicating when this was
-            ;; compiled and the version of f2cl used to compile it.
-            ;; Include the options used to compile the file.
-            (translate-and-write-subprog 
-             (introduce-continue
-              (readsubprog-extract-format-stmts inport))
-             outport
-             ofile
-             declaim
-             package
-             options))))))
+                (*print-length* nil)
+                (prog-list (readsubprog-extract-format-stmts inport)))
+            ;; READSUBPROG can return NIL if all that remained in the
+            ;; file was outside-subprogram comments (which it drops).
+            ;; In that case there is nothing to translate; just go
+            ;; back to the top of the loop and let PEEK-CHAR see EOF.
+            (when prog-list
+              ;; Print a header to the file indicating when this was
+              ;; compiled and the version of f2cl used to compile it.
+              ;; Include the options used to compile the file.
+              (translate-and-write-subprog 
+               (introduce-continue prog-list)
+               outport
+               ofile
+               declaim
+               package
+               options)))))))
   t)
 
 ;---------------------------------------------------------------------------
@@ -896,10 +901,37 @@ correctly"
           (read-char inport nil 'eof t)
           ;;(format t "~% input-list: ~S" input-list)
           )
-      ;; extract format-stmts
-      ;;(format t "extract format-stmts~%")
+      ;; Exit cleanly when LINEREAD has run out of input.  This
+      ;; happens on a perfectly valid Fortran file when the
+      ;; preprocessor has emitted some trailing fortran_comment
+      ;; lines after the file's last END (the source file ended
+      ;; with comments) and the comment-dropping clause below has
+      ;; just consumed the last one.  Without this clause the loop
+      ;; would spin forever re-reading EOF, since the (END) check
+      ;; further down does not match.  LINEREAD signals EOF by
+      ;; returning (EOF) - a one-element list whose car is the eof
+      ;; sentinel.
+      (when (and (consp input-list)
+                 (eq (car input-list) 'eof)
+                 (null (cdr input-list)))
+        (return (nreverse output-list)))
+      ;; Drop comments emitted by the preprocessor for source
+      ;; comments outside any subprogram (leading comments before
+      ;; the first SUBROUTINE/FUNCTION/PROGRAM, comments between
+      ;; one END and the next subprogram's start, and trailing
+      ;; comments after the last END).  We recognise them by
+      ;; OUTPUT-LIST being empty: at that point we have not yet
+      ;; seen a real statement of any subprogram, so a comment
+      ;; cannot belong inside one.  Comments seen after the first
+      ;; real statement fall through to the T branch below and are
+      ;; preserved as part of the subprogram body.
+      (unless (and (null output-list)
+                   (consp input-list)
+                   (eq (car input-list) 'fortran_comment))
+        ;; extract format-stmts
+        ;;(format t "extract format-stmts~%")
                
-      (cond ((id-extended-do input-list)
+        (cond ((id-extended-do input-list)
              ;; Handle extended DO statements.  These are DO
              ;; statements that do not have a line number.  The DO
              ;; statement is ended with an END-DO statement.
@@ -987,7 +1019,7 @@ correctly"
             ((eq (car input-list) 'format)
              (parse-format (brackets-check (concat-operators input-list))))
             (t
-             (push (list *current_label* input-list) output-list)))
+             (push (list *current_label* input-list) output-list))))
         
       ;; Check for end of subprogram
       (when (and (eq (car input-list) 'end) (null (cdr input-list)))

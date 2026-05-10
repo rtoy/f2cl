@@ -246,3 +246,16 @@ JFUN RETURNS    5.50000
     (f2cl-regression:run-program "val/tst-intrinsic-sin.f" "tstintsin")
   " int =  1.00  ext =  3.14
 ")
+
+;; Comment handling.  Exercises :include-comments t with comments
+;; that contain both single and double quotes, comments outside any
+;; subprogram (which must be silently dropped), and a comment line
+;; longer than column 72.  CONVERT-AND-COMPILE checks that f2cl
+;; produces output without error AND that the resulting .lisp is
+;; well-formed enough for COMPILE-FILE to accept - so a future
+;; regression in quote-escaping or stray *MAIN* emission would
+;; trip the compile, not silently slip through.
+(rt:deftest comment-test
+    (f2cl-regression:convert-and-compile "val/comment-test.f"
+                                         :include-comments t)
+  t)
