@@ -275,14 +275,15 @@ Tag being parsed:| (cadr x))))
      (update-called-functions-list (list (car l))
                                    (mapcar #'id-expression (list-split '|,| (cadr l))))
      (cons (case (car l)
-             ;; Handle some special cases for intrinsic functions
-             ;; because they conflict with the Lisp functions of the
-             ;; same name.  The cl: cases below used to be handled
-             ;; implicitly by leaving the names unrenamed via
-             ;; +allowed-lisp-names+; that broke user code that
-             ;; shadowed the same names.  Now we rename every
-             ;; non-call occurrence and emit cl: at the call site
-             ;; so the two paths stay disjoint.
+             ;; Handle special cases for intrinsic functions whose
+             ;; names conflict with Lisp functions of the same name.
+             ;; The f-prefixed wrappers (fchar, fsqrt, etc.) live in
+             ;; f2cl-lib and exist mainly for type-narrowing.  The cl:
+             ;; forms point directly at the CL builtin so the emitted
+             ;; call doesn't go through whatever the bare name happens
+             ;; to mean at the use site -- which would be the
+             ;; user-defined function in subprograms that shadow the
+             ;; intrinsic with their own definition.
              (char 'fchar)
              (sqrt 'fsqrt)
              (log 'flog)

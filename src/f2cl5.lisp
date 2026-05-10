@@ -3302,33 +3302,19 @@
 (defparameter +reserved-lisp-names+
   '(t pi nil))
 
-;; Names that should NEVER be renamed by check-reserved-lisp-names,
-;; even when they shadow a CL external symbol.  Empty by design: the
-;; Fortran intrinsics that map onto CL functions (sin, cos, abs, ...)
-;; used to live here, but that prevented user-defined functions of
-;; the same name from being renamed to sin$ / cos$ / etc., so the
-;; def-form (defun sin ...) collided with cl:sin.  Call-site dispatch
-;; for those intrinsics is now done in ID-FACTOR by emitting
-;; cl:sin etc. directly, so check-reserved-lisp-names is free to
-;; rename every occurrence that *isn't* a recognized intrinsic call.
-(defparameter +allowed-lisp-names+
-  '())
-
 ;; Check if the Fortran name would collide with Lisp names like T, PI,
 ;; NIL, FUNCALL, PROG, etc.  If it does, replace it a new name
 
 (defun check-reserved-lisp-names (x)
   (multiple-value-bind (found-it access)
       (find-symbol (string x) :common-lisp)
-    (cond ((or (member x +allowed-lisp-names+)
-               (member x '(d1mach i1mach %false% %true%)))
-           ;; Don't want to mangle allowed-lisp-names or some special
-           ;; symbols from f2cl or f2cl-lib.
+    (cond ((or (member x '(d1mach i1mach %false% %true%)))
+           ;; Don't want to mangle some special symbols from f2cl or
+           ;; f2cl-lib.
            x)
           ((or (and found-it
                     (not (eq access :internal))
-                    (fboundp found-it))
-               (member x +reserved-lisp-names+))
+                    (fboundp found-it)))
            ;; We want to append "$" for certain cases to prevent
            ;; collisions.  (Any character can be used.  But we can't
            ;; prepend because f2cl wants to look at the first

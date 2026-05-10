@@ -241,11 +241,6 @@ JFUN RETURNS    5.50000
 ;; Honouring the shadow correctly requires renaming the user
 ;; function (to sin$) and consulting that rename at call sites.
 ;;
-;; Currently broken: f2cl leaves SIN in +allowed-lisp-names+, so
-;; the user function is emitted as (defun sin ...), redefining
-;; cl:sin (or being rejected by package locks), and both call
-;; sites dispatch to cl:sin regardless of declaration.  Marked as
-;; an expected failure until the rename is fixed.
 (rt:deftest tst-intrinsic-sin
     (f2cl-regression:run-program "val/tst-intrinsic-sin.f" "tstintsin")
   " int =  1.00  ext =  3.14
