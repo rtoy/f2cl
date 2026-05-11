@@ -1695,6 +1695,352 @@ FORMAT is either :LIST-DIRECTED or a Fortran format string such as
            `((when (stringp ,dest-lun)
                (replace ,dest-lun (get-output-stream-string ,stream))))))))
 
+;;; ---------------------------------------------------------------
+;;; New reader path: FORMAT-READ
+;;; ---------------------------------------------------------------
+;;;
+;;; FORMAT-READ is the runtime entry point for the
+;;; fortran-format:read-format-based reader.  It is the partner of
+;;; READ-FILE: where READ-FILE issues plain Lisp READ/READ-LINE
+;;; calls (and so honours the FMT string only when it is the special
+;;; whole-line shape '(A)' / '(A<n>)'), FORMAT-READ hands the raw
+;;; Fortran format string to the new engine, which interprets each
+;;; edit descriptor properly.
+;;;
+;;; The translator picks which macro to emit based on
+;;; f2cl::*use-fortran-format-printer* (the same flag that gates the
+;;; output side); when the flag is on, parse-read produces FORMAT-READ
+;;; calls instead of READ-FILE calls.  Once the new reader covers
+;;; every case we care about, the legacy READ-FILE machinery can be
+;;; deleted; until then the two coexist.
+;;;
+;;; VARSPECs use the same shape as READ-FILE:
+;;;   (:place EXPR TYPE)               -- store one value
+;;;   (:implied-do IVAR E1 E2 E3 INNER-VARS)
+;;;                                    -- loop, store each inner
+;;;
+;;; The macro expands into:
+;;;
+;;;   1. A pass that *counts* the number of values needed (walking
+;;;      implied-DOs at run time so their bounds can be expressions).
+;;;
+;;;   2. A call to EXECUTE-FORMAT-READ that pulls that many values
+;;;      from the stream, honouring the format and reversion rules.
+;;;
+;;;   3. A pass that consumes the returned value list, storing each
+;;;      value into its destination place via SETF / FSET /
+;;;      F2CL-SET-STRING as appropriate.
+;;;
+;;; The handler-case + go-label control flow for END=, ERR=, IOSTAT=
+;;; is woven in by the macro the same way READ-FILE does it.
+
+(defparameter *fortran-format-read-format-fn*
+  nil
+  "Cached pointer to fortran-format:read-format.  Resolved lazily on
+first use so that f2cl-lib can be loaded without the fortran-format
+system present (translations that never use the new reader don't
+need it).")
+
+(defun %read-format (fmt record &key num-vals)
+  "Call fortran-format:read-format, resolving the symbol lazily.
+RECORD is a string or a list of record strings.  NUM-VALS, if
+supplied, asks for that many values; reversion fires if the main
+format runs out before then."
+  (unless *fortran-format-read-format-fn*
+    (setf *fortran-format-read-format-fn*
+          (or (find-symbol (symbol-name '#:read-format)
+                           (find-package '#:fortran-format))
+              (error "fortran-format:read-format not available; ~
+                      is the fortran-format system loaded?"))))
+  (if num-vals
+      (funcall *fortran-format-read-format-fn* fmt record :num-vals num-vals)
+      (funcall *fortran-format-read-format-fn* fmt record)))
+
+;;; List-directed input.  Tokens are whitespace- or comma-separated.
+;;; A token that looks like a number (optionally signed, optionally
+;;; with one decimal point, optionally with an E/D/Q exponent) is
+;;; read as a number; T/.TRUE./.T. and F/.FALSE./.F. as Lisp T / NIL;
+;;; single-quoted strings come through with quotes stripped and
+;;; embedded '' folded to one '; everything else stays a string.
+;;;
+;;; Deliberately simpler than the full Fortran list-directed reader
+;;; (no null values, no r*c repeat groups, no slash terminator).
+;;; Enough for the data files produced by gfortran and by the new
+;;; FORMAT-WRITE path; more can be added if a test demands it.
+
+(defun %list-directed-numeric-p (s)
+  "True iff S is a plausible Fortran numeric literal: optional sign,
+decimal digits with at most one dot, optional E/D/Q exponent with
+its own optional sign and at least one digit."
+  (let ((n (length s)))
+    (when (zerop n) (return-from %list-directed-numeric-p nil))
+    (let ((i 0)
+          (digits 0)
+          (dots 0))
+      (when (member (char s 0) '(#\+ #\-)) (incf i))
+      (loop while (< i n) do
+        (let ((c (char s i)))
+          (cond
+            ((digit-char-p c) (incf digits) (incf i))
+            ((char= c #\.)    (incf dots)   (incf i))
+            ((member c '(#\E #\e #\D #\d #\Q #\q))
+             (return))
+            (t (return-from %list-directed-numeric-p nil)))))
+      (when (or (zerop digits) (> dots 1))
+        (return-from %list-directed-numeric-p nil))
+      (cond
+        ((= i n) t)
+        (t
+         ;; Exponent part: skip the E/D/Q.
+         (incf i)
+         (when (and (< i n) (member (char s i) '(#\+ #\-))) (incf i))
+         (let ((exp-digits 0))
+           (loop while (< i n) do
+             (unless (digit-char-p (char s i))
+               (return-from %list-directed-numeric-p nil))
+             (incf exp-digits)
+             (incf i))
+           (and (= i n) (plusp exp-digits))))))))
+
+(defun %list-directed-classify-token (s)
+  "Map a raw list-directed token to a Lisp value."
+  (let ((u (string-upcase s)))
+    (cond
+      ((or (string= u "T") (string= u ".TRUE.") (string= u ".T.")) t)
+      ((or (string= u "F") (string= u ".FALSE.") (string= u ".F.")) nil)
+      ((and (>= (length s) 2)
+            (char= (char s 0) #\')
+            (char= (char s (1- (length s))) #\'))
+       ;; Strip surrounding quotes; fold doubled '' to single '.
+       (let* ((inner (subseq s 1 (1- (length s))))
+              (n (length inner))
+              (out (make-array n :element-type 'character
+                                 :adjustable t :fill-pointer 0))
+              (i 0))
+         (loop while (< i n) do
+           (let ((c (char inner i)))
+             (cond
+               ((and (char= c #\') (< (1+ i) n)
+                     (char= (char inner (1+ i)) #\'))
+                (vector-push-extend #\' out)
+                (incf i 2))
+               (t
+                (vector-push-extend c out)
+                (incf i)))))
+         (coerce out 'simple-string)))
+      ((%list-directed-numeric-p s)
+       ;; Fortran allows D and Q in exponents; CL's READ-FROM-STRING
+       ;; only knows E (plus implementation-specific S/F/D/L per
+       ;; *read-default-float-format*).  Rewrite D/Q to E so we get a
+       ;; CL float regardless of host.
+       (let ((s2 (substitute-if #\E
+                                (lambda (c) (member c '(#\D #\d #\Q #\q)))
+                                s)))
+         (read-from-string s2)))
+      (t s))))
+
+(defun %list-directed-read-tokens (stream count)
+  "Pull COUNT whitespace/comma-separated tokens from STREAM, crossing
+record boundaries as needed.  Quoted strings are honoured: a token
+that opens with ' is closed by the matching ' (with '' as an
+embedded literal).  Signals CL:END-OF-FILE if the stream runs dry
+before COUNT tokens are gathered."
+  (let ((tokens '())
+        (buf (make-array 32 :element-type 'character
+                            :adjustable t :fill-pointer 0))
+        (in-string nil))
+    (labels ((flush ()
+               (when (plusp (length buf))
+                 (push (coerce buf 'simple-string) tokens)
+                 (setf (fill-pointer buf) 0)))
+             (push-char (c)
+               (vector-push-extend c buf)))
+      (loop while (< (length tokens) count) do
+        (let ((c (read-char stream nil :eof)))
+          (cond
+            ((eq c :eof)
+             (flush)
+             (when (< (length tokens) count)
+               (error 'end-of-file :stream stream))
+             (return))
+            (in-string
+             (push-char c)
+             (when (char= c #\')
+               (let ((nxt (peek-char nil stream nil :eof)))
+                 (cond
+                   ((and (characterp nxt) (char= nxt #\'))
+                    (push-char (read-char stream)))
+                   (t
+                    (setf in-string nil)
+                    (flush))))))
+            ((char= c #\Newline)
+             (flush))
+            ((or (char= c #\Space) (char= c #\Tab) (char= c #\Return)
+                 (char= c #\,))
+             (flush))
+            ((char= c #\')
+             (flush)
+             (push-char c)
+             (setf in-string t))
+            (t
+             (push-char c))))))
+    (nreverse tokens)))
+
+(defun %list-directed-read-from-stream (stream count)
+  "Read COUNT list-directed values from STREAM, classifying each
+token into a Lisp value.  Signals CL:END-OF-FILE on premature EOF."
+  (mapcar #'%list-directed-classify-token
+          (%list-directed-read-tokens stream count)))
+
+(defvar *current-fformat-read-format* nil
+  "Format string in effect for the current %FFORMAT-READ-RECORDS
+call.  Bound dynamically by EXECUTE-FORMAT-READ so the helper can
+re-invoke %READ-FORMAT with successively longer record lists.")
+
+(defun %fformat-read-records (stream count)
+  "Pull lines from STREAM and feed them to %READ-FORMAT until COUNT
+values are returned.  Used by formatted reads (FMT a string).
+Signals CL:END-OF-FILE if the stream is exhausted before COUNT
+values can be produced."
+  (let ((records '()))
+    (loop
+      (let ((line (read-line stream nil :eof)))
+        (when (eq line :eof)
+          (error 'end-of-file :stream stream))
+        (setf records (append records (list line))))
+      (let ((vals (%read-format *current-fformat-read-format*
+                                records
+                                :num-vals count)))
+        (when (>= (length vals) count)
+          (return vals))))))
+
+(defun execute-format-read (stream format count)
+  "Runtime body of the FORMAT-READ macro.  FORMAT is either
+:LIST-DIRECTED or a Fortran-format string.  COUNT is the number of
+values needed.  Returns a list of COUNT values.  Signals
+CL:END-OF-FILE on premature EOF."
+  (cond
+    ((zerop count)
+     ;; No items requested.  A bare READ(*,*) with no I/O list still
+     ;; consumes one record per Fortran semantics; honour that by
+     ;; advancing past one line.
+     (let ((line (read-line stream nil :eof)))
+       (when (eq line :eof)
+         (error 'end-of-file :stream stream)))
+     '())
+    ((eq format :list-directed)
+     (%list-directed-read-from-stream stream count))
+    ((stringp format)
+     (let ((*current-fformat-read-format* format))
+       (%fformat-read-records stream count)))
+    (t
+     (error "FORMAT-READ: unrecognized format ~S" format))))
+
+;;; Helpers used by the FORMAT-READ macro to walk the varspec list
+;;; at macro-expansion time.  Two passes are emitted: one that
+;;; counts the value-producing places (with implied-DO bounds
+;;; evaluated at run time), and one that assigns from the value
+;;; list.
+
+(defun %format-read-count-form (counter-var varspec)
+  "Build code that increments COUNTER-VAR once per :place that VARSPEC
+will hit at run time.  Implied-DOs expand to a DO loop so their
+bounds are re-evaluated each call."
+  (case (first varspec)
+    (:place
+     `(incf ,counter-var))
+    (:implied-do
+     (destructuring-bind (kind ivar e1 e2 e3 inner-vars) varspec
+       (declare (ignore kind))
+       `(do ((,ivar ,e1 (+ ,ivar ,e3)))
+            ((> ,ivar ,e2))
+          (declare (type integer4 ,ivar))
+          ,@(mapcar (lambda (v) (%format-read-count-form counter-var v))
+                    inner-vars))))
+    (t (error "%format-read-count-form: unknown varspec ~S" varspec))))
+
+(defun %format-read-assign-form (pop-fn varspec)
+  "Build code that, for each :place VARSPEC will hit, pops one value
+off the read-result list (via the local function POP-FN) and stores
+it.  Storage uses FSET for (FREF ...) places, F2CL-SET-STRING for
+sized-string types, and plain SETF otherwise."
+  (case (first varspec)
+    (:place
+     (destructuring-bind (kind expr type) varspec
+       (declare (ignore kind))
+       (let ((sized-string-p (and (consp type) (eq (first type) 'string))))
+         (cond
+           ((and (consp expr) (eq (first expr) 'fref))
+            `(fset ,expr (,pop-fn)))
+           (sized-string-p
+            `(f2cl-set-string ,expr (,pop-fn) ',type))
+           (t
+            `(setf ,expr (,pop-fn)))))))
+    (:implied-do
+     (destructuring-bind (kind ivar e1 e2 e3 inner-vars) varspec
+       (declare (ignore kind))
+       `(do ((,ivar ,e1 (+ ,ivar ,e3)))
+            ((> ,ivar ,e2))
+          (declare (type integer4 ,ivar))
+          ,@(mapcar (lambda (v) (%format-read-assign-form pop-fn v))
+                    inner-vars))))
+    (t (error "%format-read-assign-form: unknown varspec ~S" varspec))))
+
+(defmacro format-read (&key unit fmt end err iostat vars)
+  "Fortran formatted READ using fortran-format:read-format.
+UNIT is the source (an integer LUN or a string).  FMT is either
+:LIST-DIRECTED or a Fortran format string such as \"(I5,1X,F10.3)\".
+
+VARS is a list of varspecs in the same shape READ-FILE uses:
+  (:place EXPR TYPE)
+  (:implied-do IVAR E1 E2 E3 INNER-VARS)
+
+On EOF, GO to the END label and set IOSTAT to -1; on other read
+errors, GO to the ERR label and set IOSTAT to +1.  Each of END,
+ERR, IOSTAT is independently optional."
+  (let* ((stream     (gensym "STREAM-"))
+         (count      (gensym "COUNT-"))
+         (values-var (gensym "VALUES-"))
+         (pop-fn     (gensym "POP-"))
+         (success-body
+          `((let ((,count 0))
+              ,@(mapcar (lambda (v) (%format-read-count-form count v)) vars)
+              (let ((,values-var (execute-format-read ,stream ',fmt ,count)))
+                (flet ((,pop-fn ()
+                         (let ((v (car ,values-var)))
+                           (setf ,values-var (cdr ,values-var))
+                           v)))
+                  (declare (ignorable (function ,pop-fn)))
+                  ,@(mapcar (lambda (v) (%format-read-assign-form pop-fn v))
+                            vars))))
+            ,@(when iostat `((setf ,iostat 0)))
+            nil))
+         (end-clause
+          (when end
+            `((end-of-file ()
+                ,@(when iostat `((setf ,iostat -1)))
+                :end))))
+         (err-clause
+          (when (or err iostat)
+            `((error ()
+                ,@(when iostat `((setf ,iostat 1)))
+                :err))))
+         (handler-form
+          `(handler-case
+               (progn ,@success-body)
+             ,@end-clause
+             ,@err-clause))
+         (case-clauses
+          (append
+           (when end `((:end (go ,(make-label end)))))
+           (when err `((:err (go ,(make-label err))))))))
+    `(let ((,stream (lun->stream ,unit t)))
+       ,(cond
+          ((null case-clauses)
+           `(progn ,handler-form nil))
+          (t
+           `(case ,handler-form ,@case-clauses))))))
+
 
 ;; Initialize a multi-dimensional array of character strings. I think
 ;; we need to do it this way to appease some picky compilers (like

@@ -63,7 +63,7 @@ f2cl/fortran-format/tests in f2cl.asd."
 
 (mk:defsystem f2cl
   :source-pathname *f2cl-root*
-  :depends-on nil
+  :depends-on ("fortran-format")
   :components
   ((:module pkg
     :source-pathname "src"
