@@ -16,6 +16,51 @@
            mk::*central-registry*
            :test #'equalp))
 
+(defun %run-rt-tests (label)
+  "Run RT's deftests and signal on unexpected outcomes.  Shared
+between the f2cl-tests and fortran-format-tests systems below.
+LABEL appears in the error message so the user can see which
+suite produced surprises.
+
+Fires after every mk:oos invocation (compile or load).  We only
+want it to do work when the regression-test files have actually
+been loaded into the image -- if entries-table is empty, either
+RT didn't load yet (compile pass under some configurations) or
+no tests.lisp was loaded, and \"0 out of 0\" isn't useful."
+  (let ((rt (find-package :regression-test)))
+    (when rt
+      (let ((pending-fn    (find-symbol "PENDING-TESTS"      rt))
+            (do-tests-fn   (find-symbol "DO-TESTS"           rt))
+            (expected-var  (find-symbol "*EXPECTED-FAILURES*" rt))
+            (entries-table (find-symbol "*ENTRIES-TABLE*"    rt)))
+        (when (and entries-table
+                   (boundp entries-table)
+                   (plusp (hash-table-count
+                           (symbol-value entries-table))))
+          (funcall do-tests-fn)
+          (let ((pending  (funcall pending-fn))
+                (expected (and (boundp expected-var)
+                               (symbol-value expected-var))))
+            (let ((unexpected (set-difference pending expected))
+                  (surprises  (set-difference expected pending)))
+              (when (or unexpected surprises)
+                (error "~A: ~@[~D unexpected failures: ~S~]~
+                            ~@[~D unexpected successes: ~S~]"
+                       label
+                       (and unexpected (length unexpected)) unexpected
+                       (and surprises  (length surprises))  surprises)))))))))
+
+(defun run-f2cl-tests ()
+  "Wired into the f2cl-tests mk system below as :finally-do, and
+mirrors the :perform method on f2cl/tests in f2cl.asd."
+  (%run-rt-tests "f2cl-tests"))
+
+(defun run-fortran-format-tests ()
+  "Wired into the fortran-format-tests mk system below as
+:finally-do, and mirrors the :perform method on
+f2cl/fortran-format/tests in f2cl.asd."
+  (%run-rt-tests "fortran-format-tests"))
+
 (mk:defsystem f2cl
   :source-pathname *f2cl-root*
   :depends-on nil
@@ -38,6 +83,26 @@
      (:file "f2cl7")
      #+cmu(:file "f2cl8")
      (:file "f2cl-lib")))))
+
+(mk:defsystem fortran-format
+  :source-pathname (merge-pathnames "src/" *f2cl-root*)
+  :components
+  ((:module format
+    :components
+    ((:file "package")
+     (:file "fortran-format-parser"
+            :depends-on ("package"))
+     (:file "fortran-format-io"
+      :depends-on ("package" "fortran-format-parser"))))))
+
+(mk:defsystem fortran-format-tests
+  :source-pathname (merge-pathnames "src/" *f2cl-root*)
+  :depends-on ("fortran-format" "rt")
+  :components
+  ((:module format
+    :components
+    ((:file "fortran-format-tests"))))
+  :finally-do (run-fortran-format-tests))
 
 ;; Regression-test system.
 ;;
@@ -84,38 +149,6 @@
   :components
   ((:file "rt-package" :source-extension "lsp")
    (:file "rt"         :source-extension "lsp")))
-
-(defun run-f2cl-tests ()
-  "Run RT's deftests and signal on unexpected outcomes.  Wired into
-the f2cl-tests mk system below as :finally-do, and mirrors the :perform
-method on f2cl/tests in f2cl.asd.
-
-Fires after every mk:oos invocation (compile or load).  We only want
-it to do work when the regression-test files have actually been loaded
-into the image -- if entries-table is empty, either RT didn't load yet
-(compile pass under some configurations) or tests.lisp wasn't loaded,
-and \"0 out of 0\" isn't useful."
-  (let ((rt (find-package :regression-test)))
-    (when rt
-      (let ((pending-fn    (find-symbol "PENDING-TESTS"      rt))
-            (do-tests-fn   (find-symbol "DO-TESTS"           rt))
-            (expected-var  (find-symbol "*EXPECTED-FAILURES*" rt))
-            (entries-table (find-symbol "*ENTRIES-TABLE*"    rt)))
-        (when (and entries-table
-                   (boundp entries-table)
-                   (plusp (hash-table-count
-                           (symbol-value entries-table))))
-          (funcall do-tests-fn)
-          (let ((pending  (funcall pending-fn))
-                (expected (and (boundp expected-var)
-                               (symbol-value expected-var))))
-            (let ((unexpected (set-difference pending expected))
-                  (surprises  (set-difference expected pending)))
-              (when (or unexpected surprises)
-                (error "f2cl-tests: ~@[~D unexpected failures: ~S~]~
-                                    ~@[~D unexpected successes: ~S~]"
-                       (and unexpected (length unexpected)) unexpected
-                       (and surprises  (length surprises))  surprises)))))))))
 
 (mk:defsystem f2cl-tests
   :source-pathname *f2cl-regression-root*
