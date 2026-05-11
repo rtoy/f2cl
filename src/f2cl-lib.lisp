@@ -1388,7 +1388,32 @@ optional."
      (format stream "~A" arg))
     ((member t nil)
      (format stream (if arg "T " "F ")))))
-     
+
+;;; Flatten a list of WRITE arguments down to a flat list of scalars,
+;;; expanding lists (from implied-DO) and arrays element-wise.
+;;;
+;;; CL-DIRECTIVES-P controls whether T/NIL are remapped to :T/:F so
+;;; that the legacy cilist's ~A directives print "T" and "F".  The
+;;; fortran-format printer wants raw booleans (its L descriptor
+;;; accepts T and NIL directly), so it passes CL-DIRECTIVES-P NIL.
+(defun fformat-flatten-args (args cl-directives-p)
+  (apply #'append
+         (map 'list
+              #'(lambda (x)
+                  (cond
+                    #+#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
+                    ((bigfloat:numberp x) (list x))
+                    #-#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
+                    ((numberp x) (list x))
+                    ((stringp x) (list x))
+                    ((member x '(t nil))
+                     (if cl-directives-p
+                         (case x ((t) (list :t)) ((nil) (list :f)))
+                         (list x)))
+                    (t
+                     (coerce x 'list))))
+              args)))
+
 (defun execute-format-main (stream format &rest args)
   (cond
     ((eq format :list-directed)
@@ -1439,34 +1464,79 @@ optional."
                (nreverse pars))))
     (t
      (let ((format-list (copy-tree format))
-           (arg-list
-            (apply #'append
-                   (map 'list #'(lambda (x)
-                                  ;; For maxima, use BIGFLOAT:NUMBERP
-                                  ;; instead of CL:NUMBERP.
-                                  (cond #+#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
-                                        ((bigfloat:numberp x)
-                                         (list x))
-                                        #-#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
-                                        ((numberp x)
-                                         (list x))
-                                        ((stringp x)
-                                         (list x))
-                                        ((member x '(t nil))
-                                         ;; Convert T and NIL to :T
-                                         ;; and :F so we print out T
-                                         ;; and F, respectively.
-                                         (case x
-                                           ((t)
-                                            (list :t))
-                                           ((nil)
-                                            (list :f))
-                                           (t
-                                            (list x))))
-                                        (t
-                                         (coerce x 'list))))
-                        args))))
+           (arg-list (fformat-flatten-args args t)))
        (execute-format t stream format-list arg-list)))))
+
+;;; ---------------------------------------------------------------
+;;; New printer path: FORMAT-WRITE
+;;; ---------------------------------------------------------------
+;;;
+;;; FORMAT-WRITE is the runtime entry point for the
+;;; fortran-format:write-format-based printer.  It is the partner of
+;;; FFORMAT: where FFORMAT takes a precompiled CL-format cilist,
+;;; FORMAT-WRITE takes the original Fortran format string (or
+;;; :LIST-DIRECTED) and hands it to the new printer at run time.
+;;;
+;;; The translator picks which macro to emit based on whether
+;;; get_format_stmt returned a string (new path) or a cilist (legacy
+;;; path), which in turn depends on f2cl::*use-fortran-format-printer*.
+;;; Once the new printer covers every case we care about, the legacy
+;;; FFORMAT and execute-format machinery can be deleted; until then
+;;; the two coexist.
+
+(defun execute-format-write (stream format args)
+  "Runtime body of the FORMAT-WRITE macro.  FORMAT is either
+:LIST-DIRECTED or a Fortran-format string.  ARGS is the list of
+WRITE arguments before flattening."
+  (cond
+    ((eq format :list-directed)
+     ;; List-directed output -- one record, items separated by
+     ;; whitespace, with a soft line break around column 80.  Mirrors
+     ;; what execute-format-main does on the legacy path.
+     (format stream "~& ~{~<~%~1,81:;~?~>~^~}~%"
+             (let (pars)
+               (dolist (v args)
+                 (typecase v
+                   (string
+                    (push "~A" pars)
+                    (push (list v) pars))
+                   (cons
+                    (dolist (item v)
+                      (push "~/f2cl-lib::fortran-format/" pars)
+                      (push (list item) pars)))
+                   (array
+                    (dotimes (k (length v))
+                      (push "~/f2cl-lib::fortran-format/" pars)
+                      (push (list (aref v k)) pars)))
+                   (t
+                    (push "~/f2cl-lib::fortran-format/" pars)
+                    (push (list v) pars))))
+               (nreverse pars))))
+    ((stringp format)
+     ;; Formatted output.  Hand the raw Fortran string plus the
+     ;; flattened args to fortran-format:write-format, write the
+     ;; result, then write the record terminator -- in Fortran every
+     ;; WRITE statement emits exactly one record.
+     (let ((s (apply (find-symbol (symbol-name '#:write-format)
+                                  (find-package '#:fortran-format))
+                     format
+                     (fformat-flatten-args args nil))))
+       (write-string s stream)
+       (terpri stream)))
+    (t
+     (error "FORMAT-WRITE: unrecognized format ~S" format))))
+
+(defmacro format-write (dest-lun format &rest args)
+  "Fortran formatted WRITE/PRINT using fortran-format:write-format.
+DEST-LUN is the destination (T, an integer LUN, or a string to fill).
+FORMAT is either :LIST-DIRECTED or a Fortran format string such as
+\"(I5,1X,F10.3)\".  ARGS are the WRITE items, prior to flattening."
+  (let ((stream (gensym "STREAM-")))
+    `(let ((,stream (lun->stream ,dest-lun)))
+       (execute-format-write ,stream ',format (list ,@args))
+       ,@(unless (or (eq t dest-lun) (numberp dest-lun))
+           `((when (stringp ,dest-lun)
+               (replace ,dest-lun (get-output-stream-string ,stream))))))))
 
 
 ;; Initialize a multi-dimensional array of character strings. I think

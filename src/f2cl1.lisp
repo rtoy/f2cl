@@ -1022,17 +1022,22 @@ correctly"
                (push `(,*current_label* ,new) output-list))
              (setf *current_label* extended-label)
              (incf extended-label)
-             ;; Convert the string format into the appropriate format
-             (let ((fmt (with-fortran-syntax
-                          ;; read body of a line
-                          (lineread
-                           (make-string-input-stream
-                            (process-format-line
-                             (if (eq 'fmt (fifth input-list))
-                                 (seventh input-list)
-                                 (fifth input-list))))))))
+             ;; Convert the string format into the appropriate format.
+             ;; Also capture the post-process-format-line raw Fortran
+             ;; text and pass it to parse-format, so the runtime can
+             ;; dispatch to fortran-format:write-format when the new
+             ;; printer is enabled (see *use-fortran-format-printer*).
+             (let* ((raw-fmt-src
+                     (process-format-line
+                      (if (eq 'fmt (fifth input-list))
+                          (seventh input-list)
+                          (fifth input-list))))
+                    (fmt (with-fortran-syntax
+                           (lineread
+                            (make-string-input-stream raw-fmt-src)))))
                (setf input-list `(format ,@fmt))
-               (parse-format (brackets-check (concat-operators input-list)))))
+               (parse-format (brackets-check (concat-operators input-list))
+                             raw-fmt-src)))
             ((eq (car input-list) 'format)
              (parse-format (brackets-check (concat-operators input-list))))
             (t
