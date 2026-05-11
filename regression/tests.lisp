@@ -312,3 +312,62 @@ JFUN RETURNS    5.50000
  PASS T7 ENOTDIR      ERR= taken
    7 passed,   0 failed.
 ")
+
+;;;----------------------------------------------------------------------
+;;; READ statement translation.
+;;;
+;;; Two halves:
+;;;
+;;;   tst-read-xlat   Translation-only check.  Verifies that the
+;;;                   patched parse-read no longer emits the blanket
+;;;                   'READ statement may not be translated correctly!'
+;;;                   comments around every READ, AND that it does
+;;;                   still emit the targeted 'formatted READ with
+;;;                   FMT=... not fully implemented' warning for the
+;;;                   three formats f2cl can't really honour: '(3I4)',
+;;;                   '(F10.3)', and the bare numeric FORMAT-statement
+;;;                   label.  Returns a list of warning kinds; expected
+;;;                   value is (:FMT :FMT :FMT), which both confirms
+;;;                   absence of :BLANKET and presence of the three
+;;;                   targeted warnings in source order.
+;;;
+;;;   tst-read-run    End-to-end check.  Writes the two fixture data
+;;;                   files into CWD (assumed to be the f2cl tree
+;;;                   root, matching the tstopn pattern above), runs
+;;;                   the translated program, and compares captured
+;;;                   stdout against the documented expected output.
+;;;                   Exercises: list-directed READ from a file, END=
+;;;                   and IOSTAT= routing of EOF to a label and to a
+;;;                   variable, implied-do READ ((B(K), K=1,M)) for an
+;;;                   array, and implied-do inside WRITE for printing
+;;;                   the array back.
+
+(rt:deftest tst-read-xlat
+    (f2cl-regression:convert-and-classify-read-warnings "val/tst-read-xlat.f")
+  (:fmt :fmt :fmt))
+
+(rt:deftest tst-read-run
+    (progn
+      (with-open-file (out "fort10.dat"
+                           :direction :output :if-exists :supersede
+                           :if-does-not-exist :create)
+        (write-string "1  1.5
+2  2.5
+3  3.5
+4  4.0
+" out))
+      (with-open-file (out "fort11.dat"
+                           :direction :output :if-exists :supersede
+                           :if-does-not-exist :create)
+        (write-string "5
+10 20 30 40 50
+" out))
+      (f2cl-regression:run-program "val/tst-read-run.f" "rdrun"))
+  " COUNT =   4
+ ISUM  =   10
+ RSUM  =   11.5
+ IOS   =   -1
+ M     =   5
+ B(1..M) =   10  20  30  40  50
+ BSUM  =   150
+")

@@ -3612,53 +3612,174 @@
                     (remove nil (list-split '|,| (cddr x))))
             (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!")))))
 
+;; Parse the parenthesised option list of a READ statement and return
+;; multiple values (LUN FMT END-LABEL ERR-LABEL IOSTAT-VAR UNHANDLED).
+;;
+;; Accepts both positional forms -- READ(5,*)  --  and keyword forms
+;; -- READ(UNIT=5, FMT=*, END=900, ERR=910, IOSTAT=IOS).  Positional
+;; UNIT must come first; positional FMT, if present, must come second.
+;; Any UNHANDLED option (something we don't recognise) is collected and
+;; returned so the caller can emit a targeted warning.
+(defun parse-read-options (opts)
+  (let ((lun nil)
+        (fmt nil)
+        (end-label nil)
+        (err-label nil)
+        (iostat-var nil)
+        (unhandled nil)
+        (positional-index 0))
+    (dolist (item opts)
+      (cond
+        ;; Keyword form: (NAME = value...)
+        ((and (consp item) (consp (cdr item)) (eq (second item) '=))
+         (let ((kw (first item))
+               (val (cddr item)))
+           (case kw
+             ((unit |unit| UNIT)
+              (setf lun (id-expression val)))
+             ((fmt |fmt| FMT)
+              (setf fmt (if (and (= (length val) 1) (eq (first val) '*))
+                            '*
+                            (id-expression val))))
+             ((end |end| END)
+              (setf end-label (first val)))
+             ((err |err| ERR)
+              (setf err-label (first val)))
+             ((iostat |iostat| IOSTAT)
+              (setf iostat-var (id-expression val)))
+             (t
+              (push item unhandled)))))
+        ;; Positional: first is UNIT, second is FMT.
+        (t
+         (incf positional-index)
+         (cond ((= positional-index 1)
+                (setf lun
+                      (cond ((and (= (length item) 1) (eq (first item) '*))
+                             ;; READ(*,...) reads from standard input.
+                             5)
+                            ((= (length item) 1)
+                             (first item))
+                            (t
+                             (id-expression item)))))
+               ((= positional-index 2)
+                (setf fmt (cond ((and (= (length item) 1) (eq (first item) '*))
+                                 '*)
+                                ((and (= (length item) 1) (stringp (first item)))
+                                 (first item))
+                                (t
+                                 (id-expression item)))))
+               (t
+                (push item unhandled))))))
+    (values lun fmt end-label err-label iostat-var (nreverse unhandled))))
+
+;; Classify the FMT specifier of a READ.  Returns one of:
+;;   :list-directed   -- NIL or *, use Lisp READ.
+;;   :whole-line      -- '(A)' or '(A<n>)' on a CHARACTER target, use READ-LINE.
+;;   :unhandled       -- numeric format-statement label or any other format
+;;                       string we don't really implement; we still emit a
+;;                       Lisp READ but the caller should warn the user.
+(defun classify-read-fmt (fmt for-string-var-p)
+  (cond
+    ((or (null fmt) (eq fmt '*))
+     :list-directed)
+    ((and for-string-var-p
+          (stringp fmt)
+          (let ((s (string-trim " " fmt)))
+            (and (>= (length s) 3)
+                 (char= (char s 0) #\()
+                 (char-equal (char s 1) #\A)
+                 ;; tail must be ')' or digits then ')'
+                 (let ((tail (subseq s 2 (length s))))
+                   (and (> (length tail) 0)
+                        (char= (char tail (1- (length tail))) #\))
+                        (every #'digit-char-p (subseq tail 0 (1- (length tail))))))))) 
+     :whole-line)
+    (t
+     :unhandled)))
+
 (defun parse-read (x)
-  (let* ((read-opts (list-split '|,| (second x)))
-         (lun (caar read-opts)))
-    ;;(format t "read-opts = ~S~%" read-opts)
-    ;;(format t "vars = ~S~%" (cddr x))
-    (labels ((handle-simple-var (expr)
-               (cond ((and (listp expr)
-                           (eq (first expr) 'fref))
-                      `(fset ,expr (read (f2cl-lib::lun->stream ,lun))))
-                     ((and (symbolp expr)
-                           (subtypep (lookup-vble-type expr) 'string))
-                      `(f2cl-set-string ,expr (read (f2cl-lib::lun->stream ,lun))
-                                        ,(lookup-vble-type expr)))
+  ;; Two surface forms:
+  ;;   READ(<opts>) <vars>     -> (READ (<opts>) <vars>...)
+  ;;   READ <fmt>, <vars>      -> (READ <fmt> |,| <vars>...)
+  ;; Normalise the second form into a single-option list, then build
+  ;; the varspec list and hand off to the F2CL-LIB::READ-FILE macro,
+  ;; which knows how to shape the handler-case / case / go control
+  ;; flow without us having to construct it here.
+  (let* ((opts-raw
+          (cond ((and (consp (second x)) (not (eq (car (second x)) '|,|)))
+                 (list-split '|,| (second x)))
+                (t
+                 (list (list 5) (list (second x))))))
+         (var-tokens
+          (cond ((and (consp (second x)) (not (eq (car (second x)) '|,|)))
+                 (cddr x))
+                (t
+                 (if (eq (third x) '|,|) (cdddr x) (cddr x))))))
+    (multiple-value-bind (lun fmt end-label err-label iostat-var unhandled)
+        (parse-read-options opts-raw)
+      (let ((warnings nil))
+        (when unhandled
+          (push `(fortran_comment
+                  ,(format nil "***WARNING: unhandled READ option(s): ~S" unhandled))
+                warnings))
+        ;; Warn when FMT is something we can't really honour at runtime
+        ;; (numeric format-statement label, or edit-descriptor string).
+        (when (and fmt
+                   (not (eq fmt '*))
+                   (not (eq (classify-read-fmt fmt t) :whole-line)))
+          (push `(fortran_comment
+                  ,(format nil "***WARNING: formatted READ with FMT=~S not fully implemented; using list-directed input"
+                           fmt))
+                warnings))
+        (labels
+            ((build-varspec (arg)
+               ;; ARG is a single comma-segment of the variable list.
+               ;; Either an implied-do '(<expr>, IVAR=E1,E2[,E3])' or a
+               ;; bare place.
+               (cond ((null arg) nil)
+                     ((and (listp arg) (listp (car arg)) (member '= (car arg)))
+                      (build-implied-do (list-split '|,| (car arg))))
                      (t
-                      (check_new_vbles expr)
-                      `(setf ,expr (read (f2cl-lib::lun->stream ,lun))))))
-             (handle-implied-do (do-list)
-               ;; Like parse-implied-do
-               (let* ((ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list))
+                      (build-place (id-expression arg)))))
+             (place-type (expr)
+               ;; lookup-vble-type expects a variable name, not an
+               ;; arbitrary expression -- for an (fref ARRAY ...) form
+               ;; we look up the array's element type instead, and for
+               ;; anything else unrecognised we return NIL so the macro
+               ;; falls back to plain SETF.
+               (cond ((symbolp expr)
+                      (lookup-vble-type expr))
+                     ((and (listp expr) (eq (first expr) 'fref))
+                      (lookup-vble-type (second expr)))
+                     (t nil)))
+             (build-place (expr)
+               (unless (or (and (listp expr) (eq (first expr) 'fref))
+                           (and (symbolp expr)
+                                (let ((ty (lookup-vble-type expr)))
+                                  (and ty (subtypep ty 'string)))))
+                 (check_new_vbles expr))
+               `(:place ,expr ,(place-type expr)))
+             (build-implied-do (do-list)
+               (let* ((ctrl-vars (member-if (lambda (x) (eq (second x) '=)) do-list))
                       (dlist (parse-dlist (ldiff do-list ctrl-vars)))
                       (ivar (first (first ctrl-vars)))
                       (e1 (id-expression (cdr (member '= (first ctrl-vars)))))
                       (e2 (id-expression (second ctrl-vars)))
                       (e3 (if (third ctrl-vars) (third ctrl-vars) 1)))
-                 ;;(format t "do-list = ~A~%" do-list)
-                 ;;(format t "dlist = ~S~%" dlist)
-                 ;;(format t "*dlist-flag* = ~A~%" *dlist-flag*)
-                 `(do ((,ivar ,e1 (+ ,ivar ,e3)))
-                      ((> ,ivar ,e2))
-                    (declare (type integer4 ,ivar))
-                    ,@(mapcar #'(lambda (v)
-                                  `(fset ,v (read (f2cl-lib::lun->stream ,lun))))
-                              (cdr dlist)))))
-             (handle-var (arg)
-               (cond ((null arg) nil)
-                     ((and (listp arg)
-                           (listp (car arg))
-                           (member '= (car arg)))
-                      ;; Implied do
-                      (handle-implied-do (list-split '|,| (car arg))))
-                     (t
-                      (handle-simple-var (id-expression arg))))))
-      ;; Only handle the simple case of read(<lun>,...)
-      (append (list '(fortran_comment "***WARNING:  READ statement may not be translated correctly!"))
-              (mapcar #'handle-var
-                      (remove nil (list-split '|,| (cddr x))))
-              (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!"))))))
+                 `(:implied-do
+                   ,ivar ,e1 ,e2 ,e3
+                   ,(mapcar #'build-place (cdr dlist))))))
+          (let* ((varspecs (remove nil
+                                   (mapcar #'build-varspec
+                                           (remove nil (list-split '|,| var-tokens)))))
+                 (call `(f2cl-lib::read-file
+                         :unit ,lun
+                         :fmt ,fmt
+                         ,@(when end-label  `(:end ,end-label))
+                         ,@(when err-label  `(:err ,err-label))
+                         ,@(when iostat-var `(:iostat ,iostat-var))
+                         :vars ,varspecs)))
+            (append (nreverse warnings) (list call))))))))
   
 
 ;; x is (OPEN (lun |,| <open-keywords)

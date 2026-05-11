@@ -1111,6 +1111,145 @@ causing all pending operations to be flushed"
         ,(if err `(unless ,result (go ,(f2cl-lib::make-label err))))
         ,(if iostat `(setf ,iostat (if ,result 0 1))))))
 
+;;;----------------------------------------------------------------------
+;;; READ
+;;;
+;;; The Fortran statement
+;;;
+;;;     READ(UNIT, FMT [,END=L] [,ERR=L] [,IOSTAT=V]) <vars>
+;;;
+;;; is translated to:
+;;;
+;;;     (f2cl-lib::read-file
+;;;        :unit U :fmt F :end L :err L :iostat V
+;;;        :vars (<varspec> ...))
+;;;
+;;; where each <varspec> is one of:
+;;;
+;;;     (:place EXPR TYPE)
+;;;         Read a single value into the place EXPR.  TYPE comes from
+;;;         the variable declaration -- if it's a string subtype we use
+;;;         F2CL-SET-STRING, if EXPR is an (FREF ...) form we use FSET,
+;;;         otherwise SETF.
+;;;
+;;;     (:implied-do IVAR E1 E2 E3 (<varspec> ...))
+;;;         Loop IVAR from E1 to E2 stepping E3, reading each inner
+;;;         <varspec> per iteration.
+;;;
+;;; Runtime semantics match Fortran: on end-of-file, GO to the END label
+;;; (if given) and set IOSTAT to -1 (if given); on other read errors,
+;;; GO to the ERR label and set IOSTAT to +1.  When neither END= nor
+;;; ERR= is supplied, no GO targets exist and the handler-case value
+;;; is discarded -- IOSTAT side effects still happen.
+
+(defun %read-whole-line-format-p (fmt)
+  "True iff FMT is a Fortran format string like '(A)' or '(A20)' --
+the kind we honour by issuing READ-LINE rather than READ."
+  (and (stringp fmt)
+       (let ((s (string-trim " " fmt)))
+         (and (>= (length s) 3)
+              (char= (char s 0) #\()
+              (char-equal (char s 1) #\A)
+              (let ((tail (subseq s 2)))
+                (and (plusp (length tail))
+                     (char= (char tail (1- (length tail))) #\))
+                     (every #'digit-char-p
+                            (subseq tail 0 (1- (length tail))))))))))
+
+(defun %read-value-form (stream-form fmt for-string-p)
+  "Build the form that reads one value.  When the destination is a
+CHARACTER variable and FMT is a recognised whole-line format like
+'(A)' or '(A20)', use READ-LINE; otherwise use READ."
+  (if (and for-string-p (%read-whole-line-format-p fmt))
+      `(read-line ,stream-form nil "")
+      `(read ,stream-form)))
+
+(defun %expand-read-place (stream-form fmt expr type)
+  "Build the form that reads one value from STREAM-FORM and stores it
+into the place EXPR, using TYPE to pick between SETF, FSET, and
+F2CL-SET-STRING.  We only emit F2CL-SET-STRING when TYPE includes a
+length, i.e. TYPE is of the form (STRING N) -- otherwise we fall back
+to plain SETF."
+  (let* ((sized-string-p (and (consp type) (eq (first type) 'string)))
+         (for-string-p (or sized-string-p (eq type 'string)))
+         (read-form (%read-value-form stream-form fmt for-string-p)))
+    (cond
+      ((and (consp expr) (eq (first expr) 'fref))
+       `(fset ,expr ,read-form))
+      (sized-string-p
+       `(f2cl-set-string ,expr ,read-form ,type))
+      (t
+       `(setf ,expr ,read-form)))))
+
+(defun %expand-read-varspec (stream-form fmt varspec)
+  "Build the form(s) for one VARSPEC.  See READ-FILE docstring for
+the varspec shape."
+  (case (first varspec)
+    (:place
+     (destructuring-bind (kind expr type) varspec
+       (declare (ignore kind))
+       (%expand-read-place stream-form fmt expr type)))
+    (:implied-do
+     (destructuring-bind (kind ivar e1 e2 e3 inner-vars) varspec
+       (declare (ignore kind))
+       `(do ((,ivar ,e1 (+ ,ivar ,e3)))
+            ((> ,ivar ,e2))
+          (declare (type f2cl-lib:integer4 ,ivar))
+          ,@(mapcar (lambda (v) (%expand-read-varspec stream-form fmt v))
+                    inner-vars))))
+    (t (error "%expand-read-varspec: unknown varspec ~S" varspec))))
+
+(defmacro read-file (&key unit fmt end err iostat vars)
+  "Implement a Fortran READ statement.
+
+Each entry in VARS is either
+
+   (:place EXPR TYPE)
+       Read a single value into the place EXPR.  TYPE comes from the
+       variable declaration -- if it's a (STRING N) subtype, use
+       F2CL-SET-STRING; if EXPR is an (FREF ...) form, use FSET;
+       otherwise use SETF.
+
+   (:implied-do IVAR E1 E2 E3 (<varspec> ...))
+       Loop IVAR from E1 to E2 stepping E3, reading each inner
+       <varspec> per iteration.
+
+Runtime semantics match Fortran: on end-of-file, GO to the END label
+and set IOSTAT to -1; on other read errors, GO to the ERR label and
+set IOSTAT to +1.  Each of END=, ERR=, IOSTAT= is independently
+optional."
+  (let* ((stream-form `(lun->stream ,unit))
+         (read-forms
+          (mapcar (lambda (v) (%expand-read-varspec stream-form fmt v)) vars))
+         (success-body
+          (append read-forms
+                  (when iostat `((setf ,iostat 0)))
+                  '(nil)))
+         (end-clause
+          (when end
+            `((end-of-file ()
+                ,@(when iostat `((setf ,iostat -1)))
+                :end))))
+         (err-clause
+          (when (or err iostat)
+            `((error ()
+                ,@(when iostat `((setf ,iostat 1)))
+                :err))))
+         (handler-form
+          `(handler-case
+               (progn ,@success-body)
+             ,@end-clause
+             ,@err-clause))
+         (case-clauses
+          (append
+           (when end `((:end (go ,(f2cl-lib::make-label end)))))
+           (when err `((:err (go ,(f2cl-lib::make-label err))))))))
+    (cond
+      ((null case-clauses)
+       `(progn ,handler-form nil))
+      (t
+       `(case ,handler-form ,@case-clauses)))))
+
 (defmacro fformat (dest-lun format-cilist &rest args)
   (let ((stream (gensym)))
     `(let ((,stream (lun->stream ,dest-lun)))
@@ -1272,6 +1411,7 @@ causing all pending operations to be flushed"
                       (progn
                         (push "~/f2cl-lib::fortran-format/" pars)
                         (push (list item) pars))
+                      #+gcl
                       (progn
                         (push "~A" pars)
                         (push (fortran-format nil item nil nil) pars))))
