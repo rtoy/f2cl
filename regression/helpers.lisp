@@ -23,6 +23,7 @@
   (:use #:cl)
   (:export #:convert
            #:convert-and-compile
+           #:convert-and-classify-read-warnings
            #:convert-compile-load
            #:run-program))
 
@@ -145,3 +146,39 @@
           (handler-case (funcall fn)
             (error (c)
               (format t "~&*** uncaught Lisp error: ~A~%" c))))))))
+
+(defun convert-and-classify-read-warnings (path)
+  "Translate PATH and report which READ-related fortran_comment warnings
+  appear in the generated Lisp.  Returns a list of keywords, one per
+  matching warning, in source order:
+
+    :blanket    -- the old unconditional 'READ statement may not be
+                   translated correctly!' wrapper.  Should never appear
+                   in patched f2cl output.
+
+    :fmt        -- a targeted 'formatted READ with FMT=... not fully
+                   implemented' warning.  Expected only on edit-
+                   descriptor formats and numeric format-statement
+                   labels.
+
+    :unhandled  -- 'unhandled READ option(s): ...' for an option keyword
+                   parse-read didn't recognise.
+
+  Returns NIL if no READ warnings were emitted at all."
+  (reset-state)
+  (ensure-directories-exist *work-dir*)
+  (let ((lisp (lisp-out path)))
+    (f2cl:f2cl (src-path path) :output-file lisp)
+    (with-open-file (in lisp)
+      (loop with kinds = nil
+            for line = (read-line in nil nil)
+            while line
+            do (cond
+                 ((search "READ statement may not be translated correctly"
+                          line)
+                  (push :blanket kinds))
+                 ((search "formatted READ with FMT=" line)
+                  (push :fmt kinds))
+                 ((search "unhandled READ option" line)
+                  (push :unhandled kinds)))
+            finally (return (nreverse kinds))))))
