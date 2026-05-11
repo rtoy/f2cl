@@ -49,6 +49,12 @@ Bound fresh at each WRITE-FORMAT call.  Updated by EMIT-OUT and
 EMIT-NEWLINE; consulted by the T-family of skip descriptors so
 they can know how far forward to space.")
 
+(defvar *colon-stop* nil
+  "Set by the colon edit descriptor when it fires while the value
+list is empty.  The WRITE-FORMAT driver loop checks this flag and
+exits both the main and reversion passes.  Bound fresh at each
+WRITE-FORMAT call.")
+
 (defun emit-out (stream string-or-char)
   "Write STRING-OR-CHAR to STREAM and advance *COLUMN* accordingly.
 The only legal way to write to the output stream from inside the
@@ -168,6 +174,15 @@ the new values-cursor (a cons of remaining values)."))
   ;; characters emitted, no value consumed.
   (declare (ignore stream))
   (setf *scale-factor* (scale-ed-scale ed))
+  values)
+
+(defmethod emit-ed ((ed colon-ed) stream values)
+  ;; Conditional terminator: if the value list is already empty,
+  ;; stop format processing (both the current pass and any reversion
+  ;; cycle that would otherwise follow).  If values remain, no-op.
+  (declare (ignore stream))
+  (when (null values)
+    (setf *colon-stop* t))
   values)
 
 ;;; ---------------------------------------------------------------
@@ -514,29 +529,33 @@ behavior."
   "Format VALUES according to FORMAT-STRING and return the result.
 If the format runs out before the values do, control reverts to
 the reversion descriptors with a newline inserted between cycles
-(Fortran 95 12.2.2)."
+(Fortran 95 12.2.2).  A `:' descriptor encountered with no
+remaining values stops format processing immediately."
   (multiple-value-bind (main-eds rev-eds) (parse-format format-string)
     (let* ((main (expand-repeats main-eds))
            (rev  (expand-repeats rev-eds))
            (out  (make-string-output-stream))
            (vs   values)
-           ;; Bind sign-control, scale, and column state fresh so
-           ;; SP/SS/S/kP/T in one call cannot leak into another.
+           ;; Bind sign-control, scale, column, and colon-stop state
+           ;; fresh so per-call state cannot leak into the next call.
            (*include-plus* nil)
            (*scale-factor* 0)
-           (*column* 1))
+           (*column* 1)
+           (*colon-stop* nil))
       ;; Main pass
       (dolist (ed main)
+        (when *colon-stop* (return))
         (setf vs (emit-ed ed out vs)))
       ;; Reversion: keep cycling rev-eds while values remain.
-      (when vs
+      (when (and vs (not *colon-stop*))
         (let ((rev-has-value-ed (some #'edit-descriptor-outputs-value-p rev)))
           (unless rev-has-value-ed
             (invalid-format
              "Format exhausted with ~D values remaining and no value-producing reversion descriptors" (length vs)))
-          (loop while vs do
+          (loop while (and vs (not *colon-stop*)) do
             (emit-newline out)
             (dolist (ed rev)
+              (when *colon-stop* (return))
               (when vs
                 (setf vs (emit-ed ed out vs)))))))
       (get-output-stream-string out))))

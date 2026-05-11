@@ -376,6 +376,46 @@
   #.(format nil "abc~%    def"))
 
 ;;; --------------------------------------------------------------
+;;; : (colon) conditional terminator on output
+;;;
+;;; The colon stops format processing if the value list is empty;
+;;; if values remain, it has no effect.
+;;; --------------------------------------------------------------
+
+(rt:deftest fmt.write.colon-stops-when-exhausted
+    ;; After I3 consumes the one value, : sees an empty list and
+    ;; halts; the A descriptor is never reached.
+    (write-format "(I3,:,A)" 1)
+  "  1")
+
+(rt:deftest fmt.write.colon-passthrough-when-values-remain
+    ;; With values remaining, : is a no-op.
+    (write-format "(I3,:,A)" 1 "xyz")
+  "  1xyz")
+
+(rt:deftest fmt.write.colon-suppresses-trailing-literal
+    ;; Classic idiom: print "1-2-3" with no trailing separator.
+    (write-format "(I3,:,\"-\",I3)" 1 2)
+  "  1-  2")
+
+(rt:deftest fmt.write.colon-with-one-value
+    ;; Same format, one value: colon kicks in, the "-" and second
+    ;; I3 are skipped.
+    (write-format "(I3,:,\"-\",I3)" 1)
+  "  1")
+
+(rt:deftest fmt.write.colon-suppresses-trailing-slash
+    ;; With a single value, the trailing / is suppressed --
+    ;; otherwise reversion would emit an empty trailing record.
+    (write-format "(I3,:,/)" 1)
+  "  1")
+
+(rt:deftest fmt.write.colon-does-not-leak-between-calls
+    (progn (write-format "(I3,:,A)" 1)
+           (write-format "(I3,A)" 2 "ok"))
+  "  2ok")
+
+;;; --------------------------------------------------------------
 ;;; Input
 ;;; --------------------------------------------------------------
 
