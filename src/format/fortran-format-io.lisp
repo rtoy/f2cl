@@ -43,6 +43,30 @@ WRITE-FORMAT call.  Affects F (rescales the value by 10^k), E and
 D (shuffles digits between mantissa and exponent), and G (when G
 falls back to E mode).  Has no effect on ES, EN, I, or BOZ output.")
 
+(defvar *column* 1
+  "Current 1-based output column in the record being assembled.
+Bound fresh at each WRITE-FORMAT call.  Updated by EMIT-OUT and
+EMIT-NEWLINE; consulted by the T-family of skip descriptors so
+they can know how far forward to space.")
+
+(defun emit-out (stream string-or-char)
+  "Write STRING-OR-CHAR to STREAM and advance *COLUMN* accordingly.
+The only legal way to write to the output stream from inside the
+emit-ed methods; using WRITE-CHAR or WRITE-STRING directly would
+leave *COLUMN* stale and break T/TR positioning."
+  (cond
+    ((characterp string-or-char)
+     (write-char string-or-char stream)
+     (incf *column*))
+    (t
+     (write-string string-or-char stream)
+     (incf *column* (length string-or-char)))))
+
+(defun emit-newline (stream)
+  "Emit a record separator and reset *COLUMN* to 1."
+  (terpri stream)
+  (setf *column* 1))
+
 (defun expand-repeats (eds)
   "Replace (repeat N) descriptors with N copies of themselves."
   (let ((out '()))
@@ -58,16 +82,32 @@ falls back to E mode).  Has no effect on ES, EN, I, or BOZ output.")
 the new values-cursor (a cons of remaining values)."))
 
 (defmethod emit-ed ((ed quoted-ed) stream values)
-  (write-string (quoted-ed-text ed) stream)
+  (emit-out stream (quoted-ed-text ed))
   values)
 
 (defmethod emit-ed ((ed skip-ed) stream values)
-  (case (edit-descriptor-name ed)
-    (:x (dotimes (_ (skip-ed-num-chars ed))
-          (write-char #\Space stream)))
-    ;; T/TL/TR: would need a positionable buffer instead of a stream.
-    ;; Out of scope for the output sketch.
-    (otherwise (warn "T/TL/TR emission not implemented in sketch")))
+  (let ((n (skip-ed-num-chars ed)))
+    (case (edit-descriptor-name ed)
+      (:x  (emit-out stream (make-string n :initial-element #\Space)))
+      (:tr (emit-out stream (make-string n :initial-element #\Space)))
+      (:t
+       ;; T n is absolute (1-based).  We support only forward T --
+       ;; jumping backwards would require a positionable record
+       ;; buffer rather than a one-pass stream.  Backward T is
+       ;; vanishingly rare in numerical Fortran (grep across the
+       ;; f2cl packages found zero uses) so we signal cleanly rather
+       ;; than implement a buffer.
+       (cond
+         ((< n *column*)
+          (invalid-format
+           "Backward T (T~D from column ~D) is not supported"
+           n *column*))
+         (t
+          (emit-out stream (make-string (- n *column*)
+                                        :initial-element #\Space)))))
+      (:tl
+       (invalid-format
+        "TL descriptor not supported (would require a positionable buffer)"))))
   values)
 
 (defmethod emit-ed ((ed integer-ed) stream values)
@@ -93,10 +133,10 @@ the new values-cursor (a cons of remaining values)."))
            (pad  (max 0 (- w (length body)))))
       (cond
         ((> (length body) w)
-         (dotimes (_ w) (write-char #\* stream)))
+         (emit-out stream (make-string w :initial-element #\*)))
         (t
-         (dotimes (_ pad) (write-char #\Space stream))
-         (write-string body stream)))))
+         (emit-out stream (make-string pad :initial-element #\Space))
+         (emit-out stream body)))))
   (cdr values))
 
 (defmethod emit-ed ((ed logical-ed) stream values)
@@ -106,10 +146,10 @@ the new values-cursor (a cons of remaining values)."))
          (ch (if v #\T #\F)))
     (cond
       ((or (null w) (zerop w))
-       (write-char ch stream))
+       (emit-out stream ch))
       (t
-       (dotimes (_ (1- w)) (write-char #\Space stream))
-       (write-char ch stream))))
+       (emit-out stream (make-string (1- w) :initial-element #\Space))
+       (emit-out stream ch))))
   (cdr values))
 
 (defmethod emit-ed ((ed flag-ed) stream values)
@@ -422,7 +462,7 @@ behavior."
   (let ((v (car values))
         (w (width-ed-width ed))
         (d (real-fixed-ed-decimal-places ed)))
-    (write-string (format-f v w d *scale-factor* *include-plus*) stream))
+    (emit-out stream (format-f v w d *scale-factor* *include-plus*)))
   (cdr values))
 
 (defmethod emit-ed ((ed real-exp-ed) stream values)
@@ -445,7 +485,7 @@ behavior."
              (otherwise
               (warn "Unknown real-exp descriptor ~A" name)
               (make-string w :initial-element #\?)))))
-    (write-string out stream))
+    (emit-out stream out))
   (cdr values))
 
 (defmethod emit-ed ((ed alpha-ed) stream values)
@@ -453,11 +493,17 @@ behavior."
          (w (or (width-ed-width ed) (length s))))
     (cond
       ((>= (length s) w)
-       (write-string s stream :end w))
+       (emit-out stream (subseq s 0 w)))
       (t
-       (dotimes (_ (- w (length s))) (write-char #\Space stream))
-       (write-string s stream))))
+       (emit-out stream (make-string (- w (length s)) :initial-element #\Space))
+       (emit-out stream s))))
   (cdr values))
+
+(defmethod emit-ed ((ed newline-ed) stream values)
+  ;; Slash terminates the current record and starts a new one.
+  ;; *COLUMN* resets to 1.
+  (emit-newline stream)
+  values)
 
 (defmethod emit-ed ((ed edit-descriptor) stream values)
   (declare (ignore stream))
@@ -474,23 +520,22 @@ the reversion descriptors with a newline inserted between cycles
            (rev  (expand-repeats rev-eds))
            (out  (make-string-output-stream))
            (vs   values)
-           ;; Bind sign-control and scale state fresh so SP/SS/S/kP
-           ;; in one call cannot leak into another.
+           ;; Bind sign-control, scale, and column state fresh so
+           ;; SP/SS/S/kP/T in one call cannot leak into another.
            (*include-plus* nil)
-           (*scale-factor* 0))
+           (*scale-factor* 0)
+           (*column* 1))
       ;; Main pass
       (dolist (ed main)
         (setf vs (emit-ed ed out vs)))
       ;; Reversion: keep cycling rev-eds while values remain.
-      ;; If rev has no value-producing eds, signal -- otherwise we'd
-      ;; loop forever.
       (when vs
         (let ((rev-has-value-ed (some #'edit-descriptor-outputs-value-p rev)))
           (unless rev-has-value-ed
             (invalid-format
              "Format exhausted with ~D values remaining and no value-producing reversion descriptors" (length vs)))
           (loop while vs do
-            (terpri out)
+            (emit-newline out)
             (dolist (ed rev)
               (when vs
                 (setf vs (emit-ed ed out vs)))))))

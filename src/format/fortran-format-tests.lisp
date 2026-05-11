@@ -169,6 +169,192 @@
   "   42")
 
 ;;; --------------------------------------------------------------
+;;; Scale factor (kP)
+;;; --------------------------------------------------------------
+
+;; On F: rescale the value by 10^k.
+
+(rt:deftest fmt.write.1p-f8.2
+    (write-format "(1P,F8.2)" 3.14159d0)
+  "   31.42")
+
+(rt:deftest fmt.write.2p-f8.2
+    (write-format "(2P,F8.2)" 3.14159d0)
+  "  314.16")
+
+(rt:deftest fmt.write.3p-f8.2
+    (write-format "(3P,F8.2)" 3.14159d0)
+  " 3141.59")
+
+(rt:deftest fmt.write.neg1p-f8.2
+    (write-format "(-1P,F8.2)" 3.14159d0)
+  "    0.31")
+
+(rt:deftest fmt.write.neg2p-f8.2
+    (write-format "(-2P,F8.2)" 3.14159d0)
+  "    0.03")
+
+;; On E: digit shuffle between mantissa and exponent.
+
+(rt:deftest fmt.write.1p-e12.4
+    (write-format "(1P,E12.4)" 3.14159d0)
+  "  3.1416E+00")
+
+(rt:deftest fmt.write.2p-e12.4
+    (write-format "(2P,E12.4)" 3.14159d0)
+  "  31.416E-01")
+
+(rt:deftest fmt.write.3p-e12.4
+    (write-format "(3P,E12.4)" 3.14159d0)
+  "  314.16E-02")
+
+(rt:deftest fmt.write.neg1p-e12.4
+    (write-format "(-1P,E12.4)" 3.14159d0)
+  "  0.0314E+02")
+
+(rt:deftest fmt.write.neg2p-e12.4
+    (write-format "(-2P,E12.4)" 3.14159d0)
+  "  0.0031E+03")
+
+;; ES and EN ignore the scale factor.
+
+(rt:deftest fmt.write.1p-es12.4-ignored
+    (write-format "(1P,ES12.4)" 3.14159d0)
+  "  3.1416E+00")
+
+(rt:deftest fmt.write.2p-es12.4-ignored
+    (write-format "(2P,ES12.4)" 3.14159d0)
+  "  3.1416E+00")
+
+(rt:deftest fmt.write.1p-en15.6-ignored
+    (write-format "(1P,EN15.6)" 3.14159d0)
+  "   3.141590E+00")
+
+;; G in E mode honors scale; in F mode it doesn't.
+
+(rt:deftest fmt.write.1p-g12.4-e-mode-small
+    ;; 0.001 is below 0.1 so G picks E mode; 1P applies.
+    (write-format "(1P,G12.4)" 0.001d0)
+  "  1.0000E-03")
+
+(rt:deftest fmt.write.1p-g12.4-e-mode-big
+    ;; 1e6 is >= 10^4 so G picks E mode; 1P applies.
+    (write-format "(1P,G12.4)" 1.0d6)
+  "  1.0000E+06")
+
+;; Scale persists through subsequent descriptors in the same call.
+
+(rt:deftest fmt.write.scale-persists
+    (write-format "(1P,F8.2,F8.2)" 3.14159d0 3.14159d0)
+  "   31.42   31.42")
+
+;; 0P resets the scale.
+
+(rt:deftest fmt.write.0p-resets-scale
+    (write-format "(1P,F8.2,0P,F8.2)" 3.14159d0 3.14159d0)
+  "   31.42    3.14")
+
+;; Scale does not affect integer or BOZ output.
+
+(rt:deftest fmt.write.1p-i5-unaffected
+    (write-format "(1P,I5)" 42)
+  "   42")
+
+(rt:deftest fmt.write.1p-z4-unaffected
+    (write-format "(1P,Z4)" 10)
+  "   A")
+
+;; Scale state must not leak between WRITE-FORMAT calls.
+
+(rt:deftest fmt.write.scale-does-not-leak-between-calls
+    (progn (write-format "(1P,F8.2)" 3.14d0)
+           (write-format "(F8.2)" 3.14d0))
+  "    3.14")
+
+;;; --------------------------------------------------------------
+;;; T / TR positioning (forward only)
+;;;
+;;; T n jumps to absolute 1-based column n; TR n advances n columns.
+;;; Backward T (target column < current) and TL are not supported
+;;; in this implementation -- both signal invalid-format.  A full
+;;; mutable-record buffer would be required to support them, and
+;;; backward T isn't used in any of the f2cl-translated packages
+;;; (BLAS, LAPACK, ODEPACK, QUADPACK, MINPACK, ...).
+;;; --------------------------------------------------------------
+
+(rt:deftest fmt.write.t5-a3
+    (write-format "(T5,A3)" "abc")
+  "    abc")
+
+(rt:deftest fmt.write.t1-a3
+    ;; T1 from column 1 is a no-op forward jump.
+    (write-format "(T1,A3)" "abc")
+  "abc")
+
+(rt:deftest fmt.write.t5-i3
+    (write-format "(T5,I3)" 1)
+  "      1")
+
+(rt:deftest fmt.write.a-t20-a
+    (write-format "(A,T20,A)" "abc" "Z")
+  "abc                Z")
+
+(rt:deftest fmt.write.a-t4-a-adjacent
+    ;; T4 lands exactly at the next column with no gap to fill.
+    (write-format "(A,T4,A)" "abc" "X")
+  "abcX")
+
+(rt:deftest fmt.write.tr-with-spaces
+    (write-format "(A,TR3,A)" "abc" "def")
+  "abc   def")
+
+(rt:deftest fmt.write.tr5-a1
+    (write-format "(TR5,A1)" "Q")
+  "     Q")
+
+(rt:deftest fmt.write.t-tracks-column-after-multiple
+    ;; Column counter must follow earlier writes.  After "  1  2"
+    ;; *column* is 7, then T15 jumps to column 15.
+    (write-format "(I3,I3,T15,A)" 1 2 "Z")
+  "  1  2        Z")
+
+(rt:deftest fmt.write.backward-t-errors
+    ;; T1 after writing "abc" would have to overwrite -- we refuse.
+    (handler-case (write-format "(A3,T1,A3)" "abc" "def")
+      (invalid-format () :rejected))
+  :rejected)
+
+(rt:deftest fmt.write.tl-errors
+    (handler-case (write-format "(A,TL2,A)" "abc" "X")
+      (invalid-format () :rejected))
+  :rejected)
+
+(rt:deftest fmt.write.t-does-not-leak-between-calls
+    (progn (write-format "(T5,A)" "X")
+           (write-format "(A)" "Q"))
+  "Q")
+
+;;; --------------------------------------------------------------
+;;; / (slash) on output
+;;;
+;;; Slash terminates the current record and starts a new one;
+;;; *column* resets to 1.
+;;; --------------------------------------------------------------
+
+(rt:deftest fmt.write.slash-between-strings
+    (write-format "(A,/,A)" "abc" "def")
+  #.(format nil "abc~%def"))
+
+(rt:deftest fmt.write.slash-between-integers
+    (write-format "(I3,/,I3)" 1 2)
+  #.(format nil "  1~%  2"))
+
+(rt:deftest fmt.write.slash-resets-column
+    ;; T5 after the slash works from column 1 of the new record.
+    (write-format "(A,/,T5,A)" "abc" "def")
+  #.(format nil "abc~%    def"))
+
+;;; --------------------------------------------------------------
 ;;; Input
 ;;; --------------------------------------------------------------
 
