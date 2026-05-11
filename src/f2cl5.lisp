@@ -3554,10 +3554,22 @@ surrounded by parentheses."
   ;; RAW-STRING, when supplied, is the Fortran format text after
   ;; process-format-line has substituted Hollerith strings and
   ;; rewritten single-quoted strings as double-quoted ones.  That is
-  ;; exactly what the fortran-format parser expects as input.  When
-  ;; the caller does not supply it (e.g. the general statement
-  ;; dispatcher at f2cl1.lisp:1441, which only has the tokenized
-  ;; form), we reconstruct an equivalent string from the token list.
+  ;; exactly what the fortran-format parser expects as input.  No
+  ;; live caller currently supplies it -- the labeled-FORMAT path
+  ;; through readsubprog-extract-format-stmts and the inline-FMT
+  ;; path through get_format_stmt both have access to a clean
+  ;; representation already -- but the argument is kept for any
+  ;; future caller that wants to bypass reconstruction.
+  ;;
+  ;; When RAW-STRING is NIL, we reconstruct an equivalent Fortran
+  ;; format string from the token list.  Reconstruction is faithful
+  ;; to what process-format-line produced (Hollerith literals come
+  ;; back as 'foo' single-quoted strings, embedded single quotes
+  ;; are doubled per Fortran convention, nested groups recurse).
+  ;; Validated on Hollerith literals, embedded commas, embedded
+  ;; single quotes, nested groups with mixed repeat counts, and
+  ;; bare X/comma spacers; see edgetest.f.
+  ;;
   ;; Stored as the third field of each *format_stmts* entry;
   ;; consulted by get_format_stmt when *use-fortran-format-printer*
   ;; is T.
@@ -3581,11 +3593,16 @@ surrounded by parentheses."
 ;;; Helpers for choosing which printer macro to emit.  When
 ;;; get_format_stmt returns a bare string, the new printer
 ;;; (FORMAT-WRITE) is wanted; otherwise the legacy cilist printer
-;;; (FFORMAT).  :LIST-DIRECTED stays on the legacy macro for now --
-;;; if and when the new path subsumes it, this single function is
-;;; the only place that needs to change.
+;;; (FFORMAT).  :LIST-DIRECTED is steered onto the new path only
+;;; when the flag is on, so that flag-off behavior remains
+;;; byte-identical to the pre-hook translator.
 (defun %printer-macro-for (fmt)
-  (if (stringp fmt) 'format-write 'fformat))
+  (cond
+    ((stringp fmt)             'format-write)
+    ((and *use-fortran-format-printer*
+          (eq fmt :list-directed))
+                               'format-write)
+    (t                         'fformat)))
 
 (defun parse-write (x)
   ;; check for comma before arguments
