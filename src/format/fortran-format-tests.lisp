@@ -335,6 +335,27 @@
   "Q")
 
 ;;; --------------------------------------------------------------
+;;; T/TL backward positioning -- expected to fail
+;;;
+;;; These exercise the real Fortran behavior of backward T and TL:
+;;; overwriting earlier columns while leaving later columns intact.
+;;; A correct implementation would need a positionable record
+;;; buffer rather than a one-pass stream.  Until that's done, both
+;;; tests fail; they're marked in *expected-failures* below so they
+;;; show up as known issues rather than regressions.
+
+(rt:deftest fmt.write.tl2-overwrites
+    ;; gfortran: (A,TL2,A) of "abc","X" -> "aXc"
+    ;; (abc at 1-3, TL2 to column 2, X at 2, c at 3 preserved)
+    (write-format "(A,TL2,A)" "abc" "X")
+  "aXc")
+
+(rt:deftest fmt.write.backward-t-overwrites
+    ;; gfortran: (A3,T1,A2) of "abc","XY" -> "XYc"
+    (write-format "(A3,T1,A2)" "abc" "XY")
+  "XYc")
+
+;;; --------------------------------------------------------------
 ;;; / (slash) on output
 ;;;
 ;;; Slash terminates the current record and starts a new one;
@@ -652,3 +673,14 @@
 (rt:deftest fmt.write.es.es10.2.zero
     (write-format "(ES10.2)" 0.0d0)
   "  0.00E+00")
+
+;;; --------------------------------------------------------------
+;;; Expected failures
+;;;
+;;; Tests that exercise documented-but-unimplemented behavior.
+;;; Listed by name so the test harness can distinguish them from
+;;; real regressions.  Use PUSHNEW so that running this test system
+;;; inside a larger suite (e.g. f2cl/tests) doesn't clobber other
+;;; expected failures registered by sibling test files.
+(pushnew 'fmt.write.tl2-overwrites          rt:*expected-failures*)
+(pushnew 'fmt.write.backward-t-overwrites   rt:*expected-failures*)
