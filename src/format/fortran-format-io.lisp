@@ -20,17 +20,22 @@
 (in-package #:fortran-format)
 
 ;;; ---------------------------------------------------------------
-;;; Output engine -- partial
+;;; Output engine
 ;;; ---------------------------------------------------------------
 ;;;
 ;;; Drives a list of expanded edit-descriptors to format VALUES into
-;;; a string. Handles I (with width and optional min-digits), F
-;;; (width and decimal-places), A (width-aware truncate/pad), X
-;;; (spaces), and quoted strings.
+;;; a string.  Reversion-of-format-control is honoured per Fortran 95
+;;; 12.2.2 (when the format runs out with values still to print, the
+;;; reversion descriptors run again on a new record).
 ;;;
-;;; Reversion-on-exhausted-format and the P-scale state are NOT
-;;; implemented here; they would slot in cleanly via the same
-;;; state-passing loop py-fortranformat uses.
+;;; Sign-control descriptors (SP/SS/S) set a dynamic flag,
+;;; *INCLUDE-PLUS*, which the per-type emit-ed methods consult.  P
+;;; and T/TL/TR are not yet implemented on output.
+
+(defvar *include-plus* nil
+  "When non-nil, force a leading '+' on non-negative numeric output.
+Set by SP, cleared by SS or S.  Bound fresh at each WRITE-FORMAT
+call so the flag does not leak across format statements.")
 
 (defun expand-repeats (eds)
   "Replace (repeat N) descriptors with N copies of themselves."
@@ -63,20 +68,54 @@ the new values-cursor (a cons of remaining values)."))
   (let* ((v (car values))
          (w (width-ed-width ed))
          (m (integer-ed-min-digits ed))
-         (digits (format nil "~D" (abs v)))
-         (sign (if (minusp v) "-" "")))
+         (base (integer-ed-base ed))
+         ;; ~vR formats in BASE; upper-cased for hex by convention.
+         (digits (let ((d (format nil "~vR" base (abs v))))
+                   (if (= base 16) (string-upcase d) d)))
+         (sign (cond
+                 ((minusp v) "-")
+                 ;; SP only forces '+' on signed decimal output.
+                 ;; BOZ outputs are unsigned bit-pattern representations
+                 ;; and never carry a sign in Fortran.
+                 ((and *include-plus* (= base 10)) "+")
+                 (t ""))))
     (when m
-      (setf digits (format nil "~v,'0D" m (abs v))))
+      ;; Pad to m digits with leading zeros, still in BASE.
+      (let ((d (format nil "~v,v,'0R" base m (abs v))))
+        (setf digits (if (= base 16) (string-upcase d) d))))
     (let* ((body (concatenate 'string sign digits))
            (pad  (max 0 (- w (length body)))))
       (cond
         ((> (length body) w)
-         ;; Fortran writes asterisks on overflow
          (dotimes (_ w) (write-char #\* stream)))
         (t
          (dotimes (_ pad) (write-char #\Space stream))
          (write-string body stream)))))
   (cdr values))
+
+(defmethod emit-ed ((ed logical-ed) stream values)
+  ;; Fortran L format writes (w-1) spaces followed by 'T' or 'F'.
+  (let* ((v (car values))
+         (w (width-ed-width ed))
+         (ch (if v #\T #\F)))
+    (cond
+      ((or (null w) (zerop w))
+       (write-char ch stream))
+      (t
+       (dotimes (_ (1- w)) (write-char #\Space stream))
+       (write-char ch stream))))
+  (cdr values))
+
+(defmethod emit-ed ((ed flag-ed) stream values)
+  ;; SP/SS/S only flip the sign-control flag; they consume no value
+  ;; and emit no characters.
+  (declare (ignore stream))
+  (case (flag-ed-flag ed)
+    (:sp (setf *include-plus* t))
+    ((:ss :s) (setf *include-plus* nil))
+    ;; BN/BZ are input-only; ignore on output.
+    ((:bn :bz)))
+  values)
 
 ;;; ---------------------------------------------------------------
 ;;; Floating-point output (simplified)
@@ -311,7 +350,7 @@ F/E boundary) are not handled."
   (let ((v (car values))
         (w (width-ed-width ed))
         (d (real-fixed-ed-decimal-places ed)))
-    (write-string (format-f v w d 0 nil) stream))
+    (write-string (format-f v w d 0 *include-plus*) stream))
   (cdr values))
 
 (defmethod emit-ed ((ed real-exp-ed) stream values)
@@ -320,13 +359,14 @@ F/E boundary) are not handled."
          (d (real-exp-ed-decimal-places ed))
          (e (real-exp-ed-exponent ed))
          (name (edit-descriptor-name ed))
+         (plus *include-plus*)
          (out
            (case name
-             (:e  (format-e  v w d e 0 nil))
-             (:d  (format-e  v w d e 0 nil :expchar #\D))
-             (:es (format-es v w d e nil))
-             (:en (format-en v w d e nil))
-             (:g  (format-g  v w d e nil))
+             (:e  (format-e  v w d e 0 plus))
+             (:d  (format-e  v w d e 0 plus :expchar #\D))
+             (:es (format-es v w d e plus))
+             (:en (format-en v w d e plus))
+             (:g  (format-g  v w d e plus))
              (otherwise
               (warn "Unknown real-exp descriptor ~A" name)
               (make-string w :initial-element #\?)))))
@@ -358,21 +398,23 @@ the reversion descriptors with a newline inserted between cycles
     (let* ((main (expand-repeats main-eds))
            (rev  (expand-repeats rev-eds))
            (out  (make-string-output-stream))
-           (vs   values))
+           (vs   values)
+           ;; Bind sign-control state fresh so SP/SS/S in one call
+           ;; cannot leak into another.
+           (*include-plus* nil))
       ;; Main pass
       (dolist (ed main)
         (setf vs (emit-ed ed out vs)))
       ;; Reversion: keep cycling rev-eds while values remain.
       ;; If rev has no value-producing eds, signal -- otherwise we'd
-      ;; loop forever. (Output: extra control descriptors with no
-      ;; consumer.)
+      ;; loop forever.
       (when vs
         (let ((rev-has-value-ed (some #'edit-descriptor-outputs-value-p rev)))
           (unless rev-has-value-ed
             (invalid-format
              "Format exhausted with ~D values remaining and no value-producing reversion descriptors" (length vs)))
           (loop while vs do
-            (terpri out)              ; new record between reversion cycles
+            (terpri out)
             (dolist (ed rev)
               (when vs
                 (setf vs (emit-ed ed out vs)))))))

@@ -66,6 +66,109 @@
   "/=  5")
 
 ;;; --------------------------------------------------------------
+;;; Logical output
+;;; --------------------------------------------------------------
+
+(rt:deftest fmt.write.l4-true
+    (write-format "(L4)" t)
+  "   T")
+
+(rt:deftest fmt.write.l4-false
+    (write-format "(L4)" nil)
+  "   F")
+
+(rt:deftest fmt.write.l1-true
+    (write-format "(L1)" t)
+  "T")
+
+;;; --------------------------------------------------------------
+;;; BOZ output (binary, octal, hex)
+;;; --------------------------------------------------------------
+
+(rt:deftest fmt.write.b8-13
+    (write-format "(B8)" 13)
+  "    1101")
+
+(rt:deftest fmt.write.o8-13
+    (write-format "(O8)" 13)
+  "      15")
+
+(rt:deftest fmt.write.z8-255
+    (write-format "(Z8)" 255)
+  "      FF")
+
+(rt:deftest fmt.write.z8-10
+    ;; Hex digits A-F come out uppercase.
+    (write-format "(Z8)" 10)
+  "       A")
+
+(rt:deftest fmt.write.z4-fits-exactly
+    (write-format "(Z4)" 65535)
+  "FFFF")
+
+(rt:deftest fmt.write.b8.5-min-digits
+    ;; Min-digits zero-pads in the chosen base.
+    (write-format "(B8.5)" 5)
+  "   00101")
+
+;;; --------------------------------------------------------------
+;;; Sign control SP/SS/S
+;;; --------------------------------------------------------------
+
+(rt:deftest fmt.write.sp-i5-positive
+    (write-format "(SP,I5)" 42)
+  "  +42")
+
+(rt:deftest fmt.write.sp-i5-negative
+    ;; Negatives always show '-' regardless of SP/SS state.
+    (write-format "(SP,I5)" -7)
+  "   -7")
+
+(rt:deftest fmt.write.sp-i5-zero
+    (write-format "(SP,I5)" 0)
+  "   +0")
+
+(rt:deftest fmt.write.ss-i5
+    ;; SS suppresses the optional plus -- same as default.
+    (write-format "(SS,I5)" 42)
+  "   42")
+
+(rt:deftest fmt.write.sp-then-ss
+    ;; Later SS overrides earlier SP within the same format.
+    (write-format "(SP,SS,I5)" 42)
+  "   42")
+
+(rt:deftest fmt.write.sp-then-i-then-ss-then-i
+    ;; The flag affects only the integers emitted while it is in effect.
+    (write-format "(SP,I5,SS,I5)" 42 42)
+  "  +42   42")
+
+(rt:deftest fmt.write.s-restores-default
+    ;; S restores processor default (same as SS in our implementation).
+    (write-format "(S,I5)" 42)
+  "   42")
+
+(rt:deftest fmt.write.sp-f8.2
+    (write-format "(SP,F8.2)" 3.14d0)
+  "   +3.14")
+
+(rt:deftest fmt.write.sp-e12.4
+    (write-format "(SP,E12.4)" 3.14d0)
+  " +0.3140E+01")
+
+(rt:deftest fmt.write.sp-does-not-apply-to-boz
+    ;; gfortran behavior: BOZ output is an unsigned bit-pattern and
+    ;; carries no sign even under SP.
+    (write-format "(SP,Z4)" 10)
+  "   A")
+
+(rt:deftest fmt.write.sp-does-not-leak-between-calls
+    ;; *INCLUDE-PLUS* must be bound fresh on each WRITE-FORMAT call.
+    (progn (write-format "(SP,I5)" 42)
+           (write-format "(I5)" 42))
+  "   42")
+
+;;; --------------------------------------------------------------
 ;;; Input
 ;;; --------------------------------------------------------------
 
