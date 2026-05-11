@@ -3790,13 +3790,45 @@ surrounded by parentheses."
     (t
      :unhandled)))
 
+;;; Helper for choosing which reader macro to emit, parallel to
+;;; %PRINTER-MACRO-FOR on the output side.  RESOLVED-FMT is what
+;;; you get back from GET_FORMAT_STMT (or NIL if the caller didn't
+;;; or couldn't resolve through it -- e.g. an FMT that's a variable
+;;; whose runtime value we can't know).  When the new printer is
+;;; enabled AND the format resolved to something the new reader can
+;;; consume (a Fortran format string, or :LIST-DIRECTED), we emit a
+;;; FORMAT-READ call.  Otherwise the legacy READ-FILE macro handles
+;;; it the same way it always has.
+(defun %reader-macro-for (resolved-fmt)
+  (cond
+    ((stringp resolved-fmt)         'f2cl-lib::format-read)
+    ((and *use-fortran-format-printer*
+          (eq resolved-fmt :list-directed))
+                                    'f2cl-lib::format-read)
+    (t                              'f2cl-lib::read-file)))
+
+;;; Resolve a parse-read-options FMT value through GET_FORMAT_STMT
+;;; so we can see what shape it actually is (raw Fortran string,
+;;; :list-directed, or a legacy cilist).  Returns NIL when FMT
+;;; refers to something we can't resolve at translate time, e.g.
+;;; a variable holding the format string.  In that case the caller
+;;; falls back to the legacy READ-FILE path.
+(defun %resolved-read-fmt (fmt)
+  (cond
+    ((null fmt)                   :list-directed)
+    ((eq fmt '*)                  :list-directed)
+    ((stringp fmt)                (get_format_stmt (list fmt)))
+    ((numberp fmt)                (get_format_stmt (list fmt)))
+    (t                            nil)))
+
 (defun parse-read (x)
   ;; Two surface forms:
   ;;   READ(<opts>) <vars>     -> (READ (<opts>) <vars>...)
   ;;   READ <fmt>, <vars>      -> (READ <fmt> |,| <vars>...)
   ;; Normalise the second form into a single-option list, then build
-  ;; the varspec list and hand off to the F2CL-LIB::READ-FILE macro,
-  ;; which knows how to shape the handler-case / case / go control
+  ;; the varspec list and hand off to F2CL-LIB::READ-FILE (legacy) or
+  ;; F2CL-LIB::FORMAT-READ (new path; see %READER-MACRO-FOR).  Both
+  ;; macros know how to shape the handler-case / case / go control
   ;; flow without us having to construct it here.
   (let* ((opts-raw
           (cond ((and (consp (second x)) (not (eq (car (second x)) '|,|)))
@@ -3810,14 +3842,20 @@ surrounded by parentheses."
                  (if (eq (third x) '|,|) (cdddr x) (cddr x))))))
     (multiple-value-bind (lun fmt end-label err-label iostat-var unhandled)
         (parse-read-options opts-raw)
-      (let ((warnings nil))
+      (let* ((resolved-fmt (%resolved-read-fmt fmt))
+             (macro        (%reader-macro-for resolved-fmt))
+             (new-path-p   (eq macro 'f2cl-lib::format-read))
+             (warnings nil))
         (when unhandled
           (push `(fortran_comment
                   ,(format nil "***WARNING: unhandled READ option(s): ~S" unhandled))
                 warnings))
-        ;; Warn when FMT is something we can't really honour at runtime
-        ;; (numeric format-statement label, or edit-descriptor string).
-        (when (and fmt
+        ;; Warn when FMT is something we can't really honour at runtime.
+        ;; This applies only to the legacy READ-FILE path; the new
+        ;; FORMAT-READ path honours edit-descriptor formats and numeric
+        ;; format-statement labels just fine.
+        (when (and (not new-path-p)
+                   fmt
                    (not (eq fmt '*))
                    (not (eq (classify-read-fmt fmt t) :whole-line)))
           (push `(fortran_comment
@@ -3865,9 +3903,16 @@ surrounded by parentheses."
           (let* ((varspecs (remove nil
                                    (mapcar #'build-varspec
                                            (remove nil (list-split '|,| var-tokens)))))
-                 (call `(f2cl-lib::read-file
+                 ;; The macro takes :FMT in a different shape per path.
+                 ;; READ-FILE wants the raw FMT (it does its own
+                 ;; runtime classification via classify-read-fmt /
+                 ;; %read-whole-line-format-p).  FORMAT-READ wants the
+                 ;; resolved FMT -- the bare Fortran string or
+                 ;; :list-directed.
+                 (fmt-arg (if new-path-p resolved-fmt fmt))
+                 (call `(,macro
                          :unit ,lun
-                         :fmt ,fmt
+                         :fmt ,fmt-arg
                          ,@(when end-label  `(:end ,end-label))
                          ,@(when err-label  `(:err ,err-label))
                          ,@(when iostat-var `(:iostat ,iostat-var))

@@ -1963,19 +1963,28 @@ bounds are re-evaluated each call."
   "Build code that, for each :place VARSPEC will hit, pops one value
 off the read-result list (via the local function POP-FN) and stores
 it.  Storage uses FSET for (FREF ...) places, F2CL-SET-STRING for
-sized-string types, and plain SETF otherwise."
+sized-string types, and plain SETF otherwise.  When TYPE names a CL
+float type, the popped value is COERCEd to it -- the format engine
+defaults F/E/D values to DOUBLE-FLOAT and the destination may be
+SINGLE-FLOAT (e.g. a Fortran REAL), so we have to bridge the gap
+the way Fortran's runtime would."
   (case (first varspec)
     (:place
      (destructuring-bind (kind expr type) varspec
        (declare (ignore kind))
-       (let ((sized-string-p (and (consp type) (eq (first type) 'string))))
+       (let* ((sized-string-p (and (consp type) (eq (first type) 'string)))
+              (float-type-p   (member type '(single-float double-float
+                                             short-float long-float)))
+              (rhs (cond
+                     (float-type-p `(coerce (,pop-fn) ',type))
+                     (t             `(,pop-fn)))))
          (cond
            ((and (consp expr) (eq (first expr) 'fref))
-            `(fset ,expr (,pop-fn)))
+            `(fset ,expr ,rhs))
            (sized-string-p
-            `(f2cl-set-string ,expr (,pop-fn) ',type))
+            `(f2cl-set-string ,expr ,rhs ',type))
            (t
-            `(setf ,expr (,pop-fn)))))))
+            `(setf ,expr ,rhs))))))
     (:implied-do
      (destructuring-bind (kind ivar e1 e2 e3 inner-vars) varspec
        (declare (ignore kind))
