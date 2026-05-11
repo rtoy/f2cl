@@ -24,7 +24,7 @@
 
 (defsystem "f2cl/fortran-format"
   :defsystem-depends-on ("rt")
-  :in-order-to ((test-op (test-op "fortran-format/tests")))
+  :in-order-to ((test-op (test-op "f2cl/fortran-format/tests")))
   :components
   ((:module "src/format"
     :components
@@ -35,15 +35,27 @@
       :depends-on ("package" "fortran-format-parser"))))))
 
 (defsystem "f2cl/fortran-format/tests"
-  :depends-on ("rt" "fortran-format")
+  :depends-on ("rt" "f2cl/fortran-format")
   :components
   ((:module "src/format"
     :components
     ((:file "fortran-format-tests"))))
-  :perform
-  (test-op (op c)
-    (declare (ignore op c))
-    (uiop:symbol-call '#:regression-test '#:do-tests)))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (uiop:symbol-call '#:regression-test '#:do-tests)
+             (let ((pending  (uiop:symbol-call '#:regression-test
+                                               '#:pending-tests))
+                   (expected (symbol-value
+                              (uiop:find-symbol* '#:*expected-failures*
+                                                 '#:regression-test))))
+               (let ((unexpected (set-difference pending expected))
+                     (surprises  (set-difference expected pending)))
+                 (when (or unexpected surprises)
+                   (error "f2cl/fortran-format/tests: ~
+                           ~@[~D unexpected failures: ~S~]~
+                           ~@[~D unexpected successes: ~S~]"
+                          (and unexpected (length unexpected)) unexpected
+                          (and surprises  (length surprises))  surprises))))))
 
 (defsystem "f2cl"
   :description "F2CL:  Fortran to Lisp converter"
