@@ -98,7 +98,8 @@
             :serial t
             :components
             ((:file "helpers")
-             (:file "tests"))))
+             (:file "tests")
+             (:file "test-fortran-format"))))
   :perform (test-op (op c)
              (declare (ignore op c))
              (uiop:symbol-call '#:regression-test '#:do-tests)

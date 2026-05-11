@@ -25,7 +25,9 @@
            #:convert-and-compile
            #:convert-and-classify-read-warnings
            #:convert-compile-load
-           #:run-program))
+           #:convert-compile-load/new-printer
+           #:run-program
+           #:run-subroutine))
 
 (in-package #:f2cl-regression)
 
@@ -87,52 +89,120 @@
     (when (and init-io (fboundp init-io))
       (funcall init-io))))
 
+;;; Every translation helper binds f2cl::*use-fortran-format-printer*
+;;; explicitly so test outcomes don't depend on whatever value the
+;;; user happened to have at the REPL when (rt:do-tests) ran.  Tests
+;;; that exercise the legacy fformat path bind the flag to NIL;
+;;; tests that exercise the new format-write path bind it to T.
+;;; The flag symbol is looked up via FIND-SYMBOL because helpers.lisp
+;;; loads before any guarantee that the new-printer support exists
+;;; in f2cl -- we want to remain compatible with f2cl checkouts that
+;;; predate issue #37.
+(defmacro with-printer-flag ((value) &body body)
+  "Evaluate BODY with f2cl::*use-fortran-format-printer* dynamically
+bound to VALUE.  When the symbol does not exist (older f2cl
+checkout without the new printer), evaluate BODY unchanged."
+  (let ((flag (gensym "FLAG-")))
+    `(let ((,flag (find-symbol "*USE-FORTRAN-FORMAT-PRINTER*"
+                               :fortran-to-lisp)))
+       (cond
+         ((and ,flag (boundp ,flag))
+          (progv (list ,flag) (list ,value)
+            ,@body))
+         (t
+          ,@body)))))
+
 (defun convert (path)
-  "Translate PATH with f2cl.  Returns T iff no error."
+  "Translate PATH with f2cl using the legacy fformat printer.
+Returns T iff no error."
   (reset-state)
   (ensure-directories-exist *work-dir*)
-  (f2cl:f2cl (src-path path) :output-file (lisp-out path))
+  (with-printer-flag (nil)
+    (f2cl:f2cl (src-path path) :output-file (lisp-out path)))
   t)
 
 (defun convert-and-compile (path &key include-comments)
-  "Translate PATH with f2cl, then COMPILE-FILE the resulting .lisp.
-  Returns T iff both steps complete without signalling an error.
-  Used for tests that need to verify the generated Lisp is itself
-  well-formed - e.g. comment-laden output where a quoting bug could
-  produce a file that f2cl writes happily but the CL reader/compiler
-  rejects."
+  "Translate PATH with f2cl (legacy printer), then COMPILE-FILE the
+  resulting .lisp.  Returns T iff both steps complete without
+  signalling an error.  Used for tests that need to verify the
+  generated Lisp is itself well-formed - e.g. comment-laden output
+  where a quoting bug could produce a file that f2cl writes happily
+  but the CL reader/compiler rejects."
   (reset-state)
   (ensure-directories-exist *work-dir*)
   (let ((lisp (lisp-out path)))
-    (f2cl:f2cl (src-path path)
-               :output-file lisp
-               :include-comments include-comments)
+    (with-printer-flag (nil)
+      (f2cl:f2cl (src-path path)
+                 :output-file lisp
+                 :include-comments include-comments))
     (compile-file lisp :verbose nil :print nil))
   t)
 
 (defun convert-compile-load (path)
-  "Translate, compile, and LOAD the resulting fasl for PATH.  Used by
-  tests that want to call the translated entry function directly --
-  e.g. inside a HANDLER-CASE in the deftest body -- without going
-  through RUN-PROGRAM's stdout-capture machinery.  Returns T."
+  "Translate, compile, and LOAD the resulting fasl for PATH using
+  the legacy fformat printer.  Used by tests that want to call the
+  translated entry function directly -- e.g. inside a HANDLER-CASE
+  in the deftest body -- without going through RUN-PROGRAM's
+  stdout-capture machinery.  Returns T."
   (reset-state)
   (ensure-directories-exist *work-dir*)
   (let ((lisp (lisp-out path)))
-    (f2cl:f2cl (src-path path) :output-file lisp)
+    (with-printer-flag (nil)
+      (f2cl:f2cl (src-path path) :output-file lisp))
     (load (compile-file lisp :verbose nil :print nil)))
   t)
 
+(defun convert-compile-load/new-printer (path)
+  "Like CONVERT-COMPILE-LOAD, but translate with f2cl's new
+  fortran-format-based printer enabled (f2cl::*use-fortran-format-printer*
+  set to T for the duration of translation).  Used by tests that
+  exercise the new printer rather than the legacy fformat path."
+  (reset-state)
+  (ensure-directories-exist *work-dir*)
+  (let ((flag (find-symbol "*USE-FORTRAN-FORMAT-PRINTER*"
+                           :fortran-to-lisp))
+        (lisp (lisp-out path)))
+    (unless (and flag (boundp flag))
+      (error "f2cl::*use-fortran-format-printer* is not bound; ~
+              new-printer support is not present in this f2cl"))
+    (with-printer-flag (t)
+      (f2cl:f2cl (src-path path) :output-file lisp))
+    (load (compile-file lisp :verbose nil :print nil)))
+  t)
+
+(defun run-subroutine (entry)
+  "Call CL-USER::ENTRY (a string naming a function in CL-USER) with
+  stdout captured to a string and return the captured string.  Used
+  by tests that translate a file containing several subroutines once
+  via CONVERT-COMPILE-LOAD/NEW-PRINTER and then exercise each
+  subroutine in its own deftest.  Errors mid-call are caught and
+  appended to the captured output so the expected-vs-actual report
+  shows what executed before the failure."
+  (let ((fn (find-symbol (string-upcase entry) :common-lisp-user)))
+    (unless (and fn (fboundp fn))
+      (error "no such entry function ~A in CL-USER" entry))
+    (with-output-to-string (out)
+      (let ((*standard-output* out))
+        ;; Re-seat f2cl-lib's unit cache so it points at OUT.
+        (let ((init-io (find-symbol "INIT-FORTRAN-IO" :f2cl-lib)))
+          (when (and init-io (fboundp init-io)) (funcall init-io)))
+        (handler-case (funcall fn)
+          (error (c)
+            (format t "~&*** uncaught Lisp error: ~A~%" c)))))))
+
 (defun run-program (path entry)
-  "Translate, compile, load PATH; call CL-USER::ENTRY with stdout
-  captured.  Return the captured string.  If the entry function
-  signals an error mid-run, the partial output captured up to that
-  point is returned with a trailing line describing the error, so
-  RT's expected-vs-actual report shows what executed before the
-  failure rather than an opaque condition object."
+  "Translate, compile, load PATH (using the legacy fformat printer);
+  call CL-USER::ENTRY with stdout captured.  Return the captured
+  string.  If the entry function signals an error mid-run, the
+  partial output captured up to that point is returned with a
+  trailing line describing the error, so RT's expected-vs-actual
+  report shows what executed before the failure rather than an
+  opaque condition object."
   (reset-state)
   (ensure-directories-exist *work-dir*)
   (let ((lisp (lisp-out path)))
-    (f2cl:f2cl (src-path path) :output-file lisp)
+    (with-printer-flag (nil)
+      (f2cl:f2cl (src-path path) :output-file lisp))
     (load (compile-file lisp :verbose nil :print nil))
     (let ((fn (find-symbol (string-upcase entry) :common-lisp-user)))
       (unless (and fn (fboundp fn))
@@ -168,7 +238,8 @@
   (reset-state)
   (ensure-directories-exist *work-dir*)
   (let ((lisp (lisp-out path)))
-    (f2cl:f2cl (src-path path) :output-file lisp)
+    (with-printer-flag (nil)
+      (f2cl:f2cl (src-path path) :output-file lisp))
     (with-open-file (in lisp)
       (loop with kinds = nil
             for line = (read-line in nil nil)
