@@ -1388,7 +1388,51 @@ optional."
      (format stream "~A" arg))
     ((member t nil)
      (format stream (if arg "T " "F ")))))
-     
+
+;;; Flatten a list of WRITE arguments down to a flat list of scalars,
+;;; expanding lists (from implied-DO) and arrays element-wise.
+;;;
+;;; CL-DIRECTIVES-P controls whether T/NIL are remapped to :T/:F so
+;;; that the legacy cilist's ~A directives print "T" and "F".  The
+;;; fortran-format printer wants raw booleans (its L descriptor
+;;; accepts T and NIL directly), so it passes CL-DIRECTIVES-P NIL.
+(defun fformat-flatten-args (args cl-directives-p &key (split-complex t))
+  "Flatten a list of WRITE arguments down to a flat list of scalars,
+expanding lists (from implied-DO) and arrays element-wise.
+
+CL-DIRECTIVES-P controls whether T/NIL are remapped to :T/:F so
+that the legacy cilist's ~A directives print 'T' and 'F'.  The
+fortran-format printer wants raw booleans (its L descriptor
+accepts T and NIL directly), so it passes CL-DIRECTIVES-P NIL.
+
+SPLIT-COMPLEX controls whether complex numbers are split into
+their real and imaginary parts.  The new printer path needs the
+split when a complex value is being consumed by a two-component
+descriptor like '(',G14.7,',',G14.7,')'.  When building the
+descriptor list (where each complex maps to one descriptor entry)
+the caller passes SPLIT-COMPLEX NIL to keep the complex as one
+item.  The legacy ~/f2cl-lib::fortran-format/ hook prints complex
+inline and so also passes SPLIT-COMPLEX NIL; passing it T is only
+correct on the new-printer formatted path."
+  (apply #'append
+         (map 'list
+              #'(lambda (x)
+                  (cond
+                    ((and split-complex (not cl-directives-p) (complexp x))
+                     (list (realpart x) (imagpart x)))
+                    #+#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
+                    ((bigfloat:numberp x) (list x))
+                    #-#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
+                    ((numberp x) (list x))
+                    ((stringp x) (list x))
+                    ((member x '(t nil))
+                     (if cl-directives-p
+                         (case x ((t) (list :t)) ((nil) (list :f)))
+                         (list x)))
+                    (t
+                     (coerce x 'list))))
+              args)))
+
 (defun execute-format-main (stream format &rest args)
   (cond
     ((eq format :list-directed)
@@ -1439,34 +1483,217 @@ optional."
                (nreverse pars))))
     (t
      (let ((format-list (copy-tree format))
-           (arg-list
-            (apply #'append
-                   (map 'list #'(lambda (x)
-                                  ;; For maxima, use BIGFLOAT:NUMBERP
-                                  ;; instead of CL:NUMBERP.
-                                  (cond #+#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
-                                        ((bigfloat:numberp x)
-                                         (list x))
-                                        #-#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
-                                        ((numberp x)
-                                         (list x))
-                                        ((stringp x)
-                                         (list x))
-                                        ((member x '(t nil))
-                                         ;; Convert T and NIL to :T
-                                         ;; and :F so we print out T
-                                         ;; and F, respectively.
-                                         (case x
-                                           ((t)
-                                            (list :t))
-                                           ((nil)
-                                            (list :f))
-                                           (t
-                                            (list x))))
-                                        (t
-                                         (coerce x 'list))))
-                        args))))
+           (arg-list (fformat-flatten-args args t)))
        (execute-format t stream format-list arg-list)))))
+
+;;; ---------------------------------------------------------------
+;;; New printer path: FORMAT-WRITE
+;;; ---------------------------------------------------------------
+;;;
+;;; FORMAT-WRITE is the runtime entry point for the
+;;; fortran-format:write-format-based printer.  It is the partner of
+;;; FFORMAT: where FFORMAT takes a precompiled CL-format cilist,
+;;; FORMAT-WRITE takes the original Fortran format string (or
+;;; :LIST-DIRECTED) and hands it to the new printer at run time.
+;;;
+;;; The translator picks which macro to emit based on whether
+;;; get_format_stmt returned a string (new path) or a cilist (legacy
+;;; path), which in turn depends on f2cl::*use-fortran-format-printer*.
+;;; Once the new printer covers every case we care about, the legacy
+;;; FFORMAT and execute-format machinery can be deleted; until then
+;;; the two coexist.
+
+;;; List-directed output: per-value formatting.
+;;;
+;;; The Fortran 77 standard leaves the per-type default formatting
+;;; implementation-defined.  We match gfortran's choices closely:
+;;; 9 significant digits for REAL (8 fractional in F-form, 9-digit
+;;; mantissa in E-form), 17 for DOUBLE PRECISION (16 fractional in
+;;; F-form, 17-digit mantissa in E-form), parens for COMPLEX with
+;;; F or E chosen per component.
+;;;
+;;; Each formatted value is rendered to a string and concatenated;
+;;; the whole record is then written.  This is per-value rather
+;;; than building one big Fortran format string, because COMPLEX
+;;; values require per-component magnitude inspection that isn't
+;;; expressible in a single static format string.
+;;;
+;;; Known divergences from gfortran (general, also affect non-LD output):
+;;;   * 3-digit exponents drop the 'E' letter: ' 1.0000+100' rather
+;;;     than gfortran's '1.0000E+100'.  This is standard Fortran
+;;;     behavior when the descriptor lacks Ee; gfortran is the
+;;;     non-standard one.
+;;;   * Rounding ties resolve per CL implementation; on SBCL this
+;;;     matches gfortran (half-to-even), on CMUCL it doesn't.
+;;;
+;;; See src/format/TODO.md for the full list.
+
+(defparameter *fortran-format-write-format-fn*
+  nil
+  "Cached pointer to fortran-format:write-format.  Resolved lazily on
+first use so that f2cl-lib can be loaded without the fortran-format
+system present (translations that never use the new printer don't
+need it).")
+
+(defun %write-format (fmt &rest args)
+  "Call fortran-format:write-format, resolving the symbol lazily."
+  (unless *fortran-format-write-format-fn*
+    (setf *fortran-format-write-format-fn*
+          (or (find-symbol (symbol-name '#:write-format)
+                           (find-package '#:fortran-format))
+              (error "fortran-format:write-format not available; ~
+                      is the fortran-format system loaded?"))))
+  (apply *fortran-format-write-format-fn* fmt args))
+
+;;; Per-component formatting for COMPLEX values.
+;;;
+;;; gfortran picks F or E per component based on magnitude.  Within
+;;; the F-form, gfortran adjusts the fractional-digit count so the
+;;; *total* significant-digit count stays constant: 9 digits for
+;;; single precision (e.g. 1.50000000, 1000.00000, 10000000.0), 17
+;;; for double precision (e.g. 1.0000000000000000, 1234.5678901234567).
+;;;
+;;; The F-range is roughly |x| in [0.1, 1e9) for single (after which
+;;; the integer part needs the full 9 sig digits and we switch to E),
+;;; [0.1, 1e17) for double.  Zero gets F-form with the maximum
+;;; fractional count (9 / 17 minus one for the leading "0.").
+
+(defun %f-form-fractional-digits (v total-sig)
+  "Return the F-form fractional-digit count for V so that the total
+significant-digit count is TOTAL-SIG.  E.g. for total-sig=9 and
+v=1000.0, returns 5 (so 1000.00000 has 9 sig digits)."
+  (let* ((mag (abs v))
+         ;; Number of digits left of the decimal point.  For |v| < 1,
+         ;; that's 1 (the leading '0').  Otherwise floor(log10) + 1.
+         (int-digits (if (< mag 1)
+                         1
+                         (1+ (floor (log mag 10))))))
+    (max 0 (- total-sig int-digits))))
+
+(defun %list-directed-complex-component-single (v)
+  (let ((mag (abs v)))
+    (cond
+      ((zerop v)
+       (string-trim " " (%write-format "(F11.8)" 0.0)))
+      ((or (< mag 1e-1) (>= mag 1e9))
+       (string-trim " " (%write-format "(1PE16.9)" v)))
+      (t
+       ;; F-form with adjustable fractional-digit count.
+       (let* ((d (%f-form-fractional-digits v 9))
+              ;; Width: 1 sign + integer-digits + 1 dot + d fractional + slack.
+              ;; Use d+12 -- big enough that no value overflows.
+              (fmt (format nil "(F~D.~D)" (+ d 12) d)))
+         (string-trim " " (%write-format fmt v)))))))
+
+(defun %list-directed-complex-component-double (v)
+  (let ((mag (abs v)))
+    (cond
+      ((zerop v)
+       (string-trim " " (%write-format "(F19.16)" 0d0)))
+      ((or (< mag 1d-1) (>= mag 1d17))
+       (string-trim " " (%write-format "(1PE27.17)" v)))
+      (t
+       (let* ((d (%f-form-fractional-digits v 17))
+              (fmt (format nil "(F~D.~D)" (+ d 20) d)))
+         (string-trim " " (%write-format fmt v)))))))
+
+(defun %list-directed-pad-left (str width)
+  "Right-align STR in a field of WIDTH characters by prepending
+spaces.  If STR is already wider than WIDTH, return it unchanged."
+  (let ((n (length str)))
+    (if (>= n width)
+        str
+        (concatenate 'string
+                     (make-string (- width n) :initial-element #\Space)
+                     str))))
+
+(defun %list-directed-format-value (value)
+  "Return the string used to print VALUE in list-directed output.
+Each return value includes its own leading blank (the standard's
+inter-value separator and leading-blank-on-record)."
+  (typecase value
+    ;; INTEGER: 1X + I11 = 12 chars, matches gfortran.
+    (integer
+     (%write-format "(1X,I11)" value))
+    ;; LOGICAL: 1X + L1 = 2 chars.
+    ((member t nil)
+     (%write-format "(1X,L1)" value))
+    ;; CHARACTER: 1X + the string at natural length.
+    (string
+     (concatenate 'string " " value))
+    ;; SINGLE COMPLEX: parens-wrapped F/E-per-component, right-aligned
+    ;; to 36 chars including leading blank.
+    ((complex single-float)
+     (let* ((re   (%list-directed-complex-component-single (realpart value)))
+            (im   (%list-directed-complex-component-single (imagpart value)))
+            (body (concatenate 'string "(" re "," im ")")))
+       (%list-directed-pad-left body 36)))
+    ;; DOUBLE COMPLEX: same shape, right-aligned to 54 chars.
+    ((complex double-float)
+     (let* ((re   (%list-directed-complex-component-double (realpart value)))
+            (im   (%list-directed-complex-component-double (imagpart value)))
+            (body (concatenate 'string "(" re "," im ")")))
+       (%list-directed-pad-left body 54)))
+    ;; Other complex precisions: route through double-precision path.
+    (complex
+     (let* ((re   (%list-directed-complex-component-double
+                   (coerce (realpart value) 'double-float)))
+            (im   (%list-directed-complex-component-double
+                   (coerce (imagpart value) 'double-float)))
+            (body (concatenate 'string "(" re "," im ")")))
+       (%list-directed-pad-left body 54)))
+    ;; SINGLE REAL: 1X + 1PG16.9 = 17 chars.
+    (single-float
+     (%write-format "(1X,1PG16.9)" value))
+    ;; DOUBLE PRECISION: 1X + 1PG25.17 = 26 chars.
+    (double-float
+     (%write-format "(1X,1PG25.17)" value))
+    ;; Other numerics -- route through double-float printing.
+    (number
+     (%write-format "(1X,1PG25.17)" (coerce value 'double-float)))
+    (t
+     (error "list-directed: don't know how to format ~S of type ~S"
+            value (type-of value)))))
+
+(defun execute-format-write (stream format args)
+  "Runtime body of the FORMAT-WRITE macro.  FORMAT is either
+:LIST-DIRECTED or a Fortran-format string.  ARGS is the list of
+WRITE arguments before flattening."
+  (cond
+    ((eq format :list-directed)
+     ;; Per-value formatting, with implied-DO list expansion handled
+     ;; by walking the flattened args (but keeping complex numbers
+     ;; intact so the complex code paths see one #C(re im) value
+     ;; rather than two reals).  Modern gfortran does not wrap
+     ;; list-directed output at 80 columns -- one record per WRITE
+     ;; statement, regardless of length -- so neither do we.
+     (dolist (v (fformat-flatten-args args nil :split-complex nil))
+       (write-string (%list-directed-format-value v) stream))
+     (terpri stream))
+    ((stringp format)
+     ;; Formatted output.  Hand the raw Fortran string plus the
+     ;; flattened args to fortran-format:write-format, write the
+     ;; result, then write the record terminator -- in Fortran every
+     ;; WRITE statement emits exactly one record.
+     (let ((s (apply #'%write-format
+                     format
+                     (fformat-flatten-args args nil))))
+       (write-string s stream)
+       (terpri stream)))
+    (t
+     (error "FORMAT-WRITE: unrecognized format ~S" format))))
+
+(defmacro format-write (dest-lun format &rest args)
+  "Fortran formatted WRITE/PRINT using fortran-format:write-format.
+DEST-LUN is the destination (T, an integer LUN, or a string to fill).
+FORMAT is either :LIST-DIRECTED or a Fortran format string such as
+\"(I5,1X,F10.3)\".  ARGS are the WRITE items, prior to flattening."
+  (let ((stream (gensym "STREAM-")))
+    `(let ((,stream (lun->stream ,dest-lun)))
+       (execute-format-write ,stream ',format (list ,@args))
+       ,@(unless (or (eq t dest-lun) (numberp dest-lun))
+           `((when (stringp ,dest-lun)
+               (replace ,dest-lun (get-output-stream-string ,stream))))))))
 
 
 ;; Initialize a multi-dimensional array of character strings. I think

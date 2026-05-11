@@ -3500,13 +3500,88 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)  
   (proclaim '(special *format_stmts* *current_label* *SP* *dlist-flag*)))
 
-(defun parse-format (x)
+;;; When non-NIL, get_format_stmt prefers the raw Fortran format string
+;;; (stashed by parse-format) over the CL-cilist representation, so
+;;; that the runtime printer can dispatch to fortran-format:write-format
+;;; instead of the legacy execute-format walker.
+;;;
+;;; Off by default for the initial integration.  Flip to T to retranslate
+;;; a file with the new printer path enabled.
+(defvar *use-fortran-format-printer* nil
+  "If T, get_format_stmt returns (:fortran-format STRING) whenever the
+raw Fortran format string was captured, causing fformat at runtime to
+dispatch to fortran-format:write-format.  Falls back to the legacy
+cilist representation when the raw string was not captured.")
+
+(defun %fortran-format-token-to-string (tok)
+  "Render one post-lineread token from a FORMAT body as Fortran source.
+Strings come back as \"...\"; the comma symbol as `,'; everything else
+by its symbol name."
+  (cond ((stringp tok)
+         ;; Use Fortran's own quoting convention: single quotes, with
+         ;; embedded single quotes doubled.  Either '...' or \"...\"
+         ;; would be accepted by the new parser; ' matches what a
+         ;; programmer would have typed.
+         (with-output-to-string (s)
+           (write-char #\' s)
+           (loop for c across tok do
+                 (write-char c s)
+                 (when (char= c #\') (write-char #\' s)))
+           (write-char #\' s)))
+        ((eq tok '|,|) ",")
+        ((symbolp tok) (symbol-name tok))
+        ((numberp tok) (princ-to-string tok))
+        ((listp tok)
+         ;; A nested group: (... ... ...) with comma-symbols between.
+         (with-output-to-string (s)
+           (write-char #\( s)
+           (dolist (sub tok)
+             (write-string (%fortran-format-token-to-string sub) s))
+           (write-char #\) s)))
+        (t (princ-to-string tok))))
+
+(defun %fortran-format-body-to-string (body)
+  "Render the body of a FORMAT statement (a list of tokens, with
+`|,|' acting as the comma separator) as a Fortran format string
+surrounded by parentheses."
+  (with-output-to-string (s)
+    (write-char #\( s)
+    (dolist (tok body)
+      (write-string (%fortran-format-token-to-string tok) s))
+    (write-char #\) s)))
+
+(defun parse-format (x &optional raw-string)
+  ;; RAW-STRING, when supplied, is the Fortran format text after
+  ;; process-format-line has substituted Hollerith strings and
+  ;; rewritten single-quoted strings as double-quoted ones.  That is
+  ;; exactly what the fortran-format parser expects as input.  No
+  ;; live caller currently supplies it -- the labeled-FORMAT path
+  ;; through readsubprog-extract-format-stmts and the inline-FMT
+  ;; path through get_format_stmt both have access to a clean
+  ;; representation already -- but the argument is kept for any
+  ;; future caller that wants to bypass reconstruction.
+  ;;
+  ;; When RAW-STRING is NIL, we reconstruct an equivalent Fortran
+  ;; format string from the token list.  Reconstruction is faithful
+  ;; to what process-format-line produced (Hollerith literals come
+  ;; back as 'foo' single-quoted strings, embedded single quotes
+  ;; are doubled per Fortran convention, nested groups recurse).
+  ;; Validated on Hollerith literals, embedded commas, embedded
+  ;; single quotes, nested groups with mixed repeat counts, and
+  ;; bare X/comma spacers; see edgetest.f.
+  ;;
+  ;; Stored as the third field of each *format_stmts* entry;
+  ;; consulted by get_format_stmt when *use-fortran-format-printer*
+  ;; is T.
   (prog (*SP*)
    (declare (special *SP*))
    (setq *SP* nil)
-   (setq *format_stmts* (cons (list *current_label*
-                                 (parse-format1 (cadr x)))
-                            *format_stmts*)))
+   (setq *format_stmts*
+         (cons (list *current_label*
+                     (parse-format1 (cadr x))
+                     (or raw-string
+                         (%fortran-format-body-to-string (cadr x))))
+               *format_stmts*)))
 )
 
 ;; x is of form: '(WRITE (* |,| 8000) |,| J |,| K)
@@ -3514,6 +3589,20 @@
 ;;           or  '(WRITE (* |,| *) |,| J |,| K)
 ;;
 ;; Note that the unit can be any arbitrary expression, so be careful.
+
+;;; Helpers for choosing which printer macro to emit.  When
+;;; get_format_stmt returns a bare string, the new printer
+;;; (FORMAT-WRITE) is wanted; otherwise the legacy cilist printer
+;;; (FFORMAT).  :LIST-DIRECTED is steered onto the new path only
+;;; when the flag is on, so that flag-off behavior remains
+;;; byte-identical to the pre-hook translator.
+(defun %printer-macro-for (fmt)
+  (cond
+    ((stringp fmt)             'format-write)
+    ((and *use-fortran-format-printer*
+          (eq fmt :list-directed))
+                               'format-write)
+    (t                         'fformat)))
 
 (defun parse-write (x)
   ;; check for comma before arguments
@@ -3527,31 +3616,35 @@
     ;;(format t "lun-part = ~A~%" lun-part)
     ;;(format t "fmt-part = ~A~%" fmt-part)
 
-    (let ((args (if (cdddr x)
-                    (mapcar #'parse-output-argument 
-                            (list-split '|,| (cdddr x)))
-                    nil)))
+    (let* ((args (if (cdddr x)
+                     (mapcar #'parse-output-argument
+                             (list-split '|,| (cdddr x)))
+                     nil))
+           (fmt (if (null fmt-part)
+                    '(("~A~%"))
+                    (get_format_stmt fmt-part))))
       ;; If there are no items to be written, make sure args is NIL,
-      ;; so fformat knows there are no items.
-      `((fformat ,(parse_format_dest lun-part)
-                 ,(if (null fmt-part) 
-                      '(("~A~%"))
-                      (get_format_stmt fmt-part))
-                 ,@args)))))
+      ;; so the printer macro knows there are no items.
+      `((,(%printer-macro-for fmt)
+          ,(parse_format_dest lun-part)
+          ,fmt
+          ,@args)))))
 
 ;; x is of the form: '(PRINT * |,| X |,| Y)
 ;;               or: '(PRINT 9000 |,| X |,| Y)
 
 (defun parse-print (x)
-  (let ((args (if (cdddr x)
-                  (mapcar #'parse-output-argument 
-                          (list-split '|,| (cdddr x)))
-                  nil)))
+  (let* ((args (if (cdddr x)
+                   (mapcar #'parse-output-argument
+                           (list-split '|,| (cdddr x)))
+                   nil))
+         (fmt (get_format_stmt (list (second x)))))
     ;; If there are no items to be written, make sure args is NIL,
-    ;; so fformat knows there are no items.
-    `((fformat t
-               ,(get_format_stmt (list (second x)))
-               ,@args))))
+    ;; so the printer macro knows there are no items.
+    `((,(%printer-macro-for fmt)
+        t
+        ,fmt
+        ,@args))))
 
 ;; x is of the form '(read (lun |,| format) var |,| var)
 ;;
@@ -3847,16 +3940,23 @@
            ;; just "number" and look up the format string.
            (get_format_stmt (list (third label))))
           ((stringp fmt-num)
-           ;; We have something like FMT = "string".  Process the
-           ;; format string and return the result.
-           (let ((*sp* nil)
-                 (fmt (with-fortran-syntax
-                        (lineread
-                         (make-string-input-stream
-                          (process-format-line
-                           fmt-num))))))
-             (declare (special *sp*))
-             (parse-format1 (brackets-check (concat-operators fmt)))))
+           ;; We have something like FMT = "string".  When the new
+           ;; printer is enabled, return the raw Fortran source as a
+           ;; bare string so parse-write/parse-print emit a
+           ;; FORMAT-WRITE call.  Otherwise build the legacy CL-style
+           ;; cilist.
+           (cond
+             (*use-fortran-format-printer*
+              (process-format-line fmt-num))
+             (t
+              (let ((*sp* nil)
+                    (fmt (with-fortran-syntax
+                           (lineread
+                            (make-string-input-stream
+                             (process-format-line
+                              fmt-num))))))
+                (declare (special *sp*))
+                (parse-format1 (brackets-check (concat-operators fmt)))))))
           ((or (eq fmt-num '*)
                (not (numberp fmt-num)))
            ;; List-directed output
@@ -3865,8 +3965,12 @@
            (do ((lis *format_stmts* (cdr lis)))
                ((null lis)
                 (error "Format statement ~A not found" fmt-num))
-             (if (equal fmt-num (caar lis))
-                 (return (cadar lis))))))))
+             (when (equal fmt-num (caar lis))
+               (return (let ((cilist (cadar lis))
+                             (raw    (caddar lis)))
+                         (if (and *use-fortran-format-printer* raw)
+                             raw
+                             cilist)))))))))
 
 ;; Figure out where we're trying to WRITE to.
 ;;

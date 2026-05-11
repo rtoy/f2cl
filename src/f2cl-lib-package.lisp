@@ -27,6 +27,7 @@
    #:fortran_comment #:fdo #:f2cl/ #:arithmetic-if #:computed-goto
    #:assigned-goto
    #:fformat
+   #:format-write
    #:data-implied-do
    #:int-add #:int-sub #:int-mul
    #:implied-do-collect

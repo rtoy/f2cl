@@ -60,6 +60,7 @@
 (defsystem "f2cl"
   :description "F2CL:  Fortran to Lisp converter"
   :defsystem-depends-on ("f2cl-asdf")
+  :depends-on ("f2cl/fortran-format")
   :in-order-to ((test-op (test-op "f2cl/tests")))
   :components
   ((:module "src"
@@ -97,7 +98,8 @@
             :serial t
             :components
             ((:file "helpers")
-             (:file "tests"))))
+             (:file "tests")
+             (:file "test-fortran-format"))))
   :perform (test-op (op c)
              (declare (ignore op c))
              (uiop:symbol-call '#:regression-test '#:do-tests)
