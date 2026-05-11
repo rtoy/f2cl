@@ -57,8 +57,8 @@
   ((:module format
     :components
     ((:file "fortran-format-tests"))))
-  :finally-do (funcall (find-symbol "RUN-SMOKE-TESTS"
-                                    (find-package :fortran-format))))
+  :finally-do (funcall (find-symbol "DO-TESTS"
+                                    (find-package :rt))))
 
 ;; Regression-test system.
 ;;

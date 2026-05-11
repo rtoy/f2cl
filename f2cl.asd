@@ -22,6 +22,30 @@
                   :name "rt" :type "asd"
                   :defaults *load-pathname*)))
 
+(defsystem "fortran-format"
+  ::defsystem-depends-on ("rt")
+  :in-order-to ((test-op (test-op "fortran-format/tests")))
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "package")
+     (:file "fortran-format-parser"
+      :depends-on ("package"))
+     (:file "fortran-format-io"
+      :depends-on ("package" "fortran-format-parser"))))))
+
+(defsystem "fortran-format/tests"
+  :depends-on ("rt" "fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-tests"))))
+  :perform
+  (test-op (op c)
+    (declare (ignore op c))
+    (uiop:symbol-call '#:regression-test '#:do-tests)))
+  
+
 (defsystem "f2cl"
   :description "F2CL:  Fortran to Lisp converter"
   :defsystem-depends-on ("f2cl-asdf")
