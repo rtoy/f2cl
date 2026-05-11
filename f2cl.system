@@ -39,6 +39,27 @@
      #+cmu(:file "f2cl8")
      (:file "f2cl-lib")))))
 
+(mk:defsystem fortran-format
+  :source-pathname (merge-pathnames "src/" *f2cl-root*)
+  :components
+  ((:module format
+    :components
+    ((:file "package")
+     (:file "fortran-format-parser"
+            :depends-on ("package"))
+     (:file "fortran-format-io"
+      :depends-on ("package" "fortran-format-parser"))))))
+
+(mk:defsystem fortran-format-tests
+  :source-pathname (merge-pathnames "src/" *f2cl-root*)
+  :depends-on ("fortran-format" "rt")
+  :components
+  ((:module format
+    :components
+    ((:file "fortran-format-tests"))))
+  :finally-do (funcall (find-symbol "RUN-SMOKE-TESTS"
+                                    (find-package :fortran-format))))
+
 ;; Regression-test system.
 ;;
 ;; The user-visible flow:
