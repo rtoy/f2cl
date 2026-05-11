@@ -1396,11 +1396,30 @@ optional."
 ;;; that the legacy cilist's ~A directives print "T" and "F".  The
 ;;; fortran-format printer wants raw booleans (its L descriptor
 ;;; accepts T and NIL directly), so it passes CL-DIRECTIVES-P NIL.
-(defun fformat-flatten-args (args cl-directives-p)
+(defun fformat-flatten-args (args cl-directives-p &key (split-complex t))
+  "Flatten a list of WRITE arguments down to a flat list of scalars,
+expanding lists (from implied-DO) and arrays element-wise.
+
+CL-DIRECTIVES-P controls whether T/NIL are remapped to :T/:F so
+that the legacy cilist's ~A directives print 'T' and 'F'.  The
+fortran-format printer wants raw booleans (its L descriptor
+accepts T and NIL directly), so it passes CL-DIRECTIVES-P NIL.
+
+SPLIT-COMPLEX controls whether complex numbers are split into
+their real and imaginary parts.  The new printer path needs the
+split when a complex value is being consumed by a two-component
+descriptor like '(',G14.7,',',G14.7,')'.  When building the
+descriptor list (where each complex maps to one descriptor entry)
+the caller passes SPLIT-COMPLEX NIL to keep the complex as one
+item.  The legacy ~/f2cl-lib::fortran-format/ hook prints complex
+inline and so also passes SPLIT-COMPLEX NIL; passing it T is only
+correct on the new-printer formatted path."
   (apply #'append
          (map 'list
               #'(lambda (x)
                   (cond
+                    ((and split-complex (not cl-directives-p) (complexp x))
+                     (list (realpart x) (imagpart x)))
                     #+#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
                     ((bigfloat:numberp x) (list x))
                     #-#.(cl:if (cl:find-package "BIGFLOAT") '(and) '(or))
@@ -1484,34 +1503,98 @@ optional."
 ;;; FFORMAT and execute-format machinery can be deleted; until then
 ;;; the two coexist.
 
+;;; List-directed default descriptors.
+;;;
+;;; The Fortran 77 standard leaves the per-type default descriptor
+;;; implementation-defined.  We aim to approximate gfortran's choices
+;;; (9 significant digits for REAL, 17 for DOUBLE PRECISION, parens
+;;; for COMPLEX) closely enough that translations stay readable.
+;;;
+;;; Every value is preceded by a 1X (the standard's leading blank,
+;;; emitted between each pair of adjacent values and at the start
+;;; of the record).  Per-descriptor widths below are sized so that
+;;; 1X + descriptor matches gfortran's total width per value: 12
+;;; for INTEGER, 17 for REAL, 26 for DOUBLE, 2 for LOGICAL, and
+;;; natural length for CHARACTER.
+;;;
+;;; Known divergences from gfortran:
+;;;   * For floats whose exponent needs 3 digits (|x| >= 1d100 or
+;;;     < 1d-99), the new fortran-format printer drops the 'E' and
+;;;     emits ' 1.0000+100' rather than gfortran's '1.0000E+100'.
+;;;     This is standard Fortran behavior when the descriptor
+;;;     doesn't specify Ee; gfortran is the non-standard one.
+;;;   * COMPLEX components use a fixed-width G descriptor and so
+;;;     show internal padding that gfortran's list-directed output
+;;;     does not -- '(  1.5000000, -2.5000000)' rather than
+;;;     '(1.5000000,-2.5000000)'.  Acceptable for readability.
+(defun list-directed-descriptor (value)
+  "Return the Fortran edit-descriptor sequence used for VALUE in
+list-directed output.  The descriptor begins with a 1X (the leading
+blank between values) and is concatenated into a format string with
+commas between successive descriptors."
+  (typecase value
+    ;; INTEGER: 1X + I11 = 12 chars, matches gfortran.
+    (integer       "1X,I11")
+    ;; LOGICAL: 1X + L1 = 2 chars, matches gfortran.
+    ((member t nil) "1X,L1")
+    ;; CHARACTER: 1X + A.  A prints the string at its natural length.
+    (string        "1X,A")
+    ;; SINGLE COMPLEX: 1X + parens-wrapped pair.
+    ((complex single-float) "1X,'(',1PG14.7,',',1PG14.7,')'")
+    ;; DOUBLE COMPLEX: 1X + parens-wrapped pair with wider components.
+    ((complex double-float) "1X,'(',1PG22.15,',',1PG22.15,')'")
+    ;; SINGLE REAL: 1X + 1PG16.9 = 17 chars, matches gfortran.
+    (single-float  "1X,1PG16.9")
+    ;; DOUBLE PRECISION: 1X + 1PG25.17 = 26 chars, matches gfortran.
+    (double-float  "1X,1PG25.17")
+    ;; Other complex precisions: fall back to double layout.
+    (complex       "1X,'(',1PG22.15,',',1PG22.15,')'")
+    ;; Other numerics: fall back to double layout.
+    (number        "1X,1PG25.17")
+    (t (error "list-directed: don't know how to format ~S of type ~S"
+              value (type-of value)))))
+
+(defun build-list-directed-format (values)
+  "Build a Fortran format string for list-directed output of VALUES.
+Each per-value descriptor begins with its own 1X (the standard's
+leading blank between values).  No global 1X is needed at the
+front: the first descriptor's 1X serves as the record's leading
+blank."
+  (with-output-to-string (s)
+    (write-char #\( s)
+    (let ((first t))
+      (dolist (v values)
+        (unless first (write-char #\, s))
+        (setf first nil)
+        (write-string (list-directed-descriptor v) s)))
+    (write-char #\) s)))
+
 (defun execute-format-write (stream format args)
   "Runtime body of the FORMAT-WRITE macro.  FORMAT is either
 :LIST-DIRECTED or a Fortran-format string.  ARGS is the list of
 WRITE arguments before flattening."
   (cond
     ((eq format :list-directed)
-     ;; List-directed output -- one record, items separated by
-     ;; whitespace, with a soft line break around column 80.  Mirrors
-     ;; what execute-format-main does on the legacy path.
-     (format stream "~& ~{~<~%~1,81:;~?~>~^~}~%"
-             (let (pars)
-               (dolist (v args)
-                 (typecase v
-                   (string
-                    (push "~A" pars)
-                    (push (list v) pars))
-                   (cons
-                    (dolist (item v)
-                      (push "~/f2cl-lib::fortran-format/" pars)
-                      (push (list item) pars)))
-                   (array
-                    (dotimes (k (length v))
-                      (push "~/f2cl-lib::fortran-format/" pars)
-                      (push (list (aref v k)) pars)))
-                   (t
-                    (push "~/f2cl-lib::fortran-format/" pars)
-                    (push (list v) pars))))
-               (nreverse pars))))
+     ;; Build a Fortran format string sized to the actual values and
+     ;; hand it to fortran-format:write-format.  Descriptor
+     ;; selection has to happen on the original (unflattened) args
+     ;; -- a complex value picks the complex descriptor (two G
+     ;; components) and then needs to be split into its real and
+     ;; imaginary parts to feed those components.  The flattening
+     ;; helper does that split when CL-DIRECTIVES-P is NIL.
+     ;;
+     ;; Modern gfortran does not wrap list-directed output at 80
+     ;; columns -- it emits one record per WRITE statement
+     ;; regardless of length -- so we don't either.
+     (let* ((flat-for-format (fformat-flatten-args args nil :split-complex nil))
+            (fmt  (build-list-directed-format flat-for-format))
+            (flat (fformat-flatten-args args nil))
+            (s    (apply (find-symbol (symbol-name '#:write-format)
+                                      (find-package '#:fortran-format))
+                         fmt
+                         flat)))
+       (write-string s stream)
+       (terpri stream)))
     ((stringp format)
      ;; Formatted output.  Hand the raw Fortran string plus the
      ;; flattened args to fortran-format:write-format, write the

@@ -1,5 +1,14 @@
 # TODO: remaining gaps in fortran-format
 
+## List-directed output (FORMAT-WRITE / :LIST-DIRECTED)
+
+These are documented divergences from gfortran's list-directed output. Output is functionally correct and readable; matching gfortran byte-for-byte requires more careful work. See `f2cl-lib:list-directed-descriptor` and `f2cl-lib:build-list-directed-format`.
+
+- **3-digit exponents drop the `E`** — for `|x| >= 1d100` or `|x| < 1d-99`, the new printer emits ` 1.0000+100` rather than gfortran's `1.0000E+100`. This is standard Fortran behavior when the descriptor doesn't specify Ee; gfortran is the non-standard one. Fix: detect huge/tiny magnitudes and pick `1PGw.dE3` instead of plain `1PGw.d`. Cost: a runtime magnitude check per value.
+- **COMPLEX components are padded** — output is ` (  1.5000000, -2.5000000)` rather than gfortran's `            (1.50000000,-2.50000000)`. The fixed-width `1PG14.7` per component produces internal padding; gfortran outputs each component at its natural width inside the parens with leading whitespace outside. Fix: bypass the format mini-language for complex and format `realpart` and `imagpart` with the scalar descriptor, then wrap manually. Or: build a wider format with leading X and tighter component widths.
+- **Double precision internal alignment** — gfortran emits 3 leading + 18 char value + 5 trailing for `1.23456789012345d0`; we emit 4 + 18 + 4. Same total width, off-by-one internal placement. Probably a quirk of how the new printer's G descriptor distributes "spare width" relative to gfortran. Likely fixable with a different `Gw.d` width/precision pair.
+- **Validate target test corpus** — list-directed is currently exercised only by `fmttest.f` and `ldtest.f`. The real test is retranslating quadpack with the flag on and diffing test output; that hasn't been done.
+
 ## F77 output
 
 - **TL / backward-T** — currently signal `invalid-format`. Two RT tests already registered as expected failures: `fmt.write.tl2-overwrites`, `fmt.write.backward-t-overwrites`. Requires a positionable record buffer rather than the current one-pass stream — non-trivial refactor.
