@@ -37,6 +37,12 @@
 Set by SP, cleared by SS or S.  Bound fresh at each WRITE-FORMAT
 call so the flag does not leak across format statements.")
 
+(defvar *scale-factor* 0
+  "Current kP scale factor in effect.  Bound fresh at each
+WRITE-FORMAT call.  Affects F (rescales the value by 10^k), E and
+D (shuffles digits between mantissa and exponent), and G (when G
+falls back to E mode).  Has no effect on ES, EN, I, or BOZ output.")
+
 (defun expand-repeats (eds)
   "Replace (repeat N) descriptors with N copies of themselves."
   (let ((out '()))
@@ -117,6 +123,13 @@ the new values-cursor (a cons of remaining values)."))
     ((:bn :bz)))
   values)
 
+(defmethod emit-ed ((ed scale-ed) stream values)
+  ;; kP sets the scale factor for subsequent F/E/D/G output. No
+  ;; characters emitted, no value consumed.
+  (declare (ignore stream))
+  (setf *scale-factor* (scale-ed-scale ed))
+  values)
+
 ;;; ---------------------------------------------------------------
 ;;; Floating-point output (simplified)
 ;;; ---------------------------------------------------------------
@@ -170,14 +183,31 @@ Negative zero shows as '-' even though MINUSP returns NIL for it."
     (t "")))
 
 (defun format-f (val width decimal-places scale incl-plus)
-  "Fortran F format: fixed-point with no exponent. The SCALE
-factor (kP) does not change F output per the Fortran standard;
-it only affects how E-family formats place digits."
-  (declare (ignore scale))
+  "Fortran F format: fixed-point with no exponent.
+With a kP scale factor in effect, the externally-shown value is
+val * 10^k -- the decimal point shifts right by k positions (or
+left, for negative k)."
   (let* ((v (coerce val 'double-float))
-         (mag (abs v))
-         (sign (%sign-prefix v incl-plus))
-         ;; CL's ~,vF gives e.g. "3.14" for (format nil "~,2F" 3.14159).
+         ;; kP on F: rescale the value.
+         ;;
+         ;; We use integer (EXPT 10 SCALE) rather than (EXPT 10d0 SCALE).
+         ;; For non-negative SCALE both produce an exact result, but for
+         ;; negative SCALE (EXPT 10d0 -k) yields e.g. 0.01d0 which is
+         ;; *not* exact in IEEE-754, so we would incur two rounding
+         ;; errors (one in EXPT, one in the multiply). With integer 10
+         ;; the EXPT stays exact (as a rational for negative powers),
+         ;; and CL coerces to double in the multiply -- one rounding.
+         ;;
+         ;; TODO: even this can lose precision when V * 10^k crosses a
+         ;; binary representation boundary. The principled fix is to
+         ;; shift the displayed digits rather than rescale the value;
+         ;; that requires the bit-exact NORMALIZE-FLOAT path we
+         ;; removed earlier in development.
+         (scaled (if (zerop scale)
+                     v
+                     (* v (expt 10 scale))))
+         (mag (abs scaled))
+         (sign (%sign-prefix scaled incl-plus))
          (body-mag (format nil "~,vF" decimal-places mag))
          (body (concatenate 'string sign body-mag)))
     (%pad-or-asterisks body width)))
@@ -232,29 +262,70 @@ output one decade off from gfortran."
 
 (defun format-e (val width decimal-places exp-digits scale incl-plus
                  &key (expchar #\E))
-  "Fortran E format: 0.DDDDE+NN by default. SCALE is the kP factor;
-for now we only handle SCALE=0 (the default)."
-  (declare (ignore scale))
+  "Fortran E format. Without a scale (k=0), output is 0.DDDDE+NN.
+With k > 0, the mantissa has k digits before the decimal and d-k+1
+after, and the exponent is reduced by k. With k < 0, the mantissa
+has |k| leading zeros after the decimal and d-|k| significant
+digits, and the exponent is increased by |k|."
   (let* ((v (coerce val 'double-float))
          (sign (%sign-prefix v incl-plus))
          (zerop (zerop v))
-         (mantissa-digits decimal-places))
+         (k scale))
     (cond
       (zerop
-       (let ((body (concatenate 'string
-                                sign
-                                "0."
-                                (make-string decimal-places :initial-element #\0)
-                                (%emit-exp-suffix 0 exp-digits :char expchar))))
+       (let* ((mantissa
+                (cond
+                  ((zerop k)
+                   (concatenate 'string "0."
+                                (make-string decimal-places
+                                             :initial-element #\0)))
+                  ((plusp k)
+                   (concatenate 'string
+                                (make-string k :initial-element #\0)
+                                "."
+                                (make-string (1+ (- decimal-places k))
+                                             :initial-element #\0)))
+                  (t  ; k < 0
+                   (concatenate 'string "0."
+                                (make-string decimal-places
+                                             :initial-element #\0)))))
+              (body (concatenate 'string
+                                 sign mantissa
+                                 (%emit-exp-suffix 0 exp-digits :char expchar))))
          (%pad-or-asterisks body width)))
       (t
-       (multiple-value-bind (mantissa exp)
-           (%cl-mantissa-and-exp v mantissa-digits)
-         (let ((body (concatenate 'string
-                                  sign
-                                  mantissa
-                                  (%emit-exp-suffix exp exp-digits :char expchar))))
-           (%pad-or-asterisks body width)))))))
+       ;; Ask CL for enough sig digits. For k>=1 we need d+1; for k<=0
+       ;; we need d (the unshown low-order positions are zeros).
+       (let* ((ndigits (cond ((plusp k) (1+ decimal-places))
+                             (t decimal-places))))
+         (multiple-value-bind (raw-mantissa exp)
+             (%cl-mantissa-and-exp v ndigits)
+           ;; raw-mantissa is "0.DDDD" with NDIGITS digits after the dot.
+           (let* ((sig (subseq raw-mantissa 2))   ; strip "0."
+                  (mantissa
+                    (cond
+                      ((zerop k)
+                       raw-mantissa)               ; "0.DDDD"
+                      ((plusp k)
+                       ;; k digits before, (d-k+1) after.
+                       (concatenate 'string
+                                    (subseq sig 0 k)
+                                    "."
+                                    (subseq sig k (+ k (1+ (- decimal-places k))))))
+                      (t   ; k < 0
+                       ;; "0." + |k| zeros + (d-|k|) sig digits.
+                       (let ((nz (- k)))
+                         (concatenate 'string "0."
+                                      (make-string nz :initial-element #\0)
+                                      (subseq sig 0
+                                              (max 0 (- decimal-places nz))))))))
+                  (shown-exp (- exp k))
+                  (body (concatenate 'string
+                                     sign
+                                     mantissa
+                                     (%emit-exp-suffix shown-exp exp-digits
+                                                       :char expchar))))
+             (%pad-or-asterisks body width))))))))
 
 (defun format-es (val width decimal-places exp-digits incl-plus)
   "Fortran ES format: D.DDDDE+NN with one significant digit before
@@ -314,15 +385,16 @@ realigning, is not always correct at boundaries."
                                  (%emit-exp-suffix eng-exp exp-digits))))
          (%pad-or-asterisks body width))))))
 
-(defun format-g (val width decimal-places exp-digits incl-plus)
+(defun format-g (val width decimal-places exp-digits scale incl-plus)
   "Fortran G format: pick F or E based on magnitude.
 
 The rule: if 0.1 <= |v| < 10^d, use F; otherwise E. When F is used,
 nb trailing spaces are appended to keep the visible field the same
 width as the E equivalent. nb = 4 for Gw.d, e+2 for Gw.dEe.
 
-Approximate: the boundary cases (values that round across the
-F/E boundary) are not handled."
+The kP scale factor passes through to the E branch when G falls
+back to scientific form; the F branch ignores it per gfortran's
+behavior."
   (let* ((v (coerce val 'double-float))
          (mag (abs v))
          (nb (if exp-digits (+ exp-digits 2) 4)))
@@ -332,7 +404,7 @@ F/E boundary) are not handled."
               (s (format-f v effective-w (max 0 (1- decimal-places)) 0 incl-plus)))
          (concatenate 'string s (make-string nb :initial-element #\Space))))
       ((or (< mag 0.1d0) (>= mag (expt 10d0 decimal-places)))
-       (format-e v width decimal-places exp-digits 0 incl-plus))
+       (format-e v width decimal-places exp-digits scale incl-plus))
       (t
        ;; F-equivalent: pick decimal places based on magnitude bucket.
        ;; mag in [10^(k-1), 10^k) for k in 1..d -> d-k decimals.
@@ -350,7 +422,7 @@ F/E boundary) are not handled."
   (let ((v (car values))
         (w (width-ed-width ed))
         (d (real-fixed-ed-decimal-places ed)))
-    (write-string (format-f v w d 0 *include-plus*) stream))
+    (write-string (format-f v w d *scale-factor* *include-plus*) stream))
   (cdr values))
 
 (defmethod emit-ed ((ed real-exp-ed) stream values)
@@ -360,13 +432,16 @@ F/E boundary) are not handled."
          (e (real-exp-ed-exponent ed))
          (name (edit-descriptor-name ed))
          (plus *include-plus*)
+         (k *scale-factor*)
          (out
            (case name
-             (:e  (format-e  v w d e 0 plus))
-             (:d  (format-e  v w d e 0 plus :expchar #\D))
+             ;; E/D/G honor kP; ES and EN are already normalized and
+             ;; ignore it per the Fortran standard.
+             (:e  (format-e  v w d e k plus))
+             (:d  (format-e  v w d e k plus :expchar #\D))
              (:es (format-es v w d e plus))
              (:en (format-en v w d e plus))
-             (:g  (format-g  v w d e plus))
+             (:g  (format-g  v w d e k plus))
              (otherwise
               (warn "Unknown real-exp descriptor ~A" name)
               (make-string w :initial-element #\?)))))
@@ -399,9 +474,10 @@ the reversion descriptors with a newline inserted between cycles
            (rev  (expand-repeats rev-eds))
            (out  (make-string-output-stream))
            (vs   values)
-           ;; Bind sign-control state fresh so SP/SS/S in one call
-           ;; cannot leak into another.
-           (*include-plus* nil))
+           ;; Bind sign-control and scale state fresh so SP/SS/S/kP
+           ;; in one call cannot leak into another.
+           (*include-plus* nil)
+           (*scale-factor* 0))
       ;; Main pass
       (dolist (ed main)
         (setf vs (emit-ed ed out vs)))
