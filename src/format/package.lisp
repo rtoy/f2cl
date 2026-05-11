@@ -14,9 +14,6 @@
 ;;;;                                   and READ-FORMAT
 ;;;;   fortran-format-tests.lisp    -- smoke tests
 ;;;;
-;;;; Load with (load "load.lisp") or load each file in order.
-;;;;
-;;;; Tested under SBCL; should work in any conforming CL.
 
 (defpackage #:fortran-format
   (:use #:cl)
