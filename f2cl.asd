@@ -22,7 +22,7 @@
                   :name "rt" :type "asd"
                   :defaults *load-pathname*)))
 
-(defsystem "fortran-format"
+(defsystem "f2cl/fortran-format"
   :defsystem-depends-on ("rt")
   :in-order-to ((test-op (test-op "fortran-format/tests")))
   :components
@@ -34,7 +34,7 @@
      (:file "fortran-format-io"
       :depends-on ("package" "fortran-format-parser"))))))
 
-(defsystem "fortran-format/tests"
+(defsystem "f2cl/fortran-format/tests"
   :depends-on ("rt" "fortran-format")
   :components
   ((:module "src/format"
@@ -44,7 +44,6 @@
   (test-op (op c)
     (declare (ignore op c))
     (uiop:symbol-call '#:regression-test '#:do-tests)))
-  
 
 (defsystem "f2cl"
   :description "F2CL:  Fortran to Lisp converter"
