@@ -1,0 +1,41 @@
+# TODO: remaining gaps in fortran-format
+
+## F77 output
+
+- **TL / backward-T** — currently signal `invalid-format`. Two RT tests already registered as expected failures: `fmt.write.tl2-overwrites`, `fmt.write.backward-t-overwrites`. Requires a positionable record buffer rather than the current one-pass stream — non-trivial refactor.
+
+## F77 input
+
+- **Quoted/Hollerith literals on input** — should advance the input cursor by the literal's length (skip those characters in the record). Currently signals an error. Standard-mandated behavior.
+
+- **End-of-record on short input** — `(3I3)` reading `"  1"` returns `(1 0 0)`; gfortran raises an end-of-record error. May or may not want strict gfortran behavior depending on use case.
+
+## Parser
+
+- **Comma-less juxtaposition** — `(I3F5.2)`, `(I3/I3)`, `(1PF8.2)`, etc. F77 allows commas to be omitted around `/`, around `:`, between `P` and the immediately following F/E/D/G, and (in some readings) between two width-bearing descriptors. py-fortranformat handles this by inserting implicit commas in the lexer. Currently we reject all comma-less forms.
+
+## Floating-point accuracy
+
+- **CL-defined rounding leakage** — `format-f` and `format-e` lean on CL's `~F`/`~E` directives, whose rounding mode is implementation-defined. On exact ties (e.g. `1234.5` to E12.4), SBCL rounds half-to-even (matches gfortran), CMUCL rounds half-away-from-zero (doesn't). The bit-exact `normalize-float` path was removed earlier in development; restoring it would give gfortran-byte-for-byte output across implementations and eliminate the `-cl-rounding` workaround in tests.
+
+- **`format-f` P-scale precision** — uses `(* v (expt 10 scale))` to rescale before formatting, which introduces one rounding step. Edge cases where `v × 10^k` crosses a binary boundary can show through. The principled fix is to do digit shifting on the decimal representation rather than arithmetic on the value — depends on the bit-exact float path above.
+
+- **G format decade boundaries** — values that round across the F/E choice boundary (e.g. 9.9999 with G12.4) aren't handled; we pick a mode then format, rather than format-then-decide. Same `normalize-float` dependency.
+
+- **CL `~E` non-normalization** — `(format nil "~,vE" ...)` can produce mantissas like `10.00d+2` instead of `1.000d+3`. We don't currently detect and renormalize. Showed up as a TODO in `%cl-mantissa-and-exp`.
+
+## Performance
+
+- **Extra consing from emit-out** — every `dotimes write-char` site became `(emit-out stream (make-string N ...))`, which allocates a fresh string for the padding instead of pushing chars one at a time. Profiling will show whether this matters; if so, the fix is to add an `emit-spaces` helper that pushes individually and bumps `*column*` by N.
+
+## Documentation / cleanliness
+
+- **Tested-implementation list** — currently only validated on SBCL in CI. CMUCL is the production target for Maxima; need a CMUCL run. GCL too if that's still in scope.
+
+## Beyond F77 (probably won't do, listing for completeness)
+
+- `I0`, `F0.d`, `E0.dEe`, `G0.d` minimum-width forms (F2003)
+- `*(...)` unlimited repeat (F2008)
+- `DT` derived-type editing (F2003)
+- `Q` record-byte-count (vendor extension)
+- `$` and `\\` suppress-newline (DEC extensions)
