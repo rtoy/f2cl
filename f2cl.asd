@@ -23,7 +23,7 @@
                   :defaults *load-pathname*)))
 
 (defsystem "fortran-format"
-  ::defsystem-depends-on ("rt")
+  :defsystem-depends-on ("rt")
   :in-order-to ((test-op (test-op "fortran-format/tests")))
   :components
   ((:module "src/format"
