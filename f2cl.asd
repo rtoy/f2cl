@@ -41,17 +41,26 @@
            (passed     (- total failed))
            (unexpected (set-difference pending expected))
            (surprises  (set-difference expected pending)))
-      (format t "~&~A: ~D test~:P, ~D passed, ~D failed ~
-                 (~D expected, ~D unexpected, ~D unexpected ~:[successes~;success~])~%"
+      (when unexpected
+        (format t "~&~A: unexpected failures:~%" label)
+        (dolist (sym unexpected)
+          (format t "  ~A~%" sym)))
+      (when surprises
+        (format t "~&~A: unexpected successes:~%" label)
+        (dolist (sym surprises)
+          (format t "  ~A~%" sym)))
+      (format t "~&~A: ~D test~:P, ~D passed, ~D failed~%~
+                 ~2T~D expected failure~:P~%~
+                 ~2T~D unexpected failure~:P~%~
+                 ~2T~D unexpected ~:[successes~;success~]~%"
               label total passed failed
-              (length expected) (length unexpected) (length surprises)
-              (= (length surprises) 1))
+              (length expected)
+              (length unexpected)
+              (length surprises) (= (length surprises) 1))
       (when (or unexpected surprises)
-        (error "~A: ~@[~D unexpected failures: ~S~]~
-                    ~@[~D unexpected successes: ~S~]"
-               label
-               (and unexpected (length unexpected)) unexpected
-               (and surprises  (length surprises))  surprises)))))
+        (error "~A: ~D unexpected failure~:P, ~D unexpected ~:[successes~;success~]"
+               label (length unexpected) (length surprises)
+               (= (length surprises) 1))))))
 
 (defsystem "f2cl/fortran-format"
   :defsystem-depends-on ("rt")
