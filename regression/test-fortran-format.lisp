@@ -19,13 +19,12 @@
 ;;; One-time translation+compile+load of val/cxtest.f.
 ;;;
 ;;; This eval-when fires when the file is loaded (as a fasl or
-;;; directly).  CONVERT-COMPILE-LOAD/NEW-PRINTER toggles
-;;; f2cl::*USE-FORTRAN-FORMAT-PRINTER* on for the duration of the
-;;; translation step, so the resulting code uses FORMAT-WRITE
-;;; rather than the legacy FFORMAT.
+;;; directly).  CONVERT-COMPILE-LOAD now uses the new
+;;; fortran-format printer by default, so the resulting code uses
+;;; FORMAT-WRITE rather than the legacy FFORMAT.
 
 (eval-when (:load-toplevel :execute)
-  (f2cl-regression:convert-compile-load/new-printer "val/cxtest.f"))
+  (f2cl-regression:convert-compile-load "val/cxtest.f"))
 
 ;;;----------------------------------------------------------------------
 ;;; Single-precision COMPLEX
