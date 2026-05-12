@@ -471,13 +471,19 @@ behavior."
 
 
 (defmethod emit-ed ((ed real-fixed-ed) stream values)
-  ;; F and D both use the F-style layout. D is supposed to take the
-  ;; same form as E historically but most programs just use it as F;
-  ;; the descriptor object distinguishes them by name if needed.
+  ;; F emits fixed-point.  D shares F's parse shape (Dw.d, no Ee
+  ;; tail), but per the Fortran standard it emits the same E-form
+  ;; layout as E with `D' as the exponent character.  gfortran and
+  ;; py-fortranformat both follow this rule.
   (let ((v (car values))
         (w (width-ed-width ed))
-        (d (real-fixed-ed-decimal-places ed)))
-    (emit-out stream (format-f v w d *scale-factor* *include-plus*)))
+        (d (real-fixed-ed-decimal-places ed))
+        (name (edit-descriptor-name ed)))
+    (emit-out stream
+              (ecase name
+                (:f (format-f v w d *scale-factor* *include-plus*))
+                (:d (format-e v w d nil *scale-factor* *include-plus*
+                              :expchar #\D)))))
   (cdr values))
 
 (defmethod emit-ed ((ed real-exp-ed) stream values)
@@ -490,10 +496,10 @@ behavior."
          (k *scale-factor*)
          (out
            (case name
-             ;; E/D/G honor kP; ES and EN are already normalized and
-             ;; ignore it per the Fortran standard.
+             ;; E/G honor kP; ES and EN are already normalized and
+             ;; ignore it per the Fortran standard.  D is dispatched
+             ;; via real-fixed-ed (its parse shape matches F).
              (:e  (format-e  v w d e k plus))
-             (:d  (format-e  v w d e k plus :expchar #\D))
              (:es (format-es v w d e plus))
              (:en (format-en v w d e plus))
              (:g  (format-g  v w d e k plus))
