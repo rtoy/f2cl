@@ -22,6 +22,37 @@
                   :name "rt" :type "asd"
                   :defaults *load-pathname*)))
 
+;;; Shared helper for the RT-based :perform methods below.  Runs
+;;; do-tests, prints a one-line summary (total / passed / failed,
+;;; with a breakdown into expected vs. unexpected outcomes), and
+;;; signals an error if there are unexpected failures or surprising
+;;; successes.  Mirrors %run-rt-tests in f2cl.system.
+(defun %f2cl-asd-run-rt-tests (label)
+  (let* ((rt-pkg     (find-package :regression-test))
+         (do-tests   (find-symbol "DO-TESTS"           rt-pkg))
+         (pending-fn (find-symbol "PENDING-TESTS"      rt-pkg))
+         (expected-v (find-symbol "*EXPECTED-FAILURES*" rt-pkg))
+         (entries-v  (find-symbol "*ENTRIES-TABLE*"    rt-pkg)))
+    (funcall do-tests)
+    (let* ((total      (hash-table-count (symbol-value entries-v)))
+           (pending    (funcall pending-fn))
+           (expected   (symbol-value expected-v))
+           (failed     (length pending))
+           (passed     (- total failed))
+           (unexpected (set-difference pending expected))
+           (surprises  (set-difference expected pending)))
+      (format t "~&~A: ~D test~:P, ~D passed, ~D failed ~
+                 (~D expected, ~D unexpected, ~D unexpected ~:[successes~;success~])~%"
+              label total passed failed
+              (length expected) (length unexpected) (length surprises)
+              (= (length surprises) 1))
+      (when (or unexpected surprises)
+        (error "~A: ~@[~D unexpected failures: ~S~]~
+                    ~@[~D unexpected successes: ~S~]"
+               label
+               (and unexpected (length unexpected)) unexpected
+               (and surprises  (length surprises))  surprises)))))
+
 (defsystem "f2cl/fortran-format"
   :defsystem-depends-on ("rt")
   :in-order-to ((test-op (test-op "f2cl/fortran-format/tests")))
@@ -39,23 +70,31 @@
   :components
   ((:module "src/format"
     :components
-    ((:file "fortran-format-tests"))))
+    ((:file "fortran-format-corpus")
+     ;; Each corpus directory contributes a pair of files per
+     ;; .test source: an auto-generated .tests.lisp of deftests,
+     ;; and a hand-maintained .expected-failures.lisp.  The tests
+     ;; depend on the corpus runner (for write-format and friends);
+     ;; expected-failures depend on the corresponding tests file
+     ;; so the deftest entries exist before pushnew runs.
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "i-ed-output.tests")
+       (:file "i-ed-output.expected-failures"
+        :depends-on ("i-ed-output.tests"))
+       (:file "f-ed-output.tests")
+       (:file "f-ed-output.expected-failures"
+        :depends-on ("f-ed-output.tests"))
+       (:file "e-ed-output.tests")
+       (:file "e-ed-output.expected-failures"
+        :depends-on ("e-ed-output.tests"))))
+     (:file "fortran-format-tests"
+      :depends-on ("fortran-format-corpus")))))
   :perform (test-op (op c)
              (declare (ignore op c))
-             (uiop:symbol-call '#:regression-test '#:do-tests)
-             (let ((pending  (uiop:symbol-call '#:regression-test
-                                               '#:pending-tests))
-                   (expected (symbol-value
-                              (uiop:find-symbol* '#:*expected-failures*
-                                                 '#:regression-test))))
-               (let ((unexpected (set-difference pending expected))
-                     (surprises  (set-difference expected pending)))
-                 (when (or unexpected surprises)
-                   (error "f2cl/fortran-format/tests: ~
-                           ~@[~D unexpected failures: ~S~]~
-                           ~@[~D unexpected successes: ~S~]"
-                          (and unexpected (length unexpected)) unexpected
-                          (and surprises  (length surprises))  surprises))))))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests")))
 
 (defsystem "f2cl"
   :description "F2CL:  Fortran to Lisp converter"
@@ -103,16 +142,5 @@
              (:file "test-fortran-format-read"))))
   :perform (test-op (op c)
              (declare (ignore op c))
-             (uiop:symbol-call '#:regression-test '#:do-tests)
-             (let ((pending (uiop:symbol-call '#:regression-test
-                                              '#:pending-tests))
-                   (expected (symbol-value
-                              (uiop:find-symbol* '#:*expected-failures*
-                                                 '#:regression-test))))
-               (let ((unexpected (set-difference pending expected))
-                     (surprises  (set-difference expected pending)))
-                 (when (or unexpected surprises)
-                   (error "f2cl/tests: ~@[~D unexpected failures: ~S~]~
-                                       ~@[~D unexpected successes: ~S~]"
-                          (and unexpected (length unexpected)) unexpected
-                          (and surprises  (length surprises))  surprises))))))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/tests")))

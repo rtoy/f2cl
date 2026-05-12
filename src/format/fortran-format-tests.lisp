@@ -715,12 +715,25 @@
   "  0.00E+00")
 
 ;;; --------------------------------------------------------------
+;;; Corpus tests
+;;;
+;;; The corpus deftests themselves are auto-generated from the
+;;; .test files under src/format/corpus/ and live next to them as
+;;; <name>.tests.lisp files; their expected-failure lists live in
+;;; <name>.expected-failures.lisp.  Both are loaded automatically
+;;; by the f2cl/fortran-format/tests ASDF system (and the
+;;; fortran-format-tests mk:defsystem), so nothing more is needed
+;;; here.  To regenerate after a corpus re-sync, see
+;;; fortran-format-corpus.lisp.
+
+;;; --------------------------------------------------------------
 ;;; Expected failures
 ;;;
 ;;; Tests that exercise documented-but-unimplemented behavior.
 ;;; Listed by name so the test harness can distinguish them from
 ;;; real regressions.  Use PUSHNEW so that running this test system
 ;;; inside a larger suite (e.g. f2cl/tests) doesn't clobber other
-;;; expected failures registered by sibling test files.
-(pushnew 'fmt.write.tl2-overwrites          rt:*expected-failures*)
-(pushnew 'fmt.write.backward-t-overwrites   rt:*expected-failures*)
+;;; expected failures registered by sibling test files.  The
+;;; corpus tests have their own per-file expected-failures lists.
+(pushnew 'fmt.write.tl2-overwrites           rt:*expected-failures*)
+(pushnew 'fmt.write.backward-t-overwrites    rt:*expected-failures*)
