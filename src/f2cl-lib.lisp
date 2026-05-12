@@ -2004,7 +2004,7 @@ the way Fortran's runtime would."
            ((and (consp expr) (eq (first expr) 'fref))
             `(fset ,expr ,rhs))
            (sized-string-p
-            `(f2cl-set-string ,expr ,rhs ',type))
+            `(f2cl-set-string ,expr ,rhs ,type))
            (t
             `(setf ,expr ,rhs))))))
     (:implied-do
