@@ -9,343 +9,319 @@
 ;;;; bug is fixed.  Implementation-specific failures should be
 ;;;; wrapped in #+<impl> / #-<impl>.
 ;;;;
-;;;; 336 failures at baseline.
+;;;; 306 failures (down from 336 baseline; Iw.0 of 0 fixed).
 
 (in-package #:fortran-format)
 
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0171 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0172 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0188 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0189 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0205 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0206 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0222 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0223 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0239 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0240 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0256 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0257 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0273 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0274 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0290 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0291 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0307 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0308 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0324 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0325 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0987 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0988 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0989 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0990 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0991 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0992 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0993 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0994 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0995 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0996 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0997 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0998 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.0999 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1000 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1001 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1002 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1003 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1004 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1005 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1006 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1007 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1008 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1009 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1010 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1011 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1012 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1013 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1014 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1015 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1016 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1017 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1018 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1019 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1020 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1021 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1022 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1023 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1024 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1025 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1026 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1027 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1028 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1029 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1030 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1031 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1032 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1033 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1034 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1035 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1036 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1037 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1038 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1039 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1040 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1041 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1042 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1043 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1044 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1045 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1046 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1047 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1048 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1049 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1050 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1051 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1052 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1053 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1054 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1055 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1056 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1057 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1058 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1059 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1060 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1061 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1062 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1063 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1064 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1065 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1066 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1067 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1068 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1069 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1070 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1071 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1072 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1073 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1074 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1075 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1076 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1077 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1078 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1079 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1080 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1081 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1082 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1083 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1084 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1085 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1086 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1087 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1088 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1089 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1090 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1091 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1092 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1093 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1094 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1095 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1096 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1097 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1098 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1099 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1100 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1101 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1102 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1103 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1104 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1105 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1106 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1107 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1108 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1109 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1110 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1111 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1112 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1113 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1114 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1115 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1116 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1117 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1118 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1119 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1120 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1121 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1122 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1123 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1124 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1125 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1126 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1127 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1128 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1129 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1130 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1131 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1132 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1133 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1134 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1135 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1136 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1137 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1138 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1139 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1140 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1141 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1142 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1143 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1144 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1145 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1146 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1147 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1148 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1149 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1150 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1151 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1152 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1153 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1154 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1155 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1156 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1157 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1158 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1174 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1175 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1191 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1192 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1208 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1209 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1225 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1226 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1293 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1294 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1295 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1296 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1297 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1298 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1299 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1300 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1301 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1302 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1303 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1304 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1305 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1306 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1307 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1308 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1309 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1310 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1311 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1312 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1313 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1314 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1315 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1316 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1317 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1318 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1319 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1320 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1321 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1322 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1323 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1324 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1325 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1326 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1327 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1328 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1329 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1330 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1331 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1332 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1333 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1334 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1335 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1336 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1337 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1338 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1339 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1340 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1341 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1342 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1343 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1344 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1345 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1346 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1347 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1348 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1349 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1350 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1351 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1352 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1353 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1354 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1355 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1356 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1357 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1358 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1359 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1360 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1361 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1362 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1363 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1364 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1365 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1366 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1367 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1368 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1369 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1370 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1371 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1372 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1373 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1374 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1375 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1376 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1377 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1378 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1379 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1380 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1381 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1382 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1383 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1384 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1385 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1386 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1387 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1388 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1389 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1390 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1391 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1392 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1393 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1394 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1395 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1396 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1397 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1398 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1399 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1400 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1401 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1402 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1403 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1404 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1405 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1406 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1407 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1408 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1409 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1410 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1411 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1412 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1413 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1414 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1415 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1416 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1417 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1418 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1419 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1420 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1421 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1422 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1423 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1424 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1425 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1426 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1427 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.I-ED-OUTPUT.1428 rt:*expected-failures*)
+(defparameter *i-ed-expected-failures*
+  '(
+    FMT.CORPUS.I-ED-OUTPUT.0987
+    FMT.CORPUS.I-ED-OUTPUT.0988
+    FMT.CORPUS.I-ED-OUTPUT.0989
+    FMT.CORPUS.I-ED-OUTPUT.0990
+    FMT.CORPUS.I-ED-OUTPUT.0991
+    FMT.CORPUS.I-ED-OUTPUT.0992
+    FMT.CORPUS.I-ED-OUTPUT.0993
+    FMT.CORPUS.I-ED-OUTPUT.0994
+    FMT.CORPUS.I-ED-OUTPUT.0995
+    FMT.CORPUS.I-ED-OUTPUT.0996
+    FMT.CORPUS.I-ED-OUTPUT.0997
+    FMT.CORPUS.I-ED-OUTPUT.0998
+    FMT.CORPUS.I-ED-OUTPUT.0999
+    FMT.CORPUS.I-ED-OUTPUT.1000
+    FMT.CORPUS.I-ED-OUTPUT.1001
+    FMT.CORPUS.I-ED-OUTPUT.1002
+    FMT.CORPUS.I-ED-OUTPUT.1003
+    FMT.CORPUS.I-ED-OUTPUT.1004
+    FMT.CORPUS.I-ED-OUTPUT.1005
+    FMT.CORPUS.I-ED-OUTPUT.1006
+    FMT.CORPUS.I-ED-OUTPUT.1007
+    FMT.CORPUS.I-ED-OUTPUT.1008
+    FMT.CORPUS.I-ED-OUTPUT.1009
+    FMT.CORPUS.I-ED-OUTPUT.1010
+    FMT.CORPUS.I-ED-OUTPUT.1011
+    FMT.CORPUS.I-ED-OUTPUT.1012
+    FMT.CORPUS.I-ED-OUTPUT.1013
+    FMT.CORPUS.I-ED-OUTPUT.1014
+    FMT.CORPUS.I-ED-OUTPUT.1015
+    FMT.CORPUS.I-ED-OUTPUT.1016
+    FMT.CORPUS.I-ED-OUTPUT.1017
+    FMT.CORPUS.I-ED-OUTPUT.1018
+    FMT.CORPUS.I-ED-OUTPUT.1019
+    FMT.CORPUS.I-ED-OUTPUT.1020
+    FMT.CORPUS.I-ED-OUTPUT.1021
+    FMT.CORPUS.I-ED-OUTPUT.1022
+    FMT.CORPUS.I-ED-OUTPUT.1023
+    FMT.CORPUS.I-ED-OUTPUT.1024
+    FMT.CORPUS.I-ED-OUTPUT.1025
+    FMT.CORPUS.I-ED-OUTPUT.1026
+    FMT.CORPUS.I-ED-OUTPUT.1027
+    FMT.CORPUS.I-ED-OUTPUT.1028
+    FMT.CORPUS.I-ED-OUTPUT.1029
+    FMT.CORPUS.I-ED-OUTPUT.1030
+    FMT.CORPUS.I-ED-OUTPUT.1031
+    FMT.CORPUS.I-ED-OUTPUT.1032
+    FMT.CORPUS.I-ED-OUTPUT.1033
+    FMT.CORPUS.I-ED-OUTPUT.1034
+    FMT.CORPUS.I-ED-OUTPUT.1035
+    FMT.CORPUS.I-ED-OUTPUT.1036
+    FMT.CORPUS.I-ED-OUTPUT.1037
+    FMT.CORPUS.I-ED-OUTPUT.1038
+    FMT.CORPUS.I-ED-OUTPUT.1039
+    FMT.CORPUS.I-ED-OUTPUT.1040
+    FMT.CORPUS.I-ED-OUTPUT.1041
+    FMT.CORPUS.I-ED-OUTPUT.1042
+    FMT.CORPUS.I-ED-OUTPUT.1043
+    FMT.CORPUS.I-ED-OUTPUT.1044
+    FMT.CORPUS.I-ED-OUTPUT.1045
+    FMT.CORPUS.I-ED-OUTPUT.1046
+    FMT.CORPUS.I-ED-OUTPUT.1047
+    FMT.CORPUS.I-ED-OUTPUT.1048
+    FMT.CORPUS.I-ED-OUTPUT.1049
+    FMT.CORPUS.I-ED-OUTPUT.1050
+    FMT.CORPUS.I-ED-OUTPUT.1051
+    FMT.CORPUS.I-ED-OUTPUT.1052
+    FMT.CORPUS.I-ED-OUTPUT.1053
+    FMT.CORPUS.I-ED-OUTPUT.1054
+    FMT.CORPUS.I-ED-OUTPUT.1055
+    FMT.CORPUS.I-ED-OUTPUT.1056
+    FMT.CORPUS.I-ED-OUTPUT.1057
+    FMT.CORPUS.I-ED-OUTPUT.1058
+    FMT.CORPUS.I-ED-OUTPUT.1059
+    FMT.CORPUS.I-ED-OUTPUT.1060
+    FMT.CORPUS.I-ED-OUTPUT.1061
+    FMT.CORPUS.I-ED-OUTPUT.1062
+    FMT.CORPUS.I-ED-OUTPUT.1063
+    FMT.CORPUS.I-ED-OUTPUT.1064
+    FMT.CORPUS.I-ED-OUTPUT.1065
+    FMT.CORPUS.I-ED-OUTPUT.1066
+    FMT.CORPUS.I-ED-OUTPUT.1067
+    FMT.CORPUS.I-ED-OUTPUT.1068
+    FMT.CORPUS.I-ED-OUTPUT.1069
+    FMT.CORPUS.I-ED-OUTPUT.1070
+    FMT.CORPUS.I-ED-OUTPUT.1071
+    FMT.CORPUS.I-ED-OUTPUT.1072
+    FMT.CORPUS.I-ED-OUTPUT.1073
+    FMT.CORPUS.I-ED-OUTPUT.1074
+    FMT.CORPUS.I-ED-OUTPUT.1075
+    FMT.CORPUS.I-ED-OUTPUT.1076
+    FMT.CORPUS.I-ED-OUTPUT.1077
+    FMT.CORPUS.I-ED-OUTPUT.1078
+    FMT.CORPUS.I-ED-OUTPUT.1079
+    FMT.CORPUS.I-ED-OUTPUT.1080
+    FMT.CORPUS.I-ED-OUTPUT.1081
+    FMT.CORPUS.I-ED-OUTPUT.1082
+    FMT.CORPUS.I-ED-OUTPUT.1083
+    FMT.CORPUS.I-ED-OUTPUT.1084
+    FMT.CORPUS.I-ED-OUTPUT.1085
+    FMT.CORPUS.I-ED-OUTPUT.1086
+    FMT.CORPUS.I-ED-OUTPUT.1087
+    FMT.CORPUS.I-ED-OUTPUT.1088
+    FMT.CORPUS.I-ED-OUTPUT.1089
+    FMT.CORPUS.I-ED-OUTPUT.1090
+    FMT.CORPUS.I-ED-OUTPUT.1091
+    FMT.CORPUS.I-ED-OUTPUT.1092
+    FMT.CORPUS.I-ED-OUTPUT.1093
+    FMT.CORPUS.I-ED-OUTPUT.1094
+    FMT.CORPUS.I-ED-OUTPUT.1095
+    FMT.CORPUS.I-ED-OUTPUT.1096
+    FMT.CORPUS.I-ED-OUTPUT.1097
+    FMT.CORPUS.I-ED-OUTPUT.1098
+    FMT.CORPUS.I-ED-OUTPUT.1099
+    FMT.CORPUS.I-ED-OUTPUT.1100
+    FMT.CORPUS.I-ED-OUTPUT.1101
+    FMT.CORPUS.I-ED-OUTPUT.1102
+    FMT.CORPUS.I-ED-OUTPUT.1103
+    FMT.CORPUS.I-ED-OUTPUT.1104
+    FMT.CORPUS.I-ED-OUTPUT.1105
+    FMT.CORPUS.I-ED-OUTPUT.1106
+    FMT.CORPUS.I-ED-OUTPUT.1107
+    FMT.CORPUS.I-ED-OUTPUT.1108
+    FMT.CORPUS.I-ED-OUTPUT.1109
+    FMT.CORPUS.I-ED-OUTPUT.1110
+    FMT.CORPUS.I-ED-OUTPUT.1111
+    FMT.CORPUS.I-ED-OUTPUT.1112
+    FMT.CORPUS.I-ED-OUTPUT.1113
+    FMT.CORPUS.I-ED-OUTPUT.1114
+    FMT.CORPUS.I-ED-OUTPUT.1115
+    FMT.CORPUS.I-ED-OUTPUT.1116
+    FMT.CORPUS.I-ED-OUTPUT.1117
+    FMT.CORPUS.I-ED-OUTPUT.1118
+    FMT.CORPUS.I-ED-OUTPUT.1119
+    FMT.CORPUS.I-ED-OUTPUT.1120
+    FMT.CORPUS.I-ED-OUTPUT.1121
+    FMT.CORPUS.I-ED-OUTPUT.1122
+    FMT.CORPUS.I-ED-OUTPUT.1123
+    FMT.CORPUS.I-ED-OUTPUT.1124
+    FMT.CORPUS.I-ED-OUTPUT.1125
+    FMT.CORPUS.I-ED-OUTPUT.1126
+    FMT.CORPUS.I-ED-OUTPUT.1127
+    FMT.CORPUS.I-ED-OUTPUT.1128
+    FMT.CORPUS.I-ED-OUTPUT.1129
+    FMT.CORPUS.I-ED-OUTPUT.1130
+    FMT.CORPUS.I-ED-OUTPUT.1131
+    FMT.CORPUS.I-ED-OUTPUT.1132
+    FMT.CORPUS.I-ED-OUTPUT.1133
+    FMT.CORPUS.I-ED-OUTPUT.1134
+    FMT.CORPUS.I-ED-OUTPUT.1135
+    FMT.CORPUS.I-ED-OUTPUT.1136
+    FMT.CORPUS.I-ED-OUTPUT.1137
+    FMT.CORPUS.I-ED-OUTPUT.1138
+    FMT.CORPUS.I-ED-OUTPUT.1139
+    FMT.CORPUS.I-ED-OUTPUT.1140
+    FMT.CORPUS.I-ED-OUTPUT.1141
+    FMT.CORPUS.I-ED-OUTPUT.1142
+    FMT.CORPUS.I-ED-OUTPUT.1143
+    FMT.CORPUS.I-ED-OUTPUT.1144
+    FMT.CORPUS.I-ED-OUTPUT.1145
+    FMT.CORPUS.I-ED-OUTPUT.1146
+    FMT.CORPUS.I-ED-OUTPUT.1147
+    FMT.CORPUS.I-ED-OUTPUT.1148
+    FMT.CORPUS.I-ED-OUTPUT.1149
+    FMT.CORPUS.I-ED-OUTPUT.1150
+    FMT.CORPUS.I-ED-OUTPUT.1151
+    FMT.CORPUS.I-ED-OUTPUT.1152
+    FMT.CORPUS.I-ED-OUTPUT.1153
+    FMT.CORPUS.I-ED-OUTPUT.1154
+    FMT.CORPUS.I-ED-OUTPUT.1155
+    FMT.CORPUS.I-ED-OUTPUT.1156
+    FMT.CORPUS.I-ED-OUTPUT.1293
+    FMT.CORPUS.I-ED-OUTPUT.1294
+    FMT.CORPUS.I-ED-OUTPUT.1295
+    FMT.CORPUS.I-ED-OUTPUT.1296
+    FMT.CORPUS.I-ED-OUTPUT.1297
+    FMT.CORPUS.I-ED-OUTPUT.1298
+    FMT.CORPUS.I-ED-OUTPUT.1299
+    FMT.CORPUS.I-ED-OUTPUT.1300
+    FMT.CORPUS.I-ED-OUTPUT.1301
+    FMT.CORPUS.I-ED-OUTPUT.1302
+    FMT.CORPUS.I-ED-OUTPUT.1303
+    FMT.CORPUS.I-ED-OUTPUT.1304
+    FMT.CORPUS.I-ED-OUTPUT.1305
+    FMT.CORPUS.I-ED-OUTPUT.1306
+    FMT.CORPUS.I-ED-OUTPUT.1307
+    FMT.CORPUS.I-ED-OUTPUT.1308
+    FMT.CORPUS.I-ED-OUTPUT.1309
+    FMT.CORPUS.I-ED-OUTPUT.1310
+    FMT.CORPUS.I-ED-OUTPUT.1311
+    FMT.CORPUS.I-ED-OUTPUT.1312
+    FMT.CORPUS.I-ED-OUTPUT.1313
+    FMT.CORPUS.I-ED-OUTPUT.1314
+    FMT.CORPUS.I-ED-OUTPUT.1315
+    FMT.CORPUS.I-ED-OUTPUT.1316
+    FMT.CORPUS.I-ED-OUTPUT.1317
+    FMT.CORPUS.I-ED-OUTPUT.1318
+    FMT.CORPUS.I-ED-OUTPUT.1319
+    FMT.CORPUS.I-ED-OUTPUT.1320
+    FMT.CORPUS.I-ED-OUTPUT.1321
+    FMT.CORPUS.I-ED-OUTPUT.1322
+    FMT.CORPUS.I-ED-OUTPUT.1323
+    FMT.CORPUS.I-ED-OUTPUT.1324
+    FMT.CORPUS.I-ED-OUTPUT.1325
+    FMT.CORPUS.I-ED-OUTPUT.1326
+    FMT.CORPUS.I-ED-OUTPUT.1327
+    FMT.CORPUS.I-ED-OUTPUT.1328
+    FMT.CORPUS.I-ED-OUTPUT.1329
+    FMT.CORPUS.I-ED-OUTPUT.1330
+    FMT.CORPUS.I-ED-OUTPUT.1331
+    FMT.CORPUS.I-ED-OUTPUT.1332
+    FMT.CORPUS.I-ED-OUTPUT.1333
+    FMT.CORPUS.I-ED-OUTPUT.1334
+    FMT.CORPUS.I-ED-OUTPUT.1335
+    FMT.CORPUS.I-ED-OUTPUT.1336
+    FMT.CORPUS.I-ED-OUTPUT.1337
+    FMT.CORPUS.I-ED-OUTPUT.1338
+    FMT.CORPUS.I-ED-OUTPUT.1339
+    FMT.CORPUS.I-ED-OUTPUT.1340
+    FMT.CORPUS.I-ED-OUTPUT.1341
+    FMT.CORPUS.I-ED-OUTPUT.1342
+    FMT.CORPUS.I-ED-OUTPUT.1343
+    FMT.CORPUS.I-ED-OUTPUT.1344
+    FMT.CORPUS.I-ED-OUTPUT.1345
+    FMT.CORPUS.I-ED-OUTPUT.1346
+    FMT.CORPUS.I-ED-OUTPUT.1347
+    FMT.CORPUS.I-ED-OUTPUT.1348
+    FMT.CORPUS.I-ED-OUTPUT.1349
+    FMT.CORPUS.I-ED-OUTPUT.1350
+    FMT.CORPUS.I-ED-OUTPUT.1351
+    FMT.CORPUS.I-ED-OUTPUT.1352
+    FMT.CORPUS.I-ED-OUTPUT.1353
+    FMT.CORPUS.I-ED-OUTPUT.1354
+    FMT.CORPUS.I-ED-OUTPUT.1355
+    FMT.CORPUS.I-ED-OUTPUT.1356
+    FMT.CORPUS.I-ED-OUTPUT.1357
+    FMT.CORPUS.I-ED-OUTPUT.1358
+    FMT.CORPUS.I-ED-OUTPUT.1359
+    FMT.CORPUS.I-ED-OUTPUT.1360
+    FMT.CORPUS.I-ED-OUTPUT.1361
+    FMT.CORPUS.I-ED-OUTPUT.1362
+    FMT.CORPUS.I-ED-OUTPUT.1363
+    FMT.CORPUS.I-ED-OUTPUT.1364
+    FMT.CORPUS.I-ED-OUTPUT.1365
+    FMT.CORPUS.I-ED-OUTPUT.1366
+    FMT.CORPUS.I-ED-OUTPUT.1367
+    FMT.CORPUS.I-ED-OUTPUT.1368
+    FMT.CORPUS.I-ED-OUTPUT.1369
+    FMT.CORPUS.I-ED-OUTPUT.1370
+    FMT.CORPUS.I-ED-OUTPUT.1371
+    FMT.CORPUS.I-ED-OUTPUT.1372
+    FMT.CORPUS.I-ED-OUTPUT.1373
+    FMT.CORPUS.I-ED-OUTPUT.1374
+    FMT.CORPUS.I-ED-OUTPUT.1375
+    FMT.CORPUS.I-ED-OUTPUT.1376
+    FMT.CORPUS.I-ED-OUTPUT.1377
+    FMT.CORPUS.I-ED-OUTPUT.1378
+    FMT.CORPUS.I-ED-OUTPUT.1379
+    FMT.CORPUS.I-ED-OUTPUT.1380
+    FMT.CORPUS.I-ED-OUTPUT.1381
+    FMT.CORPUS.I-ED-OUTPUT.1382
+    FMT.CORPUS.I-ED-OUTPUT.1383
+    FMT.CORPUS.I-ED-OUTPUT.1384
+    FMT.CORPUS.I-ED-OUTPUT.1385
+    FMT.CORPUS.I-ED-OUTPUT.1386
+    FMT.CORPUS.I-ED-OUTPUT.1387
+    FMT.CORPUS.I-ED-OUTPUT.1388
+    FMT.CORPUS.I-ED-OUTPUT.1389
+    FMT.CORPUS.I-ED-OUTPUT.1390
+    FMT.CORPUS.I-ED-OUTPUT.1391
+    FMT.CORPUS.I-ED-OUTPUT.1392
+    FMT.CORPUS.I-ED-OUTPUT.1393
+    FMT.CORPUS.I-ED-OUTPUT.1394
+    FMT.CORPUS.I-ED-OUTPUT.1395
+    FMT.CORPUS.I-ED-OUTPUT.1396
+    FMT.CORPUS.I-ED-OUTPUT.1397
+    FMT.CORPUS.I-ED-OUTPUT.1398
+    FMT.CORPUS.I-ED-OUTPUT.1399
+    FMT.CORPUS.I-ED-OUTPUT.1400
+    FMT.CORPUS.I-ED-OUTPUT.1401
+    FMT.CORPUS.I-ED-OUTPUT.1402
+    FMT.CORPUS.I-ED-OUTPUT.1403
+    FMT.CORPUS.I-ED-OUTPUT.1404
+    FMT.CORPUS.I-ED-OUTPUT.1405
+    FMT.CORPUS.I-ED-OUTPUT.1406
+    FMT.CORPUS.I-ED-OUTPUT.1407
+    FMT.CORPUS.I-ED-OUTPUT.1408
+    FMT.CORPUS.I-ED-OUTPUT.1409
+    FMT.CORPUS.I-ED-OUTPUT.1410
+    FMT.CORPUS.I-ED-OUTPUT.1411
+    FMT.CORPUS.I-ED-OUTPUT.1412
+    FMT.CORPUS.I-ED-OUTPUT.1413
+    FMT.CORPUS.I-ED-OUTPUT.1414
+    FMT.CORPUS.I-ED-OUTPUT.1415
+    FMT.CORPUS.I-ED-OUTPUT.1416
+    FMT.CORPUS.I-ED-OUTPUT.1417
+    FMT.CORPUS.I-ED-OUTPUT.1418
+    FMT.CORPUS.I-ED-OUTPUT.1419
+    FMT.CORPUS.I-ED-OUTPUT.1420
+    FMT.CORPUS.I-ED-OUTPUT.1421
+    FMT.CORPUS.I-ED-OUTPUT.1422
+    FMT.CORPUS.I-ED-OUTPUT.1423
+    FMT.CORPUS.I-ED-OUTPUT.1424
+    FMT.CORPUS.I-ED-OUTPUT.1425
+    FMT.CORPUS.I-ED-OUTPUT.1426
+    FMT.CORPUS.I-ED-OUTPUT.1427
+    FMT.CORPUS.I-ED-OUTPUT.1428
+   ))
+
+(dolist (name *i-ed-expected-failures*)
+  (pushnew name rt:*expected-failures*))
