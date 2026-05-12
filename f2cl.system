@@ -38,17 +38,25 @@ no tests.lisp was loaded, and \"0 out of 0\" isn't useful."
                    (plusp (hash-table-count
                            (symbol-value entries-table))))
           (funcall do-tests-fn)
-          (let ((pending  (funcall pending-fn))
-                (expected (and (boundp expected-var)
-                               (symbol-value expected-var))))
-            (let ((unexpected (set-difference pending expected))
-                  (surprises  (set-difference expected pending)))
-              (when (or unexpected surprises)
-                (error "~A: ~@[~D unexpected failures: ~S~]~
-                            ~@[~D unexpected successes: ~S~]"
-                       label
-                       (and unexpected (length unexpected)) unexpected
-                       (and surprises  (length surprises))  surprises)))))))))
+          (let* ((total    (hash-table-count (symbol-value entries-table)))
+                 (pending  (funcall pending-fn))
+                 (expected (and (boundp expected-var)
+                                (symbol-value expected-var)))
+                 (failed     (length pending))
+                 (passed     (- total failed))
+                 (unexpected (set-difference pending expected))
+                 (surprises  (set-difference expected pending)))
+            (format t "~&~A: ~D test~:P, ~D passed, ~D failed ~
+                       (~D expected, ~D unexpected, ~D unexpected ~:[successes~;success~])~%"
+                    label total passed failed
+                    (length expected) (length unexpected) (length surprises)
+                    (= (length surprises) 1))
+            (when (or unexpected surprises)
+              (error "~A: ~@[~D unexpected failures: ~S~]~
+                          ~@[~D unexpected successes: ~S~]"
+                     label
+                     (and unexpected (length unexpected)) unexpected
+                     (and surprises  (length surprises))  surprises))))))))
 
 (defun run-f2cl-tests ()
   "Wired into the f2cl-tests mk system below as :finally-do, and
@@ -101,7 +109,23 @@ f2cl/fortran-format/tests in f2cl.asd."
   :components
   ((:module format
     :components
-    ((:file "fortran-format-tests"))))
+    ((:file "fortran-format-corpus")
+     ;; Generated corpus tests; mirrors the ASDF wiring in f2cl.asd.
+     ;; Each pair of files is the auto-generated deftests followed by
+     ;; the hand-maintained expected-failures list for that file.
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "i-ed-output.tests")
+       (:file "i-ed-output.expected-failures"
+              :depends-on ("i-ed-output.tests"))
+       (:file "f-ed-output.tests")
+       (:file "f-ed-output.expected-failures"
+              :depends-on ("f-ed-output.tests"))
+       (:file "e-ed-output.tests")
+       (:file "e-ed-output.expected-failures"
+              :depends-on ("e-ed-output.tests"))))
+     (:file "fortran-format-tests" :depends-on ("fortran-format-corpus")))))
   :finally-do (run-fortran-format-tests))
 
 ;; Regression-test system.
