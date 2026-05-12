@@ -19,15 +19,13 @@
 ;;;----------------------------------------------------------------------
 ;;; One-time translation+compile+load of val/rdtest.f.
 ;;;
-;;; CONVERT-COMPILE-LOAD/NEW-PRINTER toggles
-;;; f2cl::*USE-FORTRAN-FORMAT-PRINTER* on for the duration of the
-;;; translation step.  When that flag is on, parse-read emits
-;;; FORMAT-READ calls (and parse-write/parse-print emit FORMAT-WRITE
-;;; calls), so both halves of each subroutine exercise the new
-;;; engines.
+;;; CONVERT-COMPILE-LOAD now uses the new fortran-format printer/reader
+;;; by default.  parse-read emits FORMAT-READ calls (and
+;;; parse-write/parse-print emit FORMAT-WRITE calls), so both halves
+;;; of each subroutine exercise the new engines.
 
 (eval-when (:load-toplevel :execute)
-  (f2cl-regression:convert-compile-load/new-printer "val/rdtest.f"))
+  (f2cl-regression:convert-compile-load "val/rdtest.f"))
 
 ;;;----------------------------------------------------------------------
 ;;; Helper.  Write INPUT to 'rdtest.dat', call the subroutine, return

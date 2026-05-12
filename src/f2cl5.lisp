@@ -3503,15 +3503,18 @@
 ;;; When non-NIL, get_format_stmt prefers the raw Fortran format string
 ;;; (stashed by parse-format) over the CL-cilist representation, so
 ;;; that the runtime printer can dispatch to fortran-format:write-format
-;;; instead of the legacy execute-format walker.
+;;; instead of the legacy execute-format walker.  The same flag also
+;;; selects between the new FORMAT-READ reader and the legacy READ-FILE
+;;; reader on the input side.
 ;;;
-;;; Off by default for the initial integration.  Flip to T to retranslate
-;;; a file with the new printer path enabled.
-(defvar *use-fortran-format-printer* nil
-  "If T, get_format_stmt returns (:fortran-format STRING) whenever the
-raw Fortran format string was captured, causing fformat at runtime to
-dispatch to fortran-format:write-format.  Falls back to the legacy
-cilist representation when the raw string was not captured.")
+;;; Enabled by default.  Bind to NIL to retranslate a file with the
+;;; legacy fformat/READ-FILE paths.
+(defvar *use-fortran-format-printer* t
+  "If T (the default), get_format_stmt returns (:fortran-format STRING)
+whenever the raw Fortran format string was captured, causing fformat at
+runtime to dispatch to fortran-format:write-format and parse-read to
+emit FORMAT-READ calls.  Falls back to the legacy cilist / READ-FILE
+representation when the raw string was not captured.")
 
 (defun %fortran-format-token-to-string (tok)
   "Render one post-lineread token from a FORMAT body as Fortran source.
