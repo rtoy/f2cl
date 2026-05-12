@@ -113,3 +113,17 @@ c     reversion fires and the format runs again on a second record.
       close(unit=20)
       write(6,*) (a(k), k=1,6)
       end
+
+      subroutine rd_var_fmt
+c     FMT given by a CHARACTER variable holding the format string.
+c     Exercises FORMAT-READ's runtime-FMT path: parse-read can't
+c     resolve FFMT's value at translate time, so it passes the
+c     symbol through and the macro evaluates it at runtime.
+      integer n
+      character*5 ffmt
+      ffmt = '(I5)'
+      open(unit=20, file='rdtest.dat', status='old')
+      read(20,ffmt) n
+      close(unit=20)
+      write(6,*) n
+      end

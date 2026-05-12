@@ -2019,8 +2019,13 @@ the way Fortran's runtime would."
 
 (defmacro format-read (&key unit fmt end err iostat vars)
   "Fortran formatted READ using fortran-format:read-format.
-UNIT is the source (an integer LUN or a string).  FMT is either
-:LIST-DIRECTED or a Fortran format string such as \"(I5,1X,F10.3)\".
+UNIT is the source (an integer LUN or a string).  FMT is evaluated
+at run time and must produce either :LIST-DIRECTED or a Fortran
+format string such as \"(I5,1X,F10.3)\".  A literal keyword or
+string self-evaluates, so the common cases work unchanged; the
+form is also free to be a variable holding the format string, an
+array reference, or any other expression that yields one of those
+two value shapes at runtime.
 
 VARS is a list of varspecs in the same shape READ-FILE uses:
   (:place EXPR TYPE)
@@ -2036,7 +2041,7 @@ ERR, IOSTAT is independently optional."
          (success-body
           `((let ((,count 0))
               ,@(mapcar (lambda (v) (%format-read-count-form count v)) vars)
-              (let ((,values-var (execute-format-read ,stream ',fmt ,count)))
+              (let ((,values-var (execute-format-read ,stream ,fmt ,count)))
                 (flet ((,pop-fn ()
                          (let ((v (car ,values-var)))
                            (setf ,values-var (cdr ,values-var))

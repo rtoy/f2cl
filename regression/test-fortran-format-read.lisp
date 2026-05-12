@@ -113,6 +113,16 @@
 ")
 
 ;;;----------------------------------------------------------------------
+;;; FMT supplied as a CHARACTER variable.  parse-read can't resolve
+;;; the variable's contents at translate time, so it passes the
+;;; symbol through; FORMAT-READ evaluates it at run time.
+
+(rt:deftest fortran-format-read.runtime-fmt
+    (rd-test "rd_var_fmt" "  999")
+  "         999
+")
+
+;;;----------------------------------------------------------------------
 ;;; IOSTAT= surfaces EOF.  The fixture's input has one record; the
 ;;; second READ inside the subroutine hits EOF.
 ;;;

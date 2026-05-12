@@ -3792,34 +3792,39 @@ surrounded by parentheses."
 
 ;;; Helper for choosing which reader macro to emit, parallel to
 ;;; %PRINTER-MACRO-FOR on the output side.  RESOLVED-FMT is what
-;;; you get back from GET_FORMAT_STMT (or NIL if the caller didn't
-;;; or couldn't resolve through it -- e.g. an FMT that's a variable
-;;; whose runtime value we can't know).  When the new printer is
-;;; enabled AND the format resolved to something the new reader can
-;;; consume (a Fortran format string, or :LIST-DIRECTED), we emit a
-;;; FORMAT-READ call.  Otherwise the legacy READ-FILE macro handles
-;;; it the same way it always has.
+;;; you get back from %RESOLVED-READ-FMT below.  When the new printer
+;;; is enabled AND the format resolved to something the new reader
+;;; can consume, we emit a FORMAT-READ call.  Otherwise the legacy
+;;; READ-FILE macro handles it.
+;;;
+;;; The "something the new reader can consume" set is:
+;;;   - a string                                  (always taken)
+;;;   - :LIST-DIRECTED                            (taken under flag)
+;;;   - a symbol or compound expression           (taken under flag --
+;;;       a variable or array reference holding the format string at
+;;;       runtime; FORMAT-READ evaluates it through to the engine)
 (defun %reader-macro-for (resolved-fmt)
   (cond
-    ((stringp resolved-fmt)         'f2cl-lib::format-read)
+    ((stringp resolved-fmt)           'f2cl-lib::format-read)
     ((and *use-fortran-format-printer*
-          (eq resolved-fmt :list-directed))
-                                    'f2cl-lib::format-read)
-    (t                              'f2cl-lib::read-file)))
+          (or (eq resolved-fmt :list-directed)
+              (symbolp resolved-fmt)
+              (consp resolved-fmt)))
+                                      'f2cl-lib::format-read)
+    (t                                'f2cl-lib::read-file)))
 
 ;;; Resolve a parse-read-options FMT value through GET_FORMAT_STMT
 ;;; so we can see what shape it actually is (raw Fortran string,
-;;; :list-directed, or a legacy cilist).  Returns NIL when FMT
-;;; refers to something we can't resolve at translate time, e.g.
-;;; a variable holding the format string.  In that case the caller
-;;; falls back to the legacy READ-FILE path.
+;;; :list-directed, or a legacy cilist).  When FMT is a variable or
+;;; arbitrary expression that we can't resolve at translate time,
+;;; return it unchanged so the macro can evaluate it at runtime.
 (defun %resolved-read-fmt (fmt)
   (cond
     ((null fmt)                   :list-directed)
     ((eq fmt '*)                  :list-directed)
     ((stringp fmt)                (get_format_stmt (list fmt)))
     ((numberp fmt)                (get_format_stmt (list fmt)))
-    (t                            nil)))
+    (t                            fmt)))
 
 (defun parse-read (x)
   ;; Two surface forms:
