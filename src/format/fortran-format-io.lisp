@@ -557,6 +557,12 @@ remaining values stops format processing immediately."
       ;; Main pass
       (dolist (ed main)
         (when *colon-stop* (return))
+        ;; F95 12.2.2: if a value-producing descriptor is reached
+        ;; with no remaining values, format processing stops as if
+        ;; a colon descriptor were present (implicit-colon rule).
+        (when (and (null vs)
+                   (edit-descriptor-outputs-value-p ed))
+          (return))
         (setf vs (emit-ed ed out vs)))
       ;; Reversion: keep cycling rev-eds while values remain.
       (when (and vs (not *colon-stop*))
@@ -568,8 +574,8 @@ remaining values stops format processing immediately."
             (emit-newline out)
             (dolist (ed rev)
               (when *colon-stop* (return))
-              (when vs
-                (setf vs (emit-ed ed out vs)))))))
+              (when (null vs) (return))
+              (setf vs (emit-ed ed out vs))))))
       (get-output-stream-string out))))
 
 ;;; ---------------------------------------------------------------
