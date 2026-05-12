@@ -1095,21 +1095,43 @@ causing all pending operations to be flushed"
   (let ((result (gensym)))
     `(prog ((,result (%rewind ,unit)))
         (declare (ignorable ,result))
-        ,(if err `(unless ,result (go ,(f2cl-lib::make-label err))))
-        ,(if iostat `(setf ,iostat (if ,result 0 1))))))
+        ,@(when iostat
+            `((setf ,iostat (if ,result 0 1))))
+        ,@(when err
+            `((unless ,result (go ,(f2cl-lib::make-label err))))))))
           
 
 (defun %close (&key unit status)
-  (when status
-    (error "F2CL-LIB does not support STATUS"))
-  (cl:close (lun->stream unit)))
+  "Implement Fortran CLOSE. Returns 0 on success, positive on
+  error. STATUS is \"KEEP\" or \"DELETE\" (case-insensitive), or NIL
+  for default (KEEP)."
+  (let ((stream (gethash unit *lun-hash*)))
+    (cond
+      ((null stream)
+       ;; F77: closing an unconnected unit has no effect.
+       0)
+      (t
+       (handler-case
+           (let ((pathname (and (typep stream 'file-stream)
+                                (pathname stream)))
+                 (delete-p (and status
+                                (string-equal status "DELETE"))))
+             (close stream)
+             (remhash unit *lun-hash*)
+             (when (and delete-p pathname (probe-file pathname))
+               (delete-file pathname))
+             0)
+         (error () 1))))))
 
-(defmacro close$ (&key unit iostat err status)
-  (let ((result (gensym)))
-    `(prog ((,result (%close :unit ,unit  :status ,status)))
-        (declare (ignorable ,result))
-        ,(if err `(unless ,result (go ,(f2cl-lib::make-label err))))
-        ,(if iostat `(setf ,iostat (if ,result 0 1))))))
+(defmacro close$ (&key unit status iostat err)
+  (let ((result (gensym "IOS-")))
+    `(let ((,result (%close :unit ,unit :status ,status)))
+       ,@(when iostat
+           `((setf ,iostat ,result)))
+       ,@(when err
+           `((unless (zerop ,result)
+               (go ,err))))
+       ,result)))
 
 ;;;----------------------------------------------------------------------
 ;;; READ
