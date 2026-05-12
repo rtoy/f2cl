@@ -18,6 +18,16 @@ These are documented divergences from gfortran's list-directed output. Output is
 
 - **End-of-record on short input** — `(3I3)` reading `"  1"` returns `(1 0 0)`; gfortran raises an end-of-record error. May or may not want strict gfortran behavior depending on use case.
 
+## F77 input wire-up (`FORMAT-READ` macro in `f2cl-lib.lisp`, `parse-read` in `f2cl5.lisp`)
+
+These are translator/macro-level gaps, separate from the engine itself.
+
+- **FMT as a runtime variable falls back to legacy `read-file`** — `READ(5, FMT_VAR) X` where `FMT_VAR` is a `CHARACTER` variable holding the format string: `parse-read` can't resolve the format at translate time, so `%reader-macro-for` picks `read-file` instead of `format-read`. The legacy path ignores the FMT and uses CL `READ`. To fix, `format-read` needs to accept FMT as a runtime expression (currently it embeds the format quoted into the expansion). The fixes are small: drop the quote in the macro and let the format be evaluated; `execute-format-read` already accepts the value at runtime.
+
+- **EOF with `IOSTAT=` but no `END=` sets `IOSTAT=+1` not `-1`** — Fortran says `IOSTAT=-1` on end-of-file regardless of whether `END=` was given. Both `read-file` and `format-read` register the `end-of-file` handler clause only when `:end` is non-nil, so without `END=` the EOF condition falls through to the catch-all `(error () ...)` clause that sets `IOSTAT=+1`. The fix is to register the `end-of-file` handler whenever either `END=` or `IOSTAT=` is given, with the IOSTAT side-effect even when no GO is needed. Same fix on both paths.
+
+- **Re-parse cost in `%fformat-read-records`** — when a read needs more records than the first call returned, the helper appends another line and re-invokes `%read-format` from scratch, which re-parses the format string each pass. For typical short Fortran reads this is unmeasurable; for a long reversion span across many records it's O(N²) parsing. The principled fix is to expose a streaming entry on the engine that can resume from a saved state across record boundaries.
+
 ## Parser
 
 - **Comma-less juxtaposition** — `(I3F5.2)`, `(I3/I3)`, `(1PF8.2)`, etc. F77 allows commas to be omitted around `/`, around `:`, between `P` and the immediately following F/E/D/G, and (in some readings) between two width-bearing descriptors. py-fortranformat handles this by inserting implicit commas in the lexer. Currently we reject all comma-less forms.
