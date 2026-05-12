@@ -18,6 +18,14 @@ These are documented divergences from gfortran's list-directed output. Output is
 
 - **End-of-record on short input** — `(3I3)` reading `"  1"` returns `(1 0 0)`; gfortran raises an end-of-record error. May or may not want strict gfortran behavior depending on use case.
 
+## F77 input wire-up (`FORMAT-READ` macro in `f2cl-lib.lisp`, `parse-read` in `f2cl5.lisp`)
+
+These are translator/macro-level gaps, separate from the engine itself.
+
+- **EOF with `IOSTAT=` but no `END=` sets `IOSTAT=+1` not `-1`** — Fortran says `IOSTAT=-1` on end-of-file regardless of whether `END=` was given. Both `read-file` and `format-read` register the `end-of-file` handler clause only when `:end` is non-nil, so without `END=` the EOF condition falls through to the catch-all `(error () ...)` clause that sets `IOSTAT=+1`. The fix is to register the `end-of-file` handler whenever either `END=` or `IOSTAT=` is given, with the IOSTAT side-effect even when no GO is needed. Same fix on both paths.
+
+- **Re-walk cost in `%fformat-read-records`** — `read-format` accepts records as a pre-built list and walks them once.  When the driver doesn't know how many records the read will consume (the common case for formatted reads with reversion), it calls `read-format` with one record, then two, then three, etc., until the requested value count is met.  Each call walks from record 1, so the K-th call re-walks records 1..K-1.  Total record-walk cost across the read is O(K²) in the number of records.  Format parsing itself is O(K) (constant per call), not O(K²) -- the format string doesn't grow.  py-fortranformat avoids the issue: its `_input.input(eds, reversion_eds, records, num_vals)` takes `records` as an iterator and pulls `next(records)` on demand from inside the walk (driven by `/` and by reversion's wraparound), so the whole read finishes in one pass regardless of record count.  Fix is to mirror that: add a `read-format` variant (or extend the existing entry) that accepts records as a stream or thunk so we can pull more on demand from inside the walk; `%fformat-read-records` then becomes a one-line wrapper that hands the input stream straight through.  For typical Fortran reads (K=1 record) the current behaviour is unmeasurable; this only matters for long-reversion-span reads across many records.
+
 ## Parser
 
 - **Comma-less juxtaposition** — `(I3F5.2)`, `(I3/I3)`, `(1PF8.2)`, etc. F77 allows commas to be omitted around `/`, around `:`, between `P` and the immediately following F/E/D/G, and (in some readings) between two width-bearing descriptors. py-fortranformat handles this by inserting implicit commas in the lexer. Currently we reject all comma-less forms.

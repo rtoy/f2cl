@@ -63,7 +63,7 @@ f2cl/fortran-format/tests in f2cl.asd."
 
 (mk:defsystem f2cl
   :source-pathname *f2cl-root*
-  :depends-on nil
+  :depends-on ("fortran-format")
   :components
   ((:module pkg
     :source-pathname "src"
@@ -155,7 +155,9 @@ f2cl/fortran-format/tests in f2cl.asd."
   :depends-on (f2cl rt quadpack-tests)
   :components
   ((:file "helpers")
-   (:file "tests"))
+   (:file "tests")
+   (:file "test-fortran-format")
+   (:file "test-fortran-format-read"))
   ;; mk-defsystem 3.9.2 wraps :finally-do's value in (lambda () ...)
   ;; at defsystem-expansion time, so don't use a lambda here.
   ;; Hopefully, this will get fixed someday.

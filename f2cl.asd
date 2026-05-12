@@ -99,7 +99,8 @@
             :components
             ((:file "helpers")
              (:file "tests")
-             (:file "test-fortran-format"))))
+             (:file "test-fortran-format")
+             (:file "test-fortran-format-read"))))
   :perform (test-op (op c)
              (declare (ignore op c))
              (uiop:symbol-call '#:regression-test '#:do-tests)

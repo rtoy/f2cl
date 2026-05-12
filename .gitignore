@@ -1,9 +1,8 @@
 # Ignore fasls
-/src/*.sse2f
-/src/f2cl-lib.err
-/src/f2cl1.err
-/src/f2cl2.err
-/src/f2cl5.err
+*.sse2f
+*.err
+/packages/fasl/
+/regression/f2cl-regression-out/
 # Ignore generated lisp files in odepack
 /packages/odepack/demo1/opkdemo1.lisp
 /packages/odepack/demo1/edit2.lisp
@@ -51,3 +50,12 @@
 /packages/colnew/fortran/problem-3/*.lisp
 /packages/colnew/fortran/problem-3/*.o
 
+# Generated files from tests.
+/rdtest.dat
+/fort10.dat
+/fort11.dat
+/exists.dat
+/fresh.dat
+/barrier
+/already.dat
+*.p
