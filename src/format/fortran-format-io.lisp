@@ -519,27 +519,60 @@ The rule: if 0.1 <= |v| < 10^d, use F; otherwise E. When F is used,
 nb trailing spaces are appended to keep the visible field the same
 width as the E equivalent. nb = 4 for Gw.d, e+2 for Gw.dEe.
 
+When (w - nb) is too small to hold the F output, gfortran emits
+the F output anyway -- extending the field past w -- rather than
+asterisking.  Only G's F mode does this; E mode preserves the
+standard asterisk-on-overflow semantics via format-e.
+
 The kP scale factor passes through to the E branch when G falls
 back to scientific form; the F branch ignores it per gfortran's
 behavior."
   (let* ((v (coerce val 'double-float))
          (mag (abs v))
-         (nb (if exp-digits (+ exp-digits 2) 4)))
-    (cond
-      ((zerop v)
-       (let* ((effective-w (- width nb))
-              (s (format-f v effective-w (max 0 (1- decimal-places)) 0 incl-plus)))
-         (concatenate 'string s (make-string nb :initial-element #\Space))))
-      ((or (< mag 0.1d0) (>= mag (expt 10d0 decimal-places)))
-       (format-e v width decimal-places exp-digits scale incl-plus))
-      (t
-       ;; F-equivalent: pick decimal places based on magnitude bucket.
-       ;; mag in [10^(k-1), 10^k) for k in 1..d -> d-k decimals.
-       (let* ((k (1+ (floor (log mag 10d0))))
-              (effective-d (max 0 (- decimal-places k)))
-              (effective-w (- width nb))
-              (s (format-f v effective-w effective-d 0 incl-plus)))
-         (concatenate 'string s (make-string nb :initial-element #\Space)))))))
+         (nb (if exp-digits (+ exp-digits 2) 4))
+         (effective-w (- width nb))
+         (trailing (make-string nb :initial-element #\Space)))
+    (labels ((natural-f (decimals)
+               ;; Get the natural F form (no padding) with possible
+               ;; leading-zero suppression applied.
+               (let* ((wide (format-f v 64 decimals 0 incl-plus))
+                      (trimmed (string-left-trim " " wide)))
+                 ;; Apply leading-zero suppression: "0.dddd" -> ".dddd",
+                 ;; "-0.dddd" -> "-.dddd".  format-f only suppresses
+                 ;; when its width is tight, which it isn't here.
+                 (cond
+                   ((and (>= (length trimmed) 2)
+                         (char= (char trimmed 0) #\0)
+                         (char= (char trimmed 1) #\.))
+                    (subseq trimmed 1))
+                   ((and (>= (length trimmed) 3)
+                         (char= (char trimmed 0) #\-)
+                         (char= (char trimmed 1) #\0)
+                         (char= (char trimmed 2) #\.))
+                    (concatenate 'string "-" (subseq trimmed 2)))
+                   (t trimmed))))
+             (emit-f (decimals)
+               ;; Render val as F with DECIMALS.  format-f handles
+               ;; padding and overflow-to-asterisks normally; we
+               ;; only intercept when effective-w <= 0, which would
+               ;; crash format-f -- in that case gfortran emits the
+               ;; natural F form anyway (extending past w).
+               (if (>= effective-w 1)
+                   (concatenate 'string
+                                (format-f v effective-w decimals 0 incl-plus)
+                                trailing)
+                   (concatenate 'string (natural-f decimals) trailing))))
+      (cond
+        ((zerop v)
+         (emit-f (max 0 (1- decimal-places))))
+        ((or (< mag 0.1d0) (>= mag (expt 10d0 decimal-places)))
+         (format-e v width decimal-places exp-digits scale incl-plus))
+        (t
+         ;; F-equivalent: pick decimal places based on magnitude bucket.
+         ;; mag in [10^(k-1), 10^k) for k in 1..d -> d-k decimals.
+         (let* ((k (1+ (floor (log mag 10d0))))
+                (effective-d (max 0 (- decimal-places k))))
+           (emit-f effective-d)))))))
 
 
 (defmethod emit-ed ((ed real-fixed-ed) stream values)
