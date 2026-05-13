@@ -7,18 +7,10 @@
 ;;;;   (fortran-format::establish-baseline-expected-failures ...)
 ;;;; but maintained by hand thereafter: remove a name when its
 ;;;; bug is fixed.
-;;;;
-;;;; 3 failures at baseline.  Will be addressed in a
-;;;; separate change.
 
 (in-package #:fortran-format)
 
-(defparameter *sp-es-ed-expected-failures*
-  '(
-    FMT.CORPUS.SP-ES-ED-OUTPUT.0620
-    FMT.CORPUS.SP-ES-ED-OUTPUT.0735
-    FMT.CORPUS.SP-ES-ED-OUTPUT.0827
-   ))
+(defparameter *sp-es-ed-expected-failures* '())
 
 (dolist (name *sp-es-ed-expected-failures*)
   (pushnew name rt:*expected-failures*))

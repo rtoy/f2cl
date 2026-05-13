@@ -140,6 +140,9 @@
        (:file "sp-en-ed-output.tests")
        (:file "sp-en-ed-output.expected-failures"
         :depends-on ("sp-en-ed-output.tests"))
+       (:file "sp-es-ed-output.tests")
+       (:file "sp-es-ed-output.expected-failures"
+        :depends-on ("sp-es-ed-output.tests"))
        (:file "sp-f-ed-output.tests")
        (:file "sp-f-ed-output.expected-failures"
         :depends-on ("sp-f-ed-output.tests"))
