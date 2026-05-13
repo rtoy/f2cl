@@ -120,29 +120,35 @@ the new values-cursor (a cons of remaining values)."))
   (let* ((v (car values))
          (w (width-ed-width ed))
          (m (integer-ed-min-digits ed))
-         (base (integer-ed-base ed))
-         ;; ~vR formats in BASE; upper-cased for hex by convention.
-         (digits (let ((d (format nil "~vR" base (abs v))))
-                   (if (= base 16) (string-upcase d) d)))
-         (sign (cond
-                 ((minusp v) "-")
-                 ;; SP only forces '+' on signed decimal output.
-                 ;; BOZ outputs are unsigned bit-pattern representations
-                 ;; and never carry a sign in Fortran.
-                 ((and *include-plus* (= base 10)) "+")
-                 (t ""))))
-    (when m
-      ;; Pad to m digits with leading zeros, still in BASE.
-      (let ((d (format nil "~v,v,'0R" base m (abs v))))
-        (setf digits (if (= base 16) (string-upcase d) d))))
-    (let* ((body (concatenate 'string sign digits))
-           (pad  (max 0 (- w (length body)))))
-      (cond
-        ((> (length body) w)
-         (emit-out stream (make-string w :initial-element #\*)))
-        (t
-         (emit-out stream (make-string pad :initial-element #\Space))
-         (emit-out stream body)))))
+         (base (integer-ed-base ed)))
+    (cond
+      ;; F77 10.6.1.1: if min-digits is explicitly 0 and the value
+      ;; is 0, the field is all blanks; no digit is produced.
+      ((and m (zerop m) (zerop v))
+       (emit-out stream (make-string w :initial-element #\Space)))
+      (t
+       (let* ((digits (let ((d (format nil "~vR" base (abs v))))
+                        ;; ~vR formats in BASE; upper-cased for hex.
+                        (if (= base 16) (string-upcase d) d)))
+              (sign (cond
+                      ((minusp v) "-")
+                      ;; SP only forces '+' on signed decimal output.
+                      ;; BOZ outputs are unsigned bit-pattern
+                      ;; representations and never carry a sign.
+                      ((and *include-plus* (= base 10)) "+")
+                      (t ""))))
+         (when m
+           ;; Pad to m digits with leading zeros, still in BASE.
+           (let ((d (format nil "~v,v,'0R" base m (abs v))))
+             (setf digits (if (= base 16) (string-upcase d) d))))
+         (let* ((body (concatenate 'string sign digits))
+                (pad  (max 0 (- w (length body)))))
+           (cond
+             ((> (length body) w)
+              (emit-out stream (make-string w :initial-element #\*)))
+             (t
+              (emit-out stream (make-string pad :initial-element #\Space))
+              (emit-out stream body))))))))
   (cdr values))
 
 (defmethod emit-ed ((ed logical-ed) stream values)
@@ -551,6 +557,12 @@ remaining values stops format processing immediately."
       ;; Main pass
       (dolist (ed main)
         (when *colon-stop* (return))
+        ;; F95 12.2.2: if a value-producing descriptor is reached
+        ;; with no remaining values, format processing stops as if
+        ;; a colon descriptor were present (implicit-colon rule).
+        (when (and (null vs)
+                   (edit-descriptor-outputs-value-p ed))
+          (return))
         (setf vs (emit-ed ed out vs)))
       ;; Reversion: keep cycling rev-eds while values remain.
       (when (and vs (not *colon-stop*))
@@ -562,8 +574,8 @@ remaining values stops format processing immediately."
             (emit-newline out)
             (dolist (ed rev)
               (when *colon-stop* (return))
-              (when vs
-                (setf vs (emit-ed ed out vs)))))))
+              (when (null vs) (return))
+              (setf vs (emit-ed ed out vs))))))
       (get-output-stream-string out))))
 
 ;;; ---------------------------------------------------------------
