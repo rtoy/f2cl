@@ -259,7 +259,10 @@
         :depends-on ("l-ed-input-1.tests"))
        (:file "f-ed-input-1.tests")
        (:file "f-ed-input-1.expected-failures"
-        :depends-on ("f-ed-input-1.tests"))))
+        :depends-on ("f-ed-input-1.tests"))
+       (:file "d-ed-input-1.tests")
+       (:file "d-ed-input-1.expected-failures"
+        :depends-on ("d-ed-input-1.tests"))))
      (:file "fortran-format-tests"
       :depends-on ("fortran-format-corpus")))))
   :perform (test-op (op c)
