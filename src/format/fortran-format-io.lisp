@@ -345,6 +345,14 @@ output one decade off from gfortran."
          (digits-raw (concatenate 'string
                                   (subseq mantissa 0 dot-pos)
                                   (subseq mantissa (1+ dot-pos))))
+         ;; Some implementations (CMUCL, CLISP) pad ~,0E with a
+         ;; trailing zero even when zero digits were requested, so
+         ;; we may get more digits than we asked for.  Truncate to
+         ;; exactly NDIGITS so downstream code (mantissa length,
+         ;; suppression decisions) is implementation-independent.
+         (digits-raw (if (> (length digits-raw) ndigits)
+                         (subseq digits-raw 0 ndigits)
+                         digits-raw))
          (fortran-exp (1+ cl-exp))
          (fortran-mantissa (concatenate 'string "0." digits-raw)))
     (values fortran-mantissa fortran-exp)))
@@ -409,11 +417,41 @@ digits, and the exponent is increased by |k|."
                                       (subseq sig 0
                                               (max 0 (- decimal-places nz))))))))
                   (shown-exp (- exp k))
+                  ;; If exp-digits was explicitly given (E w.d Ee form),
+                  ;; the exponent must fit in e digits.  If it doesn't,
+                  ;; the result is "*"s regardless of mantissa width.
+                  (exp-overflow-p
+                    (and exp-digits
+                         (> (length (format nil "~A" (abs shown-exp)))
+                            exp-digits)))
                   (body (concatenate 'string
                                      sign
                                      mantissa
                                      (%emit-exp-suffix shown-exp exp-digits
                                                        :char expchar))))
+             (when exp-overflow-p
+               (return-from format-e (make-string width :initial-element #\*)))
+             ;; gfortran leading-zero suppression for E: when the
+             ;; natural form "[-]0.dddd E+nn" overflows the field
+             ;; width and the mantissa starts with "0.", drop that
+             ;; "0" to yield "[-].dddd E+nn".  Same rule as in
+             ;; format-f.  Only applicable when k=0 (the only mode
+             ;; whose mantissa has the "0.DDDD" shape; ES/EN are
+             ;; D.DDDD, k>0 puts digits before the dot, k<0 keeps
+             ;; the "0." but the value of suppression there is
+             ;; debatable -- we leave kP<0 alone for now).
+             (when (and (zerop k)
+                        (> (length body) width)
+                        (>= (length mantissa) 2)
+                        (char= (char mantissa 0) #\0)
+                        (char= (char mantissa 1) #\.))
+               (let ((shorter (concatenate 'string
+                                           sign
+                                           (subseq mantissa 1)
+                                           (%emit-exp-suffix shown-exp exp-digits
+                                                             :char expchar))))
+                 (when (<= (length shorter) width)
+                   (setf body shorter))))
              (%pad-or-asterisks body width))))))))
 
 (defun format-es (val width decimal-places exp-digits incl-plus)
