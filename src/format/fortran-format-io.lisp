@@ -247,7 +247,12 @@ Negative zero shows as '-' even though MINUSP returns NIL for it."
   "Fortran F format: fixed-point with no exponent.
 With a kP scale factor in effect, the externally-shown value is
 val * 10^k -- the decimal point shifts right by k positions (or
-left, for negative k)."
+left, for negative k).
+
+Unlike py-fortranformat, which composes the F output digit by
+digit from a high-precision ~e intermediate, we let CL's ~F build
+the magnitude string and then trim a leading \"0.\" if it doesn't
+fit the field width."
   (let* ((v (coerce val 'double-float))
          ;; kP on F: rescale the value.
          ;;
@@ -271,6 +276,29 @@ left, for negative k)."
          (sign (%sign-prefix scaled incl-plus))
          (body-mag (format nil "~,vF" decimal-places mag))
          (body (concatenate 'string sign body-mag)))
+    ;; gfortran applies a leading-zero-suppression rule when the
+    ;; natural form does not fit the field width and |v| < 1, so
+    ;; the magnitude starts with "0.": drop that leading "0",
+    ;; yielding ".dddd" (or "-.dddd").  Try the shorter form only
+    ;; if it actually fits; otherwise fall through to "*"s.
+    (when (and (> (length body) width)
+               (>= (length body-mag) 2)
+               (char= (char body-mag 0) #\0)
+               (char= (char body-mag 1) #\.))
+      (let ((shorter (concatenate 'string sign (subseq body-mag 1))))
+        (when (<= (length shorter) width)
+          (setf body shorter))))
+    ;; Fw.0 special case: when d=0 and the value rounds to 0,
+    ;; gfortran emits "0" rather than just "." (which is what the
+    ;; leading-zero-suppression step above would produce for a
+    ;; positive sub-unit value with no sign).  "0" carries
+    ;; information; "." does not.  Also handle the case where
+    ;; even the suppressed form does not fit: collapse to "0".
+    (when (and (zerop decimal-places)
+               (zerop (round mag))
+               (or (string= body ".")
+                   (> (length body) width)))
+      (setf body "0"))
     (%pad-or-asterisks body width)))
 
 (defun %emit-exp-suffix (exp exp-digits &key (char #\E))

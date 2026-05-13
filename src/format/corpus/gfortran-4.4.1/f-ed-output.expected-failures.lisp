@@ -9,53 +9,26 @@
 ;;;; bug is fixed.  Implementation-specific failures should be
 ;;;; wrapped in #+<impl> / #-<impl>.
 ;;;;
-;;;; 46 failures at baseline.
+;;;; 1 failure (down from 46 baseline; leading-zero suppression
+;;;; and Fw.0 round-to-zero fixed).
+;;;;
+;;;; FMT.CORPUS.F-ED-OUTPUT.0128 is a corpus-data artifact, not an
+;;;; implementation defect.  The test asks (write-format "(F10.0)"
+;;;; 123456789) to produce "123456792.".  gfortran's runtime printed
+;;;; 123456792 because its compiler coerced the integer literal
+;;;; 123456789 to single-precision, where the nearest representable
+;;;; value is exactly 123456792, and then its print routine emits
+;;;; every digit of the binary value.  CMUCL's ~F prints just enough
+;;;; digits to read back the same float and so emits "123456790."
+;;;; even after coercion to single-float; SBCL behaves similarly.
+;;;; Matching gfortran would require bypassing CL's ~F and writing
+;;;; our own digit-expansion routine, which is not worthwhile for
+;;;; one corpus entry.
 
 (in-package #:fortran-format)
 
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0014 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0015 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0016 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0017 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0018 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0019 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0020 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0021 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0022 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0038 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0040 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0042 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0044 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0045 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0128 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0175 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0177 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0179 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0181 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0199 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0201 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0203 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0205 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0206 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0313 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0315 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0317 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0319 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0337 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0339 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0341 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0343 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0344 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0428 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0430 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0432 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0434 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0452 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0454 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0456 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0458 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0459 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0520 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0522 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0524 rt:*expected-failures*)
-(pushnew 'FMT.CORPUS.F-ED-OUTPUT.0526 rt:*expected-failures*)
+(defparameter *f-ed-expected-failures*
+  '(FMT.CORPUS.F-ED-OUTPUT.0128))
+
+(dolist (name *f-ed-expected-failures*)
+  (pushnew name rt:*expected-failures*))
