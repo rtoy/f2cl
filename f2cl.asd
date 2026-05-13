@@ -148,7 +148,37 @@
         :depends-on ("sp-o-ed-output.tests"))
        (:file "sp-z-ed-output.tests")
        (:file "sp-z-ed-output.expected-failures"
-        :depends-on ("sp-z-ed-output.tests"))))
+        :depends-on ("sp-z-ed-output.tests"))
+       (:file "colon-a-ed-output.tests")
+       (:file "colon-a-ed-output.expected-failures"
+        :depends-on ("colon-a-ed-output.tests"))
+       (:file "colon-b-ed-output.tests")
+       (:file "colon-b-ed-output.expected-failures"
+        :depends-on ("colon-b-ed-output.tests"))
+       (:file "colon-d-ed-output.tests")
+       (:file "colon-d-ed-output.expected-failures"
+        :depends-on ("colon-d-ed-output.tests"))
+       (:file "colon-e-ed-output.tests")
+       (:file "colon-e-ed-output.expected-failures"
+        :depends-on ("colon-e-ed-output.tests"))
+       (:file "colon-f-ed-output.tests")
+       (:file "colon-f-ed-output.expected-failures"
+        :depends-on ("colon-f-ed-output.tests"))
+       (:file "colon-g-ed-output.tests")
+       (:file "colon-g-ed-output.expected-failures"
+        :depends-on ("colon-g-ed-output.tests"))
+       (:file "colon-i-ed-output.tests")
+       (:file "colon-i-ed-output.expected-failures"
+        :depends-on ("colon-i-ed-output.tests"))
+       (:file "colon-l-ed-output.tests")
+       (:file "colon-l-ed-output.expected-failures"
+        :depends-on ("colon-l-ed-output.tests"))
+       (:file "colon-o-ed-output.tests")
+       (:file "colon-o-ed-output.expected-failures"
+        :depends-on ("colon-o-ed-output.tests"))
+       (:file "colon-z-ed-output.tests")
+       (:file "colon-z-ed-output.expected-failures"
+        :depends-on ("colon-z-ed-output.tests"))))
      (:file "fortran-format-tests"
       :depends-on ("fortran-format-corpus")))))
   :perform (test-op (op c)
