@@ -178,7 +178,16 @@
         :depends-on ("colon-o-ed-output.tests"))
        (:file "colon-z-ed-output.tests")
        (:file "colon-z-ed-output.expected-failures"
-        :depends-on ("colon-z-ed-output.tests"))))
+        :depends-on ("colon-z-ed-output.tests"))
+       (:file "x-a-ed-output.tests")
+       (:file "x-a-ed-output.expected-failures"
+        :depends-on ("x-a-ed-output.tests"))
+       (:file "x-d-ed-output.tests")
+       (:file "x-d-ed-output.expected-failures"
+        :depends-on ("x-d-ed-output.tests"))
+       (:file "x-l-ed-output.tests")
+       (:file "x-l-ed-output.expected-failures"
+        :depends-on ("x-l-ed-output.tests"))))
      (:file "fortran-format-tests"
       :depends-on ("fortran-format-corpus")))))
   :perform (test-op (op c)
