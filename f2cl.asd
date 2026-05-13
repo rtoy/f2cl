@@ -107,6 +107,9 @@
        (:file "d-ed-output.tests")
        (:file "d-ed-output.expected-failures"
         :depends-on ("d-ed-output.tests"))
+       (:file "es-ed-output.tests")
+       (:file "es-ed-output.expected-failures"
+        :depends-on ("es-ed-output.tests"))
        (:file "l-ed-output.tests")
        (:file "l-ed-output.expected-failures"
         :depends-on ("l-ed-output.tests"))
