@@ -118,7 +118,43 @@
         :depends-on ("o-ed-output.tests"))
        (:file "z-ed-output.tests")
        (:file "z-ed-output.expected-failures"
-        :depends-on ("z-ed-output.tests"))))
+        :depends-on ("z-ed-output.tests"))
+       (:file "sp-a-ed-output.tests")
+       (:file "sp-a-ed-output.expected-failures"
+        :depends-on ("sp-a-ed-output.tests"))
+       (:file "sp-b-ed-output.tests")
+       (:file "sp-b-ed-output.expected-failures"
+        :depends-on ("sp-b-ed-output.tests"))
+       (:file "sp-d-ed-output.tests")
+       (:file "sp-d-ed-output.expected-failures"
+        :depends-on ("sp-d-ed-output.tests"))
+       (:file "sp-e-ed-output.tests")
+       (:file "sp-e-ed-output.expected-failures"
+        :depends-on ("sp-e-ed-output.tests"))
+       (:file "sp-en-ed-output.tests")
+       (:file "sp-en-ed-output.expected-failures"
+        :depends-on ("sp-en-ed-output.tests"))
+       (:file "sp-es-ed-output.tests")
+       (:file "sp-es-ed-output.expected-failures"
+        :depends-on ("sp-es-ed-output.tests"))
+       (:file "sp-f-ed-output.tests")
+       (:file "sp-f-ed-output.expected-failures"
+        :depends-on ("sp-f-ed-output.tests"))
+       (:file "sp-g-ed-output.tests")
+       (:file "sp-g-ed-output.expected-failures"
+        :depends-on ("sp-g-ed-output.tests"))
+       (:file "sp-i-ed-output.tests")
+       (:file "sp-i-ed-output.expected-failures"
+        :depends-on ("sp-i-ed-output.tests"))
+       (:file "sp-l-ed-output.tests")
+       (:file "sp-l-ed-output.expected-failures"
+        :depends-on ("sp-l-ed-output.tests"))
+       (:file "sp-o-ed-output.tests")
+       (:file "sp-o-ed-output.expected-failures"
+        :depends-on ("sp-o-ed-output.tests"))
+       (:file "sp-z-ed-output.tests")
+       (:file "sp-z-ed-output.expected-failures"
+        :depends-on ("sp-z-ed-output.tests"))))
      (:file "fortran-format-tests"
       :depends-on ("fortran-format-corpus")))))
   :perform (test-op (op c)
