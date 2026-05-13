@@ -262,6 +262,23 @@ Negative zero shows as '-' even though MINUSP returns NIL for it."
     (incl-plus "+")
     (t "")))
 
+(defun %floor-log10 (mag)
+  "Return (floor (log mag 10)) -- i.e. the integer N such that
+10^N <= mag < 10^(N+1).  MAG must be a positive double-float.
+
+(log mag 10d0) is a floating-point computation and may have
+round-off error.  Use it as a starting guess and correct in
+either direction with exact-integer comparisons against
+(expt 10 N)."
+  (let* ((n (floor (log mag 10d0)))
+         (n (loop while (>= mag (expt 10 (1+ n)))
+                  do (incf n)
+                  finally (return n)))
+         (n (loop while (< mag (expt 10 n))
+                  do (decf n)
+                  finally (return n))))
+    n))
+
 (defun format-f (val width decimal-places scale incl-plus)
   "Fortran F format: fixed-point with no exponent.
 With a kP scale factor in effect, the externally-shown value is
@@ -511,8 +528,7 @@ the decimal."
 
 (defun format-en (val width decimal-places exp-digits incl-plus)
   "Fortran EN format: 1-3 digits before the decimal, exponent a
-multiple of 3. Approximate: rounding the value first, then
-realigning, is not always correct at boundaries."
+multiple of 3."
   (let* ((v (coerce val 'double-float))
          (sign (%sign-prefix v incl-plus)))
     (cond
@@ -525,9 +541,7 @@ realigning, is not always correct at boundaries."
          (%pad-or-asterisks body width)))
       (t
        (let* ((mag (abs v))
-              ;; Compute the floor-of-log10 to find the unrestricted exp
-              (log10 (log mag 10d0))
-              (raw-exp (floor log10))
+              (raw-exp (%floor-log10 mag))
               ;; Engineering exponent is the largest multiple of 3 not
               ;; exceeding RAW-EXP.
               (eng-exp (* 3 (floor raw-exp 3)))
@@ -535,9 +549,16 @@ realigning, is not always correct at boundaries."
               ;; SHIFTED is now in [1, 1000); render with the right
               ;; number of digits after its decimal point.
               (body-mag (format nil "~,vF" decimal-places shifted))
+              ;; Ee overflow check, same as format-e and format-es.
+              (exp-overflow-p
+                (and exp-digits
+                     (> (length (format nil "~A" (abs eng-exp)))
+                        exp-digits)))
               (body (concatenate 'string
                                  sign body-mag
                                  (%emit-exp-suffix eng-exp exp-digits))))
+         (when exp-overflow-p
+           (return-from format-en (make-string width :initial-element #\*)))
          (%pad-or-asterisks body width))))))
 
 (defun format-g (val width decimal-places exp-digits scale incl-plus)
@@ -601,18 +622,7 @@ behavior."
         (t
          ;; F-equivalent: pick decimal places based on magnitude bucket.
          ;; mag in [10^(k-1), 10^k) for k in 1..d -> d-k decimals.
-         ;;
-         ;; (log mag 10d0) gives a starting guess for k.  On SBCL
-         ;; this can be one ulp low for power-of-10 inputs (e.g.
-         ;; (log 1d3 10d0) -> 2.9999999999999996d0), so we correct
-         ;; with exact-integer comparisons.  This mirrors how
-         ;; py-fortranformat handles the same precision issue.
-         ;; CMUCL doesn't need the correction but the loops are
-         ;; no-ops in that case.
-         (let* ((k (1+ (floor (log mag 10d0))))
-                (k (loop while (>= mag (expt 10 k)) do (incf k) finally (return k)))
-                (k (loop while (and (> k 0) (< mag (expt 10 (1- k))))
-                         do (decf k) finally (return k)))
+         (let* ((k (1+ (%floor-log10 mag)))
                 (effective-d (max 0 (- decimal-places k))))
            (emit-f effective-d)))))))
 
