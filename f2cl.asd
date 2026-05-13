@@ -176,6 +176,9 @@
        (:file "colon-en-ed-output.tests")
        (:file "colon-en-ed-output.expected-failures"
         :depends-on ("colon-en-ed-output.tests"))
+       (:file "colon-es-ed-output.tests")
+       (:file "colon-es-ed-output.expected-failures"
+        :depends-on ("colon-es-ed-output.tests"))
        (:file "colon-f-ed-output.tests")
        (:file "colon-f-ed-output.expected-failures"
         :depends-on ("colon-f-ed-output.tests"))
