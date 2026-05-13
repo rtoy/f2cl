@@ -7,21 +7,10 @@
 ;;;;   (fortran-format::establish-baseline-expected-failures ...)
 ;;;; but maintained by hand thereafter: remove a name when its
 ;;;; bug is fixed.
-;;;;
-;;;; 3 baseline failures.  All (ESw.dE1) -1.96d-16 cases where the
-;;;; exponent -15 needs 2 digits but the format requests 1.
-;;;; format-es lacks the Ee exponent-overflow check that format-e
-;;;; has; will be addressed in a separate change.
 
 (in-package #:fortran-format)
 
-(defparameter *es-ed-expected-failures*
-  '(
-    FMT.CORPUS.ES-ED-OUTPUT.0620
-    FMT.CORPUS.ES-ED-OUTPUT.0735
-    FMT.CORPUS.ES-ED-OUTPUT.0827
-   ))
+(defparameter *es-ed-expected-failures* '())
 
 (dolist (name *es-ed-expected-failures*)
   (pushnew name rt:*expected-failures*))
-
