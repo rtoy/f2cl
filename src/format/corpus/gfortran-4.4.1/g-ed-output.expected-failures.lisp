@@ -8,55 +8,14 @@
 ;;;; but maintained by hand thereafter: remove a name when its
 ;;;; bug is fixed.
 ;;;;
-;;;; Each implementation defines *g-ed-expected-failures* with its
-;;;; own list of known-failing test names.  A failure that is
-;;;; currently universal will appear in every section; that's
-;;;; intentional and easier to manage than trying to maintain a
-;;;; separate "common" section.
-;;;;
-;;;; SBCL:  28 failures, all at decade boundaries (mag = 10^k).
-;;;;        Caused by SBCL's (log mag 10d0) returning one ulp below
-;;;;        the true mathematical answer for power-of-10 inputs,
-;;;;        putting format-g into the wrong bucket.
-;;;;
-;;;; CMUCL: 0 failures.  CMUCL's two-arg log widens the integer base
-;;;;        to double-float, so it doesn't have the precision issue.
+;;;; SBCL:  0 failures.
+;;;; CMUCL: 0 failures.
 
 (in-package #:fortran-format)
 
 ;;; --- SBCL ----------------------------------------------------
 #+sbcl
-(defparameter *g-ed-expected-failures*
-  '(
-    FMT.CORPUS.G-ED-OUTPUT.0352
-    FMT.CORPUS.G-ED-OUTPUT.0353
-    FMT.CORPUS.G-ED-OUTPUT.0398
-    FMT.CORPUS.G-ED-OUTPUT.0399
-    FMT.CORPUS.G-ED-OUTPUT.0444
-    FMT.CORPUS.G-ED-OUTPUT.0881
-    FMT.CORPUS.G-ED-OUTPUT.0882
-    FMT.CORPUS.G-ED-OUTPUT.0927
-    FMT.CORPUS.G-ED-OUTPUT.0928
-    FMT.CORPUS.G-ED-OUTPUT.1318
-    FMT.CORPUS.G-ED-OUTPUT.1319
-    FMT.CORPUS.G-ED-OUTPUT.1341
-    FMT.CORPUS.G-ED-OUTPUT.1342
-    FMT.CORPUS.G-ED-OUTPUT.1364
-    FMT.CORPUS.G-ED-OUTPUT.1387
-    FMT.CORPUS.G-ED-OUTPUT.1388
-    FMT.CORPUS.G-ED-OUTPUT.1801
-    FMT.CORPUS.G-ED-OUTPUT.1802
-    FMT.CORPUS.G-ED-OUTPUT.1824
-    FMT.CORPUS.G-ED-OUTPUT.1825
-    FMT.CORPUS.G-ED-OUTPUT.1870
-    FMT.CORPUS.G-ED-OUTPUT.1871
-    FMT.CORPUS.G-ED-OUTPUT.2284
-    FMT.CORPUS.G-ED-OUTPUT.2285
-    FMT.CORPUS.G-ED-OUTPUT.2307
-    FMT.CORPUS.G-ED-OUTPUT.2308
-    FMT.CORPUS.G-ED-OUTPUT.2353
-    FMT.CORPUS.G-ED-OUTPUT.2354
-   ))
+(defparameter *g-ed-expected-failures* '())
 
 ;;; --- CMUCL ---------------------------------------------------
 #+cmu

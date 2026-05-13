@@ -570,7 +570,18 @@ behavior."
         (t
          ;; F-equivalent: pick decimal places based on magnitude bucket.
          ;; mag in [10^(k-1), 10^k) for k in 1..d -> d-k decimals.
+         ;;
+         ;; (log mag 10d0) gives a starting guess for k.  On SBCL
+         ;; this can be one ulp low for power-of-10 inputs (e.g.
+         ;; (log 1d3 10d0) -> 2.9999999999999996d0), so we correct
+         ;; with exact-integer comparisons.  This mirrors how
+         ;; py-fortranformat handles the same precision issue.
+         ;; CMUCL doesn't need the correction but the loops are
+         ;; no-ops in that case.
          (let* ((k (1+ (floor (log mag 10d0))))
+                (k (loop while (>= mag (expt 10 k)) do (incf k) finally (return k)))
+                (k (loop while (and (> k 0) (< mag (expt 10 (1- k))))
+                         do (decf k) finally (return k)))
                 (effective-d (max 0 (- decimal-places k))))
            (emit-f effective-d)))))))
 
