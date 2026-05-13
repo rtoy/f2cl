@@ -395,3 +395,127 @@ those are baselined once and then maintained by hand."
     (dolist (test-file (directory (merge-pathnames "*.test" dir)))
       (regenerate-corpus-tests test-file :verbose verbose))))
 
+
+;;; --- Input corpora ---------------------------------------------
+;;;
+;;; The input corpus files (vendored from py-fortranformat under
+;;; corpus/gfortran-4.4.1/input/) have the same three-line per-case
+;;; shape as the output corpora -- FORMAT: line, INPUT: line, then
+;;; the expected result -- but the meaning of INPUT and the result
+;;; differ.  Here INPUT is the raw record text to feed READ-FORMAT,
+;;; and the third line is either:
+;;;
+;;;   - "ERR"  --- READ-FORMAT must signal an error on this input,
+;;;     or
+;;;   - the Fortran-printed value gfortran wrote back as a sanity
+;;;     check on what it parsed.  For integers/logicals the third
+;;;     line has the integer in a wide right-justified field; for
+;;;     reals it has gfortran's 0.dddE+nnn high-precision form.
+;;;     The Lisp reader can read both directly (logical 0/1 -> we
+;;;     translate to NIL/T after).
+
+(defun %parse-expected-input-value (line ed-kind)
+  "Parse the expected-result line from an input corpus.  ED-KIND is
+the descriptor letter (a keyword: :I, :F, :L, :B, :O, :Z, :E, :EN,
+:ES, :G, :D) so we know whether to translate 0/1 to NIL/T (for L).
+
+Returns one of:
+  (:value <lisp-value>) on success,
+  :err                   if the line is 'ERR'."
+  (let ((trim (string-trim '(#\Space #\Tab) line)))
+    (cond
+      ((string= trim "ERR") :err)
+      (t
+       (let ((val (let ((*read-default-float-format* 'double-float))
+                    (with-standard-io-syntax
+                      (let ((*read-default-float-format* 'double-float))
+                        (read-from-string trim))))))
+         (list :value
+               (case ed-kind
+                 (:l (if (zerop val) nil t))
+                 (t val))))))))
+
+(defun %ed-kind-from-stem (stem)
+  "Given a corpus stem like 'L-ED-INPUT-1' or 'F-ED-INPUT-1',
+return a keyword naming the value-descriptor family: :L, :F, :I,
+etc."
+  (intern (subseq stem 0 (position #\- stem)) :keyword))
+
+(defun parse-input-corpus-file (path)
+  "Return a list of (format-string input-string expected) lists.
+EXPECTED is either :ERR or (:VALUE <lisp-value>)."
+  (let* ((path (pathname path))
+         (stem (%test-name-stem path))
+         (kind (%ed-kind-from-stem stem)))
+    (with-open-file (in path :direction :input)
+      (let ((cases '())
+            (fmt nil)
+            (input nil)
+            (state :want-fmt))
+        (loop for line = (read-line in nil nil) while line do
+          (cond
+            ((zerop (length line)))
+            ((%starts-with-p "FORMAT:" line)
+             (setf fmt (subseq line 7) state :want-input))
+            ((%starts-with-p "INPUT:" line)
+             (setf input (subseq line 6) state :want-expected))
+            ((eql state :want-expected)
+             (push (list fmt input (%parse-expected-input-value line kind))
+                   cases)
+             (setf state :want-fmt))
+            (t
+             (error "Unexpected line in ~A while state=~A: ~S"
+                    path state line))))
+        (nreverse cases)))))
+
+(defun regenerate-input-corpus-tests (test-file
+                                      &key (output-file nil) (verbose t))
+  "Generate rt:deftest forms from an INPUT corpus file.  Each
+deftest calls READ-FORMAT and checks the result, or expects an
+error to be signaled.
+
+Test names are FMT.CORPUS.<stem>.<NNNN>, where stem is the
+upcased filename like 'L-ED-INPUT-1'."
+  (let* ((path  (pathname test-file))
+         (cases (parse-input-corpus-file path))
+         (out   (or output-file
+                    (merge-pathnames
+                     (make-pathname :name (concatenate 'string
+                                                       (pathname-name path)
+                                                       ".tests")
+                                    :type "lisp")
+                     path)))
+         (stem  (%test-name-stem path)))
+    (with-open-file (s out :direction :output
+                           :if-exists :supersede
+                           :if-does-not-exist :create)
+      (format s ";;;; ~A~%;;;;~%" (file-namestring out))
+      (format s ";;;; AUTO-GENERATED from ~A.~%" (file-namestring path))
+      (format s ";;;; Do not edit by hand.  Regenerate with~%;;;;~%")
+      (format s ";;;;   (fortran-format::regenerate-input-corpus-tests~%")
+      (format s ";;;;     #P\"...~A\")~%;;;;~%"
+              (file-namestring path))
+      (format s ";;;; ~D cases.~%~%" (length cases))
+      (format s "(in-package #:fortran-format)~%~%")
+      (loop for (fmt input expected) in cases
+            for n from 1
+            for name = (%test-symbol-name stem n)
+            do
+               (ecase (if (eq expected :err) :err (first expected))
+                 (:err
+                  ;; deftest form: signal-anything counts as the
+                  ;; expected value :ERR.
+                  (format s "(rt:deftest ~A~%~
+                            ~4@T(handler-case (progn (read-format ~S ~S) :NO-ERR)~%~
+                            ~6@T(error () :ERR))~%~
+                            ~2@T:ERR)~%~%"
+                          name fmt input))
+                 (:value
+                  (format s "(rt:deftest ~A~%~
+                            ~4@T(read-format ~S ~S)~%~
+                            ~2@T~S)~%~%"
+                          name fmt input (list (second expected)))))))
+    (when verbose
+      (format t "~&Wrote ~D input deftests to ~A~%" (length cases) out))
+    out))
+

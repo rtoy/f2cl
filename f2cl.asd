@@ -251,6 +251,12 @@
        (:file "slash-z-ed-output.tests")
        (:file "slash-z-ed-output.expected-failures"
         :depends-on ("slash-z-ed-output.tests"))))
+     (:module "corpus/gfortran-4.4.1/input"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "l-ed-input-1.tests")
+       (:file "l-ed-input-1.expected-failures"
+        :depends-on ("l-ed-input-1.tests"))))
      (:file "fortran-format-tests"
       :depends-on ("fortran-format-corpus")))))
   :perform (test-op (op c)
