@@ -103,7 +103,10 @@
         :depends-on ("a-ed-output.tests"))
        (:file "g-ed-output.tests")
        (:file "g-ed-output.expected-failures"
-        :depends-on ("g-ed-output.tests"))))
+        :depends-on ("g-ed-output.tests"))
+       (:file "d-ed-output.tests")
+       (:file "d-ed-output.expected-failures"
+        :depends-on ("d-ed-output.tests"))))
      (:file "fortran-format-tests"
       :depends-on ("fortran-format-corpus")))))
   :perform (test-op (op c)
