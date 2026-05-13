@@ -202,7 +202,37 @@
         :depends-on ("t-d-ed-output.tests"))
        (:file "t-l-ed-output.tests")
        (:file "t-l-ed-output.expected-failures"
-        :depends-on ("t-l-ed-output.tests"))))
+        :depends-on ("t-l-ed-output.tests"))
+       (:file "slash-a-ed-output.tests")
+       (:file "slash-a-ed-output.expected-failures"
+        :depends-on ("slash-a-ed-output.tests"))
+       (:file "slash-b-ed-output.tests")
+       (:file "slash-b-ed-output.expected-failures"
+        :depends-on ("slash-b-ed-output.tests"))
+       (:file "slash-d-ed-output.tests")
+       (:file "slash-d-ed-output.expected-failures"
+        :depends-on ("slash-d-ed-output.tests"))
+       (:file "slash-e-ed-output.tests")
+       (:file "slash-e-ed-output.expected-failures"
+        :depends-on ("slash-e-ed-output.tests"))
+       (:file "slash-f-ed-output.tests")
+       (:file "slash-f-ed-output.expected-failures"
+        :depends-on ("slash-f-ed-output.tests"))
+       (:file "slash-g-ed-output.tests")
+       (:file "slash-g-ed-output.expected-failures"
+        :depends-on ("slash-g-ed-output.tests"))
+       (:file "slash-i-ed-output.tests")
+       (:file "slash-i-ed-output.expected-failures"
+        :depends-on ("slash-i-ed-output.tests"))
+       (:file "slash-l-ed-output.tests")
+       (:file "slash-l-ed-output.expected-failures"
+        :depends-on ("slash-l-ed-output.tests"))
+       (:file "slash-o-ed-output.tests")
+       (:file "slash-o-ed-output.expected-failures"
+        :depends-on ("slash-o-ed-output.tests"))
+       (:file "slash-z-ed-output.tests")
+       (:file "slash-z-ed-output.expected-failures"
+        :depends-on ("slash-z-ed-output.tests"))))
      (:file "fortran-format-tests"
       :depends-on ("fortran-format-corpus")))))
   :perform (test-op (op c)
