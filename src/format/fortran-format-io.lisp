@@ -557,18 +557,21 @@ behavior."
                (let* ((wide (format-f v 64 decimals 0 incl-plus))
                       (trimmed (string-left-trim " " wide)))
                  ;; Apply leading-zero suppression: "0.dddd" -> ".dddd",
-                 ;; "-0.dddd" -> "-.dddd".  format-f only suppresses
-                 ;; when its width is tight, which it isn't here.
+                 ;; "[-+]0.dddd" -> "[-+].dddd".  format-f only
+                 ;; suppresses when its width is tight, which it isn't
+                 ;; here.
                  (cond
                    ((and (>= (length trimmed) 2)
                          (char= (char trimmed 0) #\0)
                          (char= (char trimmed 1) #\.))
                     (subseq trimmed 1))
                    ((and (>= (length trimmed) 3)
-                         (char= (char trimmed 0) #\-)
+                         (or (char= (char trimmed 0) #\-)
+                             (char= (char trimmed 0) #\+))
                          (char= (char trimmed 1) #\0)
                          (char= (char trimmed 2) #\.))
-                    (concatenate 'string "-" (subseq trimmed 2)))
+                    (concatenate 'string (string (char trimmed 0))
+                                 (subseq trimmed 2)))
                    (t trimmed))))
              (emit-f (decimals)
                ;; Render val as F with DECIMALS.  format-f handles
