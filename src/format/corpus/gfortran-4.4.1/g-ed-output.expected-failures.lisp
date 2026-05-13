@@ -7,19 +7,18 @@
 ;;;;   (fortran-format::establish-baseline-expected-failures ...)
 ;;;; but maintained by hand thereafter: remove a name when its
 ;;;; bug is fixed.
-;;;;
-;;;; SBCL:  0 failures.
-;;;; CMUCL: 0 failures.
 
 (in-package #:fortran-format)
 
-;;; --- SBCL ----------------------------------------------------
-#+sbcl
-(defparameter *g-ed-expected-failures* '())
-
-;;; --- CMUCL ---------------------------------------------------
-#+cmu
-(defparameter *g-ed-expected-failures* '())
+(defparameter *g-ed-expected-failures*
+  #+sbcl
+  '(
+    )
+  #+cmu
+  '(
+    )
+  #-(or sbcl cmu)
+  '())
 
 (dolist (name *g-ed-expected-failures*)
   (pushnew name rt:*expected-failures*))

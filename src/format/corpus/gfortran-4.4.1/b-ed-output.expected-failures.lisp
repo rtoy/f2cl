@@ -10,13 +10,15 @@
 
 (in-package #:fortran-format)
 
-;;; --- SBCL ----------------------------------------------------
-#+sbcl
-(defparameter *b-ed-expected-failures* '())
-
-;;; --- CMUCL ---------------------------------------------------
-#+cmu
-(defparameter *b-ed-expected-failures* '())
+(defparameter *b-ed-expected-failures*
+  #+sbcl
+  '(
+    )
+  #+cmu
+  '(
+    )
+  #-(or sbcl cmu)
+  '())
 
 (dolist (name *b-ed-expected-failures*)
   (pushnew name rt:*expected-failures*))
