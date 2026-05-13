@@ -155,29 +155,49 @@ characters.  Plain-CL substitute for alexandria:starts-with-subseq."
 
 (defun parse-corpus-file (path)
   "Return a list of (format-string values expected-output) lists,
-one per case in the .test file at PATH.  Skips blank lines."
+one per case in the .test file at PATH.
+
+Each case is FORMAT: line, INPUT: line, then one or more output
+lines.  The output runs from the line after INPUT: up to (but not
+including) the next FORMAT: line, or EOF.  Multiple output lines
+are joined with #\\Newline, so a blank line is preserved as an
+empty record separator -- this is what corpora for the / edit
+descriptor (record terminator) require."
   (with-open-file (in path :direction :input)
     (let ((cases '())
           (fmt nil)
           (vals nil)
+          (out-lines nil)
           (state :want-fmt))
-      (loop for line = (read-line in nil nil) while line do
-        (cond
-          ((zerop (length line))
-           ;; Blank line: tolerated only between groups.
-           )
-          ((%starts-with-p "FORMAT:" line)
-           (setf fmt (subseq line 7)
-                 state :want-input))
-          ((%starts-with-p "INPUT:" line)
-           (setf vals (parse-fortran-values (subseq line 6))
-                 state :want-output))
-          ((eql state :want-output)
-           (push (list fmt vals line) cases)
-           (setf state :want-fmt))
-          (t
-           (error "Unexpected line in ~A while state=~A: ~S"
-                  path state line))))
+      (labels ((commit ()
+                 (when (eql state :collecting-output)
+                   (push (list fmt vals
+                               (format nil "~{~A~^~%~}"
+                                       (nreverse out-lines)))
+                         cases)
+                   (setf fmt nil vals nil out-lines nil
+                         state :want-fmt))))
+        (loop for line = (read-line in nil nil) while line do
+          (cond
+            ((%starts-with-p "FORMAT:" line)
+             (commit)
+             (setf fmt (subseq line 7)
+                   state :want-input))
+            ((%starts-with-p "INPUT:" line)
+             (unless (eql state :want-input)
+               (error "Unexpected INPUT: in ~A while state=~A" path state))
+             (setf vals (parse-fortran-values (subseq line 6))
+                   state :collecting-output))
+            ((eql state :collecting-output)
+             (push line out-lines))
+            ((zerop (length line))
+             ;; Stray blank line outside any case (e.g. between groups,
+             ;; or at EOF).  Tolerated.
+             )
+            (t
+             (error "Unexpected line in ~A while state=~A: ~S"
+                    path state line))))
+        (commit))
       (nreverse cases))))
 
 ;;; --- Runner -----------------------------------------------------
