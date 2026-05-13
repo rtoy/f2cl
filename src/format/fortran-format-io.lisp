@@ -55,6 +55,16 @@ list is empty.  The WRITE-FORMAT driver loop checks this flag and
 exits both the main and reversion passes.  Bound fresh at each
 WRITE-FORMAT call.")
 
+(defparameter *boz-word-bits*
+  (if (>= most-positive-fixnum (expt 2 32)) 64 32)
+  "Bit width used to interpret negative integers in B, O, and Z
+output as their unsigned two's-complement bit pattern.  Defaults
+to the host word size derived from MOST-POSITIVE-FIXNUM, matching
+the platform's default Fortran integer kind: 64 on 64-bit hosts,
+32 on 32-bit hosts.  Rebind to compare against output captured on
+a different platform (e.g. set to 32 to match a corpus generated
+by a 32-bit gfortran).")
+
 (defun emit-out (stream string-or-char)
   "Write STRING-OR-CHAR to STREAM and advance *COLUMN* accordingly.
 The only legal way to write to the output stream from inside the
@@ -120,7 +130,16 @@ the new values-cursor (a cons of remaining values)."))
   (let* ((v (car values))
          (w (width-ed-width ed))
          (m (integer-ed-min-digits ed))
-         (base (integer-ed-base ed)))
+         (base (integer-ed-base ed))
+         ;; B/O/Z (non-decimal) interpret the value's bit pattern
+         ;; as unsigned.  *BOZ-WORD-BITS* selects the truncation
+         ;; width (32 or 64); on a 64-bit host it defaults to 64
+         ;; and -1 prints as 0xFFFFFFFFFFFFFFFF, on a 32-bit host
+         ;; it defaults to 32 and -1 prints as 0xFFFFFFFF.  Decimal
+         ;; I keeps the signed form.
+         (v (if (= base 10)
+                v
+                (ldb (byte *boz-word-bits* 0) v))))
     (cond
       ;; F77 10.6.1.1: if min-digits is explicitly 0 and the value
       ;; is 0, the field is all blanks; no digit is produced.
