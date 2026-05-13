@@ -40,7 +40,7 @@ jobs:
       # self-registers our vendored "rt" system and adds packages/ to
       # asdf:*central-registry*, so only the repo root needs to be on
       # the registry.
-      - name: Run regression suite
+      - name: Run f2cl regression suite
         run: |
           sbcl --non-interactive --no-sysinit --no-userinit \
             --eval '(require :asdf)' \
@@ -50,6 +50,28 @@ jobs:
                                asdf:*compile-file-failure-behaviour*  :ignore)
                          (push (truename "./") asdf:*central-registry*)
                          (asdf:test-system :f2cl)
+                         (sb-ext:exit :code 0))
+                     (error (c)
+                       (format *error-output* "~&FAIL: ~A~%" c)
+                       (sb-ext:exit :code 1)))'
+
+      # Run the fortran-format corpus suite in a fresh Lisp.  Kept
+      # separate from f2cl/tests above because f2cl/fortran-format/tests
+      # populates rt:*expected-failures* from its corpus
+      # expected-failures.lisp files, and the existing regression
+      # tests in regression/tests.lisp SETF the variable, which would
+      # clobber the corpus registrations if both ran in the same
+      # image.
+      - name: Run fortran-format corpus suite
+        run: |
+          sbcl --non-interactive --no-sysinit --no-userinit \
+            --eval '(require :asdf)' \
+            --eval '(handler-case
+                       (progn
+                         (setf asdf:*compile-file-warnings-behaviour* :ignore
+                               asdf:*compile-file-failure-behaviour*  :ignore)
+                         (push (truename "./") asdf:*central-registry*)
+                         (asdf:test-system :f2cl/fortran-format)
                          (sb-ext:exit :code 0))
                      (error (c)
                        (format *error-output* "~&FAIL: ~A~%" c)
