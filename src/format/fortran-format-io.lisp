@@ -495,9 +495,18 @@ the decimal."
                          (position #\d cl-str :test #'char-equal)))
               (mantissa (subseq cl-str 0 e-pos))
               (cl-exp (parse-integer (subseq cl-str (1+ e-pos))))
+              ;; When exp-digits was explicitly given (ESw.dEe form),
+              ;; the exponent must fit in e digits.  If it doesn't,
+              ;; emit "*"s -- mirrors the same check in format-e.
+              (exp-overflow-p
+                (and exp-digits
+                     (> (length (format nil "~A" (abs cl-exp)))
+                        exp-digits)))
               (body (concatenate 'string
                                  sign mantissa
                                  (%emit-exp-suffix cl-exp exp-digits))))
+         (when exp-overflow-p
+           (return-from format-es (make-string width :initial-element #\*)))
          (%pad-or-asterisks body width))))))
 
 (defun format-en (val width decimal-places exp-digits incl-plus)
