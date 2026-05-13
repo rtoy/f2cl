@@ -907,13 +907,16 @@ if it cannot be salvaged."
     ;; Bare "." or "-" -> "0"
     (when (or (string= s ".") (string= s "-") (string= s "+"))
       (setf s "0"))
-    ;; Trailing E, E+, E- -> drop the exponent stub
+    ;; Trailing E, E+, E- with no exponent digits: that's a
+    ;; truncated exponent (likely because the field width cut off
+    ;; the exponent digits).  gfortran rejects this; we return NIL
+    ;; so the caller signals an error.
     (when (and (find #\E s)
                (let ((epos (position #\E s)))
                  (or (= epos (1- (length s)))
                      (and (= epos (- (length s) 2))
                           (member (char s (1+ epos)) '(#\+ #\-))))))
-      (setf s (subseq s 0 (position #\E s))))
+      (return-from parse-real-payload nil))
     ;; Force a decimal point if none present, so CL parses as float
     (unless (find #\. s)
       (let ((e (position #\E s)))
@@ -930,6 +933,8 @@ if it cannot be salvaged."
            (val
              (cond
                ((zerop (length clean)) 0.0d0)
+               ((null raw)
+                (invalid-format "~S is not a valid real number" sub))
                (t (handler-case
                       (with-standard-io-syntax
                         (let ((*read-default-float-format* 'double-float))
