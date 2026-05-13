@@ -224,6 +224,12 @@
        (:file "slash-e-ed-output.tests")
        (:file "slash-e-ed-output.expected-failures"
         :depends-on ("slash-e-ed-output.tests"))
+       (:file "slash-en-ed-output.tests")
+       (:file "slash-en-ed-output.expected-failures"
+        :depends-on ("slash-en-ed-output.tests"))
+       (:file "slash-es-ed-output.tests")
+       (:file "slash-es-ed-output.expected-failures"
+        :depends-on ("slash-es-ed-output.tests"))
        (:file "slash-f-ed-output.tests")
        (:file "slash-f-ed-output.expected-failures"
         :depends-on ("slash-f-ed-output.tests"))
