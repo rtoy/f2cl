@@ -23,6 +23,13 @@
 (in-package #:fortran-format)
 
 (defparameter *f-ed-input-1-expected-failures*
+  ;; clisp doesn't support IEEE signed zero, so -0.0d0 reads to the
+  ;; same object as 0.0d0; the corpus's expected 0.0d0 matches and
+  ;; these tests pass cleanly on clisp.  On every other implementation
+  ;; the sign is preserved and EQUAL distinguishes -0.0 from 0.0,
+  ;; tripping the comparison.
+  #+clisp '()
+  #-clisp
   '(
     FMT.CORPUS.F-ED-INPUT-1.0107
     FMT.CORPUS.F-ED-INPUT-1.0109

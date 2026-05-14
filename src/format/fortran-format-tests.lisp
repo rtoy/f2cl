@@ -737,3 +737,13 @@
 ;;; corpus tests have their own per-file expected-failures lists.
 (pushnew 'fmt.write.tl2-overwrites           rt:*expected-failures*)
 (pushnew 'fmt.write.backward-t-overwrites    rt:*expected-failures*)
+
+;;; CLISP-specific:
+;;;   * ~,3F rounds 99.9995d0 to "100.000" rather than "99.999".
+;;;   * CLISP lacks IEEE signed zero, so -0.0d0 is indistinguishable
+;;;     from 0.0d0 and (F8.3) -0.0d0 writes "   0.000" instead of
+;;;     "  -0.000".
+#+clisp
+(progn
+  (pushnew 'fmt.write.f.f6.3.99.9995         rt:*expected-failures*)
+  (pushnew 'fmt.write.f.f8.3.negative-zero   rt:*expected-failures*))
