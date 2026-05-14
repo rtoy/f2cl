@@ -7,27 +7,10 @@
 ;;;;   (fortran-format::establish-baseline-expected-failures ...)
 ;;;; but maintained by hand thereafter: remove a name when its
 ;;;; bug is fixed.
-;;;;
-;;;; 7 baseline failures, all of the same shape: a
-;;;; field of width N containing a sign followed by blanks (after
-;;;; the BN default strips the blanks, the field is just "-" or
-;;;; "+").  Examples: (I2) "- ", (I4) "-   001" which truncates
-;;;; to "-   ".  gfortran reads these as zero (a sign with no
-;;;; magnitude is taken as 0); read-integer currently signals an
-;;;; invalid-format error.
 
 (in-package #:fortran-format)
 
-(defparameter *i-ed-input-2-expected-failures*
-  '(
-    FMT.CORPUS.I-ED-INPUT-2.0153
-    FMT.CORPUS.I-ED-INPUT-2.0154
-    FMT.CORPUS.I-ED-INPUT-2.0175
-    FMT.CORPUS.I-ED-INPUT-2.0258
-    FMT.CORPUS.I-ED-INPUT-2.0259
-    FMT.CORPUS.I-ED-INPUT-2.0280
-    FMT.CORPUS.I-ED-INPUT-2.0343
-   ))
+(defparameter *i-ed-input-2-expected-failures* '())
 
 (dolist (name *i-ed-input-2-expected-failures*)
   (pushnew name rt:*expected-failures*))
