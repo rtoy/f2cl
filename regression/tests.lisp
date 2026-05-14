@@ -73,6 +73,8 @@
  j =            3
  k =            4
  j =            3
+ after outer: k =            4
+ after outer: j =            4
 ")
 
 (rt:deftest tst-simple-exit

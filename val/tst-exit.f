@@ -17,4 +17,6 @@
             exit
          endif
       enddo
+      print *, 'after outer: k = ', k
+      print *, 'after outer: j = ', j
       end
