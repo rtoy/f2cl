@@ -268,7 +268,25 @@
         :depends-on ("i-ed-input-1.tests"))
        (:file "i-ed-input-2.tests")
        (:file "i-ed-input-2.expected-failures"
-        :depends-on ("i-ed-input-2.tests"))))
+        :depends-on ("i-ed-input-2.tests"))
+       (:file "b-ed-input-1.tests")
+       (:file "b-ed-input-1.expected-failures"
+        :depends-on ("b-ed-input-1.tests"))
+       (:file "b-ed-input-2.tests")
+       (:file "b-ed-input-2.expected-failures"
+        :depends-on ("b-ed-input-2.tests"))
+       (:file "o-ed-input-1.tests")
+       (:file "o-ed-input-1.expected-failures"
+        :depends-on ("o-ed-input-1.tests"))
+       (:file "o-ed-input-2.tests")
+       (:file "o-ed-input-2.expected-failures"
+        :depends-on ("o-ed-input-2.tests"))
+       (:file "z-ed-input-1.tests")
+       (:file "z-ed-input-1.expected-failures"
+        :depends-on ("z-ed-input-1.tests"))
+       (:file "z-ed-input-2.tests")
+       (:file "z-ed-input-2.expected-failures"
+        :depends-on ("z-ed-input-2.tests"))))
      (:file "fortran-format-tests"
       :depends-on ("fortran-format-corpus")))))
   :perform (test-op (op c)
