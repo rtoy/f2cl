@@ -73,6 +73,31 @@
  j =            3
  k =            4
  j =            3
+ after outer: k =            4
+ after outer: j =            4
+")
+
+(rt:deftest tst-simple-exit
+    (f2cl-regression:run-program "val/tst-simple-exit.f" "tst")
+  "           1
+           2
+           3
+           4
+ done
+")
+
+(rt:deftest tst-simple-cycle
+    (f2cl-regression:run-program "val/tst-simple-cycle.f" "tst")
+  "           1
+           2
+           3
+           4
+           6
+           7
+           8
+           9
+          10
+ done
 ")
 
 (rt:deftest tst-init
