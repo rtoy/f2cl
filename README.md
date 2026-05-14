@@ -1,297 +1,203 @@
 # Welcome to f2cl - a Fortran to Common Lisp Translator
 
-Contained in this directory are source code files and some documentation.
-The translator is written in Common Lisp making installation simple.
+f2cl translates Fortran 77 source code into Common Lisp.  The
+generated Lisp can then be compiled and loaded by any conforming CL
+implementation; SBCL, CMUCL, CCL, ECL, ABCL, Allegro, and LispWorks
+have all been used successfully.
 
-# Installation
+Source: <https://github.com/rtoy/f2cl>
 
+## Build systems
 
-If this has been extracted as a part of CLOCC, the way to build f2cl
-is to simply run "make system" from a shell, as is usual with CLOCC
-packages.
+f2cl supports both ASDF and mk-defsystem as first-class build
+systems; both are exercised by the CI (see Continuous integration
+below).
 
-A second method is to use defsystem (from CLOCC).  Then load
-`f2cl.system`, and then finally run `(mk:oos "f2cl" :compile)`.  
+### ASDF
 
-A third method is to use asdf.  You can load `f2cl.asd` and run
-`(asdf:oos 'asdf:load-op :f2cl)`.  (Asdf may not be able to find
-`f2cl.asd`.  In this case, you need to tell asdf where to find it.
-The old-style is to do something like
-```
-(push "path-to-directory" asdf:*central-registry*)
-```
-where "path-to-directory" is the path to the directory containing
-"f2cl.asd". 
-
-Finally, a fourth method, if you have none of the above, is to
-manually run everything as follows:
-
-1. Start your favorite Common Lisp implementation use the function
-   `compile-file` to compile each of the source files:
-
-		f2cl-package.lisp
-		f2cl1.lisp
-		f2cl2.lisp
-		f2cl3.lisp
-		f2cl4.lisp
-		f2cl5.lisp
-		f2cl6.lisp
-		f2cl7.lisp
-		f2cl-lib.lisp
-
-2. Load up all of the files
-
-        (load "f2cl-package.lisp")
-        (load "f2cl1.lisp")
-        (load "f2cl2.lisp")
-        (load "f2cl3.lisp")
-        (load "f2cl4.lisp")
-        (load "f2cl5.lisp")
-        (load "f2cl6.lisp")
-        (load "f2cl7.lisp")
-	    (load "f2cl-lib.lisp")
-
-   to load all the compiled files.
-
-
-# Usage
-
-
-## Converting Fortran Code
-
-To use f2cl:
-```
-(f2cl:f2cl "<path>/fortran.f")
-```
-will convert the file `<path>/fortran.f` to Lisp code and places the
-result in the file `<path>/fortran.lisp`.
-
-Alternatively,
-```
-(f2cl:f2cl-compile "<path>/fortran.f")
-```
-will also run `compile-file` on the Lisp file so you can load it
-directly into your lisp.
-
-
-For those anxious to use the translator without studying the documentation
-here is a short list of restrictions that may result in obscure errors:
- - input code is assumed to be valid Fortran 77
- - no tabs are permitted in the source,
- - $comments should only be turned on if the Fortran code has comments
-   exclusively within subroutines,
- - linebreaks must occur within whitespace,
- - spaces are required to separate symbols.
-
-Note also that an intermediate file called "prep.tmp" is produced by the
-preprocessing stage of the translation.
-
-### Options
-
-These are the options available to `f2cl:f2cl` and `f2cl:f2cl-compile`
-
-* `:OUTPUT-FILE`             
-	File to contain Lisp code
-
-* `:VERBOSE`                
-	Verbose output. Default = NIL.  Mostly for debugging.
-
-* `:PRUNE-LABELS`           
-	Prune unused labels. Default = NIL.
-
-* `:INCLUDE-COMMENTS`       
-	Include Fortran comments in the Lisp output.
-        Default = NIL
-
-* `:AUTO-SAVE`              
-	Variables in DATA statements are automatically SAVE'd. Default
-	= T.
-
-* `:RELAXED-ARRAY-DECLS`      
-	Declarations of array sizes are relaxed in formal
-        parameters to functions. That is, any array
-        length declarations (except lower limits) are
-        ignored if possible, like old Fortran used
-        to. Default = T.
-
-* `:COERCE-ASSIGNS`  
-	If `T` or `:ALWAYS`, all assignment statements automatically
-        coerce the RHS to the appropriate type for the assignment.  If
-        `NIL` or `:NEVER`, coercion never happens.  If `:AS-NEEDED`, f2cl
-        applies coercion if it thinks it is needed.  Default =
-        `:AS-NEEDED`.
-
-* `:EXTENSION`                 
-	The extension to use for the output file, if needed.  Defaults
-        to `*DEFAULT-LISP-EXTENSION*` or "lisp".
-
-* `:KEEP-TEMP-FILE`
-	If `T`, the temporary file is not deleted.  This is mostly for
-	debugging f2cl. Default = `NIL`.
-
-* `:ARRAY-TYPE`  
-	The type of array f2cl should use.  Should be `:simple-array` or
-        `:array`.  For some compilers, there can be significant speed up
-        if the array can be declared as simple-arrays.  But this is
-        incompatible with array-slicing, so care must be used if you
-        choose `:simple-array`. Default = `:array.`
-
-* `:ARRAY-SLICING`  
-	When non-`NIL`, f2cl assumes that, whenever we do an array
-        reference in a call to a subroutine or function, we are really
-        passing a subarray to the routine instead of just the single
-        value, unless f2cl knows the function takes a scalar arg that
-        is not modified.  Default = `T`.
-
-* `:PACKAGE`  
-	A string or symbol specifying what package the resulting code
-        should be in. (Basically puts a `(in-package <p>)` at the top.)
-        Default is "COMMON-LISP-USER".
-
-* `:DECLAIM` 
-	Declaim compilation options (Basically puts a `(declaim <declaim>)` at the top.)  Default is none.
-
-* `:DECLARE-COMMON`  
-	When non-`NIL`, any structures definitions for common blocks are
-        defined when converting this file. Otherwise, the structures
-        for the common blocks are expected to be defined elsewhere.
-        This should be used only once for one subprogram that will be
-        used to define the common block.  See below for more
-        information. Default is `NIL`.
-
-* `:FLOAT-FORMAT`              
-	Float format to use when printing the result.  Default is
-        `*READ-DEFAULT-FLOAT-FORMAT*`
-
-* `:COMMON-AS-ARRAY`  
-	Instead of defining a common block as a structure with the
-	same slot names as variables in the common block, the common
-	block is defined as a set of arrays.  The actual common block
-	variables are defined as offsets into these arrays.  For more
-	information see below.  This mimics the memory layout of how
-	Fortran treats common blocks.  Default = `NIL`.
-
-# Using Converted Code
-
-Once you've converted the code, you do not need to load up all of f2cl
-to use the converted code.  In fact, you only need f2cl0.l and
-macros.l to define the necessary packages and functions used by the
-converted code.  Actually, you really only need the defpackage for
-f2cl-lib in f2cl0.l.
-
-# Issues
-
-For a more detailed list of issues and notes, see src/NOTES.
-
-We highlight just a few issues here.
-
-## Block data statements
-
-In Fortran, block data statments are used to initialize common
-blocks.  Since Fortran executables are loaded and run just once,
-this is not a problem.  However, in Lisp, this might not be true,
-and you may want to run the main program many times.  Thus, it is
-up to you to run the block data initializer at the right time, as
-needed.  f2cl cannot know when and where to call the initializer.
-
-## Common blocks  
-F2cl converts common blocks to structures.  However, common blocks
-may be referenced in several different files, so the user must
-tell f2cl when to define the structure.  Use the :declare-common
-parameter to tell f2cl to define the structure. This should be
-done exactly once for each common block that is defined.  This
-should also be done for the first file that is compiled and
-loaded, so that subsequent files know about the definition.
-
-In addition, there is another option, :common-as-array.  This
-changes how f2cl handles common blocks.   A rather common use of
-common blocks has the same common block using different variable
-names.  For example, one routine might have
-```
-        COMMON /foo/ a(10), b, i(4)
+```lisp
+(asdf:load-asd #P"/path/to/f2cl/f2cl-asdf.asd")
+(asdf:load-asd #P"/path/to/f2cl/f2cl.asd")
+(asdf:load-system "f2cl")
 ```
 
-and another might say
+`f2cl.asd` self-registers the vendored `rt` test framework and adds
+`packages/` to `asdf:*central-registry*`, so only the repo root
+needs to be visible to ASDF.  No external dependencies need to be
+fetched.
 
+### mk-defsystem
+
+```lisp
+(load "/path/to/mk-defsystem/defsystem.lisp")
+(setf mk::*bother-user-if-no-binary* nil
+      mk::*load-source-instead-of-binary* nil)
+(load "f2cl.system")
+(mk:oos "f2cl" :compile)
 ```
-        COMMON /foo/ b(9), c, d, j(2), k(2)
+
+## Translating Fortran code
+
+A typical session:
+
+```lisp
+;; Translate a single file.  Produces hello.lisp next to hello.f.
+(f2cl:f2cl "path/to/hello.f")
+
+;; Or translate AND compile in one step:
+(f2cl:f2cl-compile "path/to/hello.f")
+
+;; Then load and use the result like any Lisp code:
+(load "path/to/hello")
+(my-fortran-package:hello)
 ```
 
-In Fortran, this is perfectly acceptable.  Normally, f2cl expects
-all common blocks to use the same variable names, and then f2cl
-creates a structure for the common block using the variable names
-as the names of the slots.  However, for a case like the above,
-f2cl gets confused.  Hence, :common-as-array.  We treat the common
-block as an array of memory.  So this gets converted into a
-structure somewhat like
+## Translating a multi-file Fortran library
+
+Bigger Fortran libraries are typically organized as an
+`f2cl-system`: a defsystem-extension class that knows how to treat
+`.f` files as components.  The `packages/` directory contains
+several worked examples — LAPACK, MINPACK, ODEPACK, QUADPACK,
+FFTPACK 5, COLNEW, TOMS 715, and BLAS Complex.  Each provides an
+`.asd` file that declares its Fortran components plus any per-file
+or per-system f2cl translation options.
+
+To use the LAPACK package, for example:
+
+```lisp
+(asdf:load-asd #P"/path/to/f2cl/f2cl-asdf.asd")
+(asdf:load-asd #P"/path/to/f2cl/f2cl.asd")
+(asdf:load-asd #P"/path/to/f2cl/packages/lapack.asd")
+(asdf:load-system "lapack")
 ```
-        (defstruct foo
-          (part-0 (make-array 11 :element-type 'real))
-          (part-1 (make-array 4 :element-type 'integer4)))
+
+The first time you load the system ASDF will translate each `.f`
+file to `.lisp` and then compile it.  Subsequent loads pick up the
+existing fasls.
+
+## Running the tests
+
+The test suite covers both the translator and the standalone
+`fortran-format` library (Fortran-style `READ`/`WRITE` at run time).
+The format suite alone is ~95,000 cases, drawn from
+[py-fortranformat](https://github.com/brendanarnold/py-fortranformat)'s
+gfortran-generated reference corpus.
+
+Under ASDF:
+
+```lisp
+;; Run the format library's test system (does not run f2cl
+;; translator tests):
+(asdf:test-system "f2cl/fortran-format")
+
+;; Run the full translator regression suite:
+(asdf:test-system "f2cl")
 ```
-(In a more general case, we group all contiguous variables of the
-same type into one array.  f2cl and Lisp cannot handle the case
-where a real and integer value are allocated to the same piece of
-memory.)
 
-Then in the individual routines, symbol-macrolets are used to
-create accessors for the various definitions.  Hence, for the
-second version, we would do something like
+Under mk-defsystem, the `f2cl-tests` system runs the suite as part
+of its `:finally-do` action when compiled:
+
+```lisp
+(mk:oos "f2cl-tests" :compile)
 ```
-          (symbol-macrolet 
-            (b (make-array 9 :displaced-to 
-                           (foo-part-0 *foo*)
-                           :diplaced-offset 0))
-            (c (aref (foo-part-0 *foo*) 9))
-            (d (aref (foo-part-0 *foo*) 10))
-            (j (make-array 2 :displaced-to
-                           (foo-part-1 *foo*)
-                           :displaced-offset 0))
-            (k (make-array 2 :displaced-to
-                           (foo-part-1 *foo*)
-                           :displaced-offset 2))
-            ...)
-```
-Thus, we access the right parts of the common block, independent
-of the name.  Note that this has a performance impact since we
-used displaced arrays.
-  
 
+A green run reports zero unexpected failures and zero unexpected
+successes; some failures and successes are *expected* on each
+implementation and are tracked per-file under
+`src/format/corpus/gfortran-4.4.1/*.expected-failures.lisp`.
 
-## Conversion order
-While not necessary, f2cl can do a significantly better job in
-generating code if the functions are compiled in the correct
-order.  This means any function, F, that is called by another
-function, G,  should compiled first.  In this way, f2cl can
-determine the calling conventions for F, and generate the
-appropriate call for F in G.  This is important if F takes an
-array argument and G passes a slice of an array to F, or
-conversely if F takes a simple variable, and G calls F with an
-array reference.  
+## Translator options
 
-If this is not done, the user may have to modify either the
-Fortran code or the resulting Lisp code to pass arguments
-correctly.  
+The most-commonly-used keyword arguments to `f2cl:f2cl` and
+`f2cl:f2cl-compile`:
 
-F2cl cannot always determine whether a slice of an array should be
-used or just the single element.
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `:output-file` | derived from input | Output `.lisp` path. |
+| `:package` | `"COMMON-LISP-USER"` | Package the translated code lives in. |
+| `:array-type` | `:array` | `:simple-array` enables faster array access but is incompatible with array slicing. |
+| `:array-slicing` | `T` | Pass subarrays to subroutines, mimicking Fortran's pass-by-reference. |
+| `:coerce-assigns` | `:as-needed` | Whether assignment statements coerce the RHS to match the LHS type (`T`/`:always`, `nil`/`:never`, or `:as-needed`). |
+| `:relaxed-array-decls` | `T` | Ignore array-length declarations on formal parameters, matching pre-F90 Fortran's looseness. |
+| `:auto-save` | `T` | Treat variables in `DATA` statements as if they had `SAVE`. |
+| `:declare-common` | `nil` | Emit the `defstruct` for any common block this file references.  Use once per common block. |
+| `:common-as-array` | `nil` | Treat common blocks as memory arrays rather than structs with named slots.  Needed when different routines name the same common-block memory differently. |
+| `:include-comments` | `nil` | Preserve Fortran comments in the Lisp output. |
+| `:prune-labels` | `nil` | Delete unreferenced labels. |
+| `:verbose` | `nil` | Trace translation activity. |
+| `:keep-temp-file` | `nil` | Keep `prep.tmp` for debugging. |
+| `:extension` | `"lisp"` | Output file extension. |
+| `:float-format` | `*read-default-float-format*` | Float format used when printing literals. |
+| `:declaim` | none | `(declaim ...)` form to prepend. |
 
-See also the file src/NOTES which contains a change log.  But there
-are also various notes about about restrictions and enhancements on
-various features supported by f2cl.
+## Fortran dialect
 
+The translator front-end is primarily Fortran 77, with a handful of
+F90 features supported as extensions:
 
-# Acknowledgments
+- `DO WHILE` loops.
+- `END DO` / `ENDDO` block-style loop termination.
+- `EXIT` (terminate the enclosing loop) and `CYCLE` (skip the rest
+  of the current iteration and continue with the next).
+- `IMPLICIT NONE`.
 
-The translator was written by Kevin Broughan and Diane Koorey Willcock
-at the University of Waikato. Reports should be sent to
-kab@waikato.ac.nz and should include examples of Fortran code which
-fails to translate or which translates incorrectly.
+Some F90 edit descriptors (`EN`, `ES`, `B`, `O`, `Z`) are supported
+at run time via the `fortran-format` library even though the
+translator itself is mostly F77.
 
-Major changes have be written by Raymond Toy and the entire translator
-is now part of CLOCC, with permission from Kevin Broughan.  Send bug
-reports and other comments to http://clocc.sourceforge.net.
+Other source-formatting restrictions:
 
-The code is also placed under the GPL, by permission of Kevin
-Broughan.  The exception is macros.l which is released under the LGPL
-so that it can be incorporated into other packages.
+- No tabs in the source.
+- Line breaks must occur in whitespace.
+- Spaces are required to separate symbols.
+
+An intermediate file `prep.tmp` is produced during preprocessing
+and removed unless `:keep-temp-file` is non-nil.
+
+## Using translated code without f2cl
+
+Once the translator has run, you do not need to load f2cl itself to
+use the output.  The translated code depends only on the
+`f2cl-lib` package, defined in `src/f2cl-lib-package.lisp` and
+`src/f2cl-lib.lisp`, plus the `fortran-format` library if the
+original Fortran used formatted `READ`/`WRITE`.
+
+## Common blocks and conversion order
+
+Common blocks become Lisp `defstruct`s.  Because the same common
+block may be referenced from several files, you must tell f2cl
+which file should emit the `defstruct` definition: pass
+`:declare-common t` to exactly one call per common block, and
+arrange for that file to be loaded before the others.
+
+For libraries where different routines partition the same common
+block differently — a frequent pattern in older numerical codes —
+use `:common-as-array t` instead.  See the comments in the source
+for details.
+
+Where possible, translate functions in call order: any `F` called
+by `G` should be translated before `G` so that f2cl can see `F`'s
+calling convention when emitting the call from `G`.  Most of the
+worked examples under `packages/` arrange their `.asd` `:components`
+lists with this in mind.
+
+## Continuous integration
+
+- GitHub Actions (`.github/workflows/ci.yml`) — ASDF flow, SBCL on
+  Ubuntu.
+- GitLab CI (`.gitlab-ci.yml`) — both the ASDF and mk-defsystem
+  flows, CMUCL 21f.
+
+Both runners execute the full f2cl regression suite plus the
+`fortran-format` corpus, and exit nonzero on any unexpected outcome.
+
+## Acknowledgments
+
+The original translator was written by Kevin Broughan and Diane
+Koorey Willcock at the University of Waikato.  Substantial later
+work — including most of the run-time format library and the
+package ports under `packages/` — is by Raymond Toy.
+
+The code is released under the GPL by permission of Kevin
+Broughan; `src/f2cl-lib.lisp` is released under the LGPL so it can
+be linked into other packages.
