@@ -847,6 +847,21 @@ parsed value; for control descriptors, it is :no-value."))
              (base  (integer-ed-base ed))
              (val   (cond
                       ((zerop (length clean)) 0)
+                      ;; A field containing a sign followed by
+                      ;; blanks reads as zero per F2008 10.7.5.2.1:
+                      ;; with BN in effect blanks are stripped, and
+                      ;; a sign with no magnitude has magnitude 0.
+                      ;; Examples: (I2) "- " or (I4) "-   001"
+                      ;; which truncates to "-   " then BN-cleans
+                      ;; to "-".  A bare sign with no other field
+                      ;; characters (e.g. (I1) "-0" -> field "-")
+                      ;; is still rejected -- there is no room for
+                      ;; a magnitude.
+                      ((and (= (length clean) 1)
+                            (or (char= (char clean 0) #\+)
+                                (char= (char clean 0) #\-))
+                            (> (length sub) 1))
+                       0)
                       (t (handler-case
                              (parse-integer clean :radix base)
                            (error ()

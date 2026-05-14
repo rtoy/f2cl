@@ -7,38 +7,10 @@
 ;;;;   (fortran-format::establish-baseline-expected-failures ...)
 ;;;; but maintained by hand thereafter: remove a name when its
 ;;;; bug is fixed.
-;;;;
-;;;; 18 baseline failures, all of the same shape: a
-;;;; field of width N containing a sign followed by blanks (after
-;;;; the BN default strips the blanks, the field is just "-" or
-;;;; "+").  Examples: (I2) "- ", (I4) "-   001" which truncates
-;;;; to "-   ".  gfortran reads these as zero (a sign with no
-;;;; magnitude is taken as 0); read-integer currently signals an
-;;;; invalid-format error.
 
 (in-package #:fortran-format)
 
-(defparameter *i-ed-input-1-expected-failures*
-  '(
-    FMT.CORPUS.I-ED-INPUT-1.0040
-    FMT.CORPUS.I-ED-INPUT-1.0041
-    FMT.CORPUS.I-ED-INPUT-1.0062
-    FMT.CORPUS.I-ED-INPUT-1.0083
-    FMT.CORPUS.I-ED-INPUT-1.0250
-    FMT.CORPUS.I-ED-INPUT-1.0251
-    FMT.CORPUS.I-ED-INPUT-1.0272
-    FMT.CORPUS.I-ED-INPUT-1.0293
-    FMT.CORPUS.I-ED-INPUT-1.0460
-    FMT.CORPUS.I-ED-INPUT-1.0461
-    FMT.CORPUS.I-ED-INPUT-1.0482
-    FMT.CORPUS.I-ED-INPUT-1.0503
-    FMT.CORPUS.I-ED-INPUT-1.0649
-    FMT.CORPUS.I-ED-INPUT-1.0650
-    FMT.CORPUS.I-ED-INPUT-1.0671
-    FMT.CORPUS.I-ED-INPUT-1.0692
-    FMT.CORPUS.I-ED-INPUT-1.0839
-    FMT.CORPUS.I-ED-INPUT-1.0860
-   ))
+(defparameter *i-ed-input-1-expected-failures* '())
 
 (dolist (name *i-ed-input-1-expected-failures*)
   (pushnew name rt:*expected-failures*))
