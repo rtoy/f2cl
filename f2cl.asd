@@ -224,6 +224,24 @@
        (:file "tr-l-ed-output.tests")
        (:file "tr-l-ed-output.expected-failures"
         :depends-on ("tr-l-ed-output.tests"))
+       (:file "bn-a-ed-output.tests")
+       (:file "bn-a-ed-output.expected-failures"
+        :depends-on ("bn-a-ed-output.tests"))
+       (:file "bn-d-ed-output.tests")
+       (:file "bn-d-ed-output.expected-failures"
+        :depends-on ("bn-d-ed-output.tests"))
+       (:file "bn-l-ed-output.tests")
+       (:file "bn-l-ed-output.expected-failures"
+        :depends-on ("bn-l-ed-output.tests"))
+       (:file "bz-a-ed-output.tests")
+       (:file "bz-a-ed-output.expected-failures"
+        :depends-on ("bz-a-ed-output.tests"))
+       (:file "bz-d-ed-output.tests")
+       (:file "bz-d-ed-output.expected-failures"
+        :depends-on ("bz-d-ed-output.tests"))
+       (:file "bz-l-ed-output.tests")
+       (:file "bz-l-ed-output.expected-failures"
+        :depends-on ("bz-l-ed-output.tests"))
        (:file "slash-a-ed-output.tests")
        (:file "slash-a-ed-output.expected-failures"
         :depends-on ("slash-a-ed-output.tests"))
