@@ -735,8 +735,9 @@
 ;;; inside a larger suite (e.g. f2cl/tests) doesn't clobber other
 ;;; expected failures registered by sibling test files.  The
 ;;; corpus tests have their own per-file expected-failures lists.
-(pushnew 'fmt.write.tl2-overwrites           rt:*expected-failures*)
-(pushnew 'fmt.write.backward-t-overwrites    rt:*expected-failures*)
+(dolist (name '(fmt.write.tl2-overwrites
+                fmt.write.backward-t-overwrites))
+  (pushnew name rt:*expected-failures*))
 
 ;;; CLISP-specific:
 ;;;   * ~,3F rounds 99.9995d0 to "100.000" rather than "99.999".
@@ -744,6 +745,12 @@
 ;;;     from 0.0d0 and (F8.3) -0.0d0 writes "   0.000" instead of
 ;;;     "  -0.000".
 #+clisp
-(progn
-  (pushnew 'fmt.write.f.f6.3.99.9995         rt:*expected-failures*)
-  (pushnew 'fmt.write.f.f8.3.negative-zero   rt:*expected-failures*))
+(dolist (name '(fmt.write.f.f6.3.99.9995
+                fmt.write.f.f8.3.negative-zero))
+  (pushnew name rt:*expected-failures*))
+
+;;; CCL: same ~,3F rounding behavior as clisp for 99.9995d0;
+;;; CCL supports signed zero so the negative-zero test passes.
+#+(or ccl clozure openmcl)
+(dolist (name '(fmt.write.f.f6.3.99.9995))
+  (pushnew name rt:*expected-failures*))
