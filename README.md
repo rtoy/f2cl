@@ -70,8 +70,14 @@ To use the LAPACK package, for example:
 (asdf:load-asd #P"/path/to/f2cl/packages/lapack.asd")
 (asdf:load-system "lapack")
 ```
+Or
+```lisp
+(load "f2cl.system")
+(load "packages/linpack.system")
+(mk:oos "lapack" :compile)
+```
 
-The first time you load the system ASDF will translate each `.f`
+The first time you load the system f2cl will translate each `.f`
 file to `.lisp` and then compile it.  Subsequent loads pick up the
 existing fasls.
 
@@ -102,33 +108,69 @@ of its `:finally-do` action when compiled:
 ```
 
 A green run reports zero unexpected failures and zero unexpected
-successes; some failures and successes are *expected* on each
+successes; some failures are *expected* on each
 implementation and are tracked per-file under
-`src/format/corpus/gfortran-4.4.1/*.expected-failures.lisp`.
+`src/format/corpus/gfortran-4.4.1/*.expected-failures.lisp`.  
+
+Some of reasons for failure are:
+* B, O, Z tests fail because the reference was running with a 32-bit
+  host, but this implementation uses the word size of the running
+  Lisp.
+* The F and D input tests contain inputs that are read as a
+  floating-point signed zero, but the reference tests writes the
+  result out without the sign.
+* A few tests assume the nearest representable single-float value is
+  printed, but Lisp generally produces the shortest representation
+  that would reproduce the value when read back in.
+* Backward cursor positioning (TL, and T with negative position) is
+  not implemented.  
+* Clisp lacks signed-zeros so any test with that fails.
+
 
 ## Translator options
 
-The most-commonly-used keyword arguments to `f2cl:f2cl` and
-`f2cl:f2cl-compile`:
+f2cl exports two entry points.  `f2cl:f2cl` translates a Fortran
+source file to a Lisp source file.  `f2cl:f2cl-compile` does the
+same and then compiles the resulting Lisp.  Most options are
+shared; the two have a few additional options of their own.
+
+### Options shared by `f2cl:f2cl` and `f2cl:f2cl-compile`
 
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `:output-file` | derived from input | Output `.lisp` path. |
-| `:package` | `"COMMON-LISP-USER"` | Package the translated code lives in. |
+| `:package` | `:common-lisp-user` | Package the translated code lives in. |
 | `:array-type` | `:array` | `:simple-array` enables faster array access but is incompatible with array slicing. |
-| `:array-slicing` | `T` | Pass subarrays to subroutines, mimicking Fortran's pass-by-reference. |
-| `:coerce-assigns` | `:as-needed` | Whether assignment statements coerce the RHS to match the LHS type (`T`/`:always`, `nil`/`:never`, or `:as-needed`). |
-| `:relaxed-array-decls` | `T` | Ignore array-length declarations on formal parameters, matching pre-F90 Fortran's looseness. |
-| `:auto-save` | `T` | Treat variables in `DATA` statements as if they had `SAVE`. |
+| `:array-slicing` | `t` | Pass subarrays to subroutines, mimicking Fortran's pass-by-reference. |
+| `:coerce-assigns` | `:as-needed` | Whether assignment statements coerce the RHS to match the LHS type (`t`/`:always`, `nil`/`:never`, or `:as-needed`). |
+| `:relaxed-array-decls` | `t` | Ignore array-length declarations on formal parameters, matching pre-F90 Fortran's looseness. |
+| `:auto-save` | `t` | Treat variables in `DATA` statements as if they had `SAVE`. |
 | `:declare-common` | `nil` | Emit the `defstruct` for any common block this file references.  Use once per common block. |
 | `:common-as-array` | `nil` | Treat common blocks as memory arrays rather than structs with named slots.  Needed when different routines name the same common-block memory differently. |
-| `:include-comments` | `nil` | Preserve Fortran comments in the Lisp output. |
+| `:copy-array-parameter` | `nil` | When an array of one type is passed where another type is expected, allocate a new array and copy the data.  Off by default because the copy is slow. |
+| `:include-comments` | `nil` | Preserve Fortran comments in the Lisp output.  Marked as possibly buggy. |
 | `:prune-labels` | `nil` | Delete unreferenced labels. |
+| `:promote-to-double` | `nil` | Promote `REAL`/`COMPLEX` constants, variables, and arrays to `REAL*8`/`COMPLEX*16`. |
+| `:float-format` | `*read-default-float-format*` | Float format used when printing literal values. |
+| `:declaim` | none | `(declaim ...)` form to prepend to the output. |
+
+### `f2cl:f2cl`-only options
+
+| Option | Default | Meaning |
+| --- | --- | --- |
 | `:verbose` | `nil` | Trace translation activity. |
-| `:keep-temp-file` | `nil` | Keep `prep.tmp` for debugging. |
-| `:extension` | `"lisp"` | Output file extension. |
-| `:float-format` | `*read-default-float-format*` | Float format used when printing literals. |
-| `:declaim` | none | `(declaim ...)` form to prepend. |
+| `:keep-temp-file` | `nil` | Keep `prep.tmp` after translation for debugging. |
+| `:extension` | `"lisp"` | Output file extension (overrides `*default-lisp-extension*`). |
+| `:prune-unused-vars` | `nil` | Remove `let`-bound variables that the translated code never reads.  Reduces compile-time warnings on the generated Lisp. |
+| `:common-block-file` | `nil` | When a common block is declared, write its `defstruct` to a separate file named after the block with extension `cmn`. |
+
+### `f2cl:f2cl-compile`-only options
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `:output-file` | `(compile-file-pathname filename)` | Note that `f2cl-compile`'s default differs from `f2cl`'s -- it expects a fasl path here, not a `.lisp` path. |
+| `:error-file` | none | Passed to `compile-file` as `:error-file`. |
+| `:keep-lisp-file` | `t` | Whether to retain the intermediate `.lisp` file after the fasl is produced. |
 
 ## Fortran dialect
 
