@@ -15,7 +15,6 @@
 
 (in-package :f2cl)
 
-(defvar *prune_labels* t)
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (proclaim '(special *verbose*)))
 ;-----------------------------------------------------------------------
@@ -62,7 +61,7 @@
 ;-----------------------------------------------------------------------
 (defun prune-labels (fun)
  (if *verbose* (format t "post-processing begins ...~%"))
- (if *prune_labels*
+ (if *prune-labels*
   (let* ((labels (find-all-labels fun))
          (golabels (find-go-labels fun))
          (spare-labels (set-difference labels golabels)))

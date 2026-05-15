@@ -19,8 +19,8 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (proclaim '(special *intrinsic-function-names* *external-function-names*
               *non-intrinsic-function-names*
-              *subprog_name* *subprog-stmt-fns* *subprog-arglist*
-              *declared_vbles* *undeclared_vbles* *key_params*
+              *subprog-name* *subprog-stmt-fns* *subprog-arglist*
+              *declared-vbles* *undeclared-vbles* *key-params*
               *functions-used*)))
 
 (defparameter *f2cl2-version*
@@ -72,9 +72,9 @@
     ;; that local binding, not the intrinsic.
     ((and (member sym *intrinsic-function-names*)
           (not (member sym *non-intrinsic-function-names*))
-          (not (member sym *declared_vbles*))
-          (not (member (check-reserved-lisp-names sym) *undeclared_vbles*))
-          (not (member sym *key_params* :key #'car))
+          (not (member sym *declared-vbles*))
+          (not (member (check-reserved-lisp-names sym) *undeclared-vbles*))
+          (not (member sym *key-params* :key #'car))
           (not (member sym *subprog-arglist*)))
      `(function ,(intrinsic-call-emit-symbol sym)))
     ;; External top-level user function.

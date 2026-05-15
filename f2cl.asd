@@ -338,7 +338,8 @@
 	     (:file "f2cl5"
 		    :depends-on ("f2cl1"))
 	     (:file "f2cl6")
-	     (:file "f2cl7")
+	     (:file "f2cl7"
+		    :depends-on ("f2cl1"))
 	     #+cmu(:file "f2cl8")
 	     (:file "f2cl-lib"
 		    :depends-on ("f2cl-package"))))))

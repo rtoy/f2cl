@@ -76,10 +76,10 @@
                                     %false% %true%
                                     funcall))
                     (member exprs *fortran-keywords*)
-                    (member exprs *key_params* :key #'car)
+                    (member exprs *key-params* :key #'car)
                     (member exprs *external-function-names*)
-                    (member exprs *declared_vbles*)
-                    (member exprs *undeclared_vbles*)
+                    (member exprs *declared-vbles*)
+                    (member exprs *undeclared-vbles*)
                     (sym-is-fun-name (list exprs))
                     (sym-is-number-p exprs))
                 ;; This aren't new variables either because they can't
@@ -89,7 +89,7 @@
                ((eq exprs 'pause)
                 )
                (t
-                (pushnew (check-reserved-lisp-names exprs) *undeclared_vbles*))))
+                (pushnew (check-reserved-lisp-names exprs) *undeclared-vbles*))))
         ((listp exprs)
          (cond ((eq (first exprs) 'function)
                 ;; (function sym) is a resolved function reference;
@@ -144,12 +144,12 @@
                type-hash)
       `((declare ,@dec)))))
 
-(defun lookup-vble-type (vble &optional (decls *explicit_vble_decls*))
+(defun lookup-vble-type (vble &optional (decls *explicit-vble-decls*))
   ;;(format t "lookup-vble: ~a~%" vble)
-  (cond ((or (member vble *declared_vbles*)
+  (cond ((or (member vble *declared-vbles*)
              (member vble *subprog-arglist*))
          ;;(format t "  is declared var~%")
-         ;;(format t "  explicit_vbld_decls = ~A~%" *explicit_vble_decls*)
+         ;;(format t "  explicit_vbld_decls = ~A~%" *explicit-vble-decls*)
          
          ;; First for declared variables
          (do* ((type-clauses decls
@@ -193,7 +193,7 @@
                )))
         (t
          ;;(format t "  is not declared. Implicit type = ~a~%" (get-implicit-type vble))
-         ;;(format t "implicit ~a~%" *implicit_vble_decls*)
+         ;;(format t "implicit ~a~%" *implicit-vble-decls*)
          (cond ((get-implicit-type vble))
                ((default-int-p vble)
                 'integer4)
@@ -228,7 +228,7 @@
               (cond ((eq var-type 'array)
                      ;; Look up the type of the array
                      (destructuring-bind (&optional decl1 decl2)
-                         (vble-declared-twice-p arg *explicit_vble_decls*)
+                         (vble-declared-twice-p arg *explicit-vble-decls*)
                        (declare (ignorable decl2))
                        (values (first decl1) t)))
                     ((vble-is-array-p arg)
@@ -815,7 +815,7 @@
   (let ((sym-mlets '())
         (sym-lets ()))
     (if *common-blocks-as-arrays*
-        (let ((common-var-decls (mapcar #'make-special-var-decl *subprog_common_vars*)))
+        (let ((common-var-decls (mapcar #'make-special-var-decl *subprog-common-vars*)))
           (setf common-var-decls (append '(declaim)
                                          (mapcar #'(lambda (decl)
                                                      (second decl))
@@ -1252,15 +1252,15 @@
   (reduce #'* bounds :key #'(lambda (b)
                               (1+ (- (second b) (first b))))))
 
-;;; *common_array_dims* is stored as a flat list of alternating
+;;; *common-array-dims* is stored as a flat list of alternating
 ;;; name and bounds entries: (NAME-1 BOUNDS-1 NAME-2 BOUNDS-2 ...),
 ;;; not an alist.  Use GETF-style traversal, not ASSOC.
 (defun lookup-array-bounds (name)
   "Return the declared bounds list for array NAME, or NIL."
-  (or (loop for decl in *explicit_vble_decls*
+  (or (loop for decl in *explicit-vble-decls*
             for hit = (assoc name (cdr decl))
             when (and hit (consp (cdr hit))) return (cdr hit))
-      (loop for (n b) on *common_array_dims* by #'cddr
+      (loop for (n b) on *common-array-dims* by #'cddr
             when (eq n name) return b)))
 
 ;;; Reduce an EQUIVALENCE pair to a uniform shape for the solver.
@@ -1624,10 +1624,10 @@
             (declare (ignore declare-sym type-sym var))
             (when declare-vars
               (push decl var-decls))
-            (setf *declared_vbles*
-                  (remove vble *declared_vbles*))
-            (setf *undeclared_vbles*
-                  (remove vble *undeclared_vbles*))
+            (setf *declared-vbles*
+                  (remove vble *declared-vbles*))
+            (setf *undeclared-vbles*
+                  (remove vble *undeclared-vbles*))
             (push type var-type-list)))))
     (values (nreverse var-type-list)
             (nreverse var-decls))))
@@ -1841,27 +1841,27 @@
      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
            arglist (caddr fort-fun)
            body (cdddr fort-fun))
-     (setq *undeclared_vbles* 
-           (set-difference *undeclared_vbles* *subprog_common_vars*))
+     (setq *undeclared-vbles* 
+           (set-difference *undeclared-vbles* *subprog-common-vars*))
      (when (member :insert-declaration *f2cl-trace*)
        (format t "~&")
-       (format t "declared_vbles   = ~S~%" *declared_vbles*)
-       (format t "undeclared_vbles = ~S~%" *undeclared_vbles*)
-       (format t "implicit_vbles   = ~S~%" *implicit_vble_decls*)
+       (format t "declared-vbles   = ~S~%" *declared-vbles*)
+       (format t "undeclared-vbles = ~S~%" *undeclared-vbles*)
+       (format t "implicit_vbles   = ~S~%" *implicit-vble-decls*)
        (format t "*functions used* = ~S~%" *functions-used*)
        (format t "external func    = ~S~%" *external-function-names*)
-       (format t "*subprog_common_vars* = ~S~%" *subprog_common_vars*)
-       (format t "*common_array_dims*   = ~S~%" *common_array_dims*)
-       (format t "*explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
+       (format t "*subprog-common-vars* = ~S~%" *subprog-common-vars*)
+       (format t "*common-array-dims*   = ~S~%" *common-array-dims*)
+       (format t "*explicit-vble-decls* = ~A~%" *explicit-vble-decls*)
        (maphash #'(lambda (key val)
                     (format t "~A => ~A~%" key val))
                 *common-blocks*))
-     ;;(setq special-proclamation (make-special-proclamation *subprog_common_vars*))
+     ;;(setq special-proclamation (make-special-proclamation *subprog-common-vars*))
      #+nil
      (when (member :insert-declaration *f2cl-trace*)
        (format t "special-proclamation = ~a~%" special-proclamation))
      (setq common_var_decls 
-           (mapcar #'make-special-var-decl *subprog_common_vars*))
+           (mapcar #'make-special-var-decl *subprog-common-vars*))
      ;; Clean up the declarations by merging them into one
      (setq common_var_decls
            (append '(declaim)
@@ -1869,8 +1869,8 @@
                                (second decl))
                            common_var_decls)))
 
-     ;;(format t "*subprog_common_vars* = ~S~%" *subprog_common_vars*)
-     ;;(format t "*common_array_dims* = ~S~%" *common_array_dims*)
+     ;;(format t "*subprog-common-vars* = ~S~%" *subprog-common-vars*)
+     ;;(format t "*common-array-dims* = ~S~%" *common-array-dims*)
      ;;(format t "declared = ~S~%" common_var_decls)
      
      (setf common-block-structs (make-common-block-structure common_var_decls))
@@ -1905,10 +1905,10 @@
                          (let ((decl
                                 (make-declaration vble :vble-is-formal-arg t)))
                            (format t "~S: ~S is ~S~%" defun-bit vble decl)
-                           (setf *declared_vbles*
-                                 (remove vble *declared_vbles*))
-                           (setf *undeclared_vbles*
-                                 (remove vble *undeclared_vbles*))
+                           (setf *declared-vbles*
+                                 (remove vble *declared-vbles*))
+                           (setf *undeclared-vbles*
+                                 (remove vble *undeclared-vbles*))
                            decl))
                      (set-difference arglist *external-function-names*)))))
      ;;(format t "*functions used* = ~S~%" *functions-used*)
@@ -1925,10 +1925,10 @@
                                     decl
                                   (declare (ignore declare-sym type-sym var))
                                   (push decl var-decls)
-                                  (setf *declared_vbles*
-                                        (remove vble *declared_vbles*))
-                                  (setf *undeclared_vbles*
-                                        (remove vble *undeclared_vbles*))
+                                  (setf *declared-vbles*
+                                        (remove vble *declared-vbles*))
+                                  (setf *undeclared-vbles*
+                                        (remove vble *undeclared-vbles*))
                                   type))))
                       arglist)
               ))
@@ -1990,7 +1990,7 @@
      
      ;; If we are auto-SAVE'ing variables initialized in DATA
      ;; statements, we add all of the variables in the *data-init* list
-     ;; to the *save_vbles* list, removing duplicates.
+     ;; to the *save-vbles* list, removing duplicates.
 
      (flet ((extract-var-name (setter)
               ;; From the setting form, we extract the variable name.
@@ -2014,10 +2014,10 @@
                        (second (second setter)))
                       ((eq 'data-implied-do (first setter))
                        (find-data-var (second setter)))))))
-       (when (and *auto-save-data* *data-init* (not (eq *save_vbles* '%save-all-locals%)))
-         (setf *save_vbles*
+       (when (and *auto-save-data* *data-init* (not (eq *save-vbles* '%save-all-locals%)))
+         (setf *save-vbles*
                (remove-duplicates
-                (append *save_vbles*
+                (append *save-vbles*
                         (remove nil 
                                 (flatten-list
                                  (mapcar #'extract-var-name
@@ -2025,20 +2025,20 @@
 
      ;; If a variable names a function used or an external function,
      ;; delete the variable.
-     (setf *declared_vbles*
+     (setf *declared-vbles*
            (remove-if #'(lambda (v)
                           (or (member v *functions-used* :key #'caar)
                               (member v *external-function-names*)))
-                      *declared_vbles*))
+                      *declared-vbles*))
      ;; If a variable names a function used or an external function or
      ;; delete the variable.
-     (setf *undeclared_vbles*
+     (setf *undeclared-vbles*
            (remove-if #'(lambda (v)
                           (or (member v *functions-used* :key #'caar)
                               (member v *external-function-names*)))
-                      *undeclared_vbles*))
+                      *undeclared-vbles*))
 
-     ;;(format t "*key_params* = ~S~%" *key_params*)
+     ;;(format t "*key-params* = ~S~%" *key-params*)
      ;;(format t "key-params = ~S~%" key-params)
 
      ;; Convert reserved names in parameter statements.  Coerce the
@@ -2050,16 +2050,16 @@
                                     
                           (list maybe-new-name
                                 (coerce-parameter-assign maybe-new-name (cadr x)))))
-                    *key_params*)))
+                    *key-params*)))
      ;;(format t "key-params = ~S~%" key-params)
      
-     (when (eq *save_vbles* '%save-all-locals%)
-       ;; If *save_vbles* is the magic '%save-all-locals%, we want to
+     (when (eq *save-vbles* '%save-all-locals%)
+       ;; If *save-vbles* is the magic '%save-all-locals%, we want to
        ;; save all local variables.
-       (setf *save_vbles* (concatenate 'list *declared_vbles* *undeclared_vbles*)))
+       (setf *save-vbles* (concatenate 'list *declared-vbles* *undeclared-vbles*)))
 
      ;; No need to save key-params
-     (setf *save_vbles* (set-difference *save_vbles* (mapcar #'first *key_params*)))
+     (setf *save-vbles* (set-difference *save-vbles* (mapcar #'first *key-params*)))
 
      ;; Initialize local variables
      (setq local-vbles
@@ -2068,11 +2068,11 @@
                     (mapcar #'make-initialisation 
                             (remove-if 
                              #'(lambda (x)
-                                 (or (member x *save_vbles*)
+                                 (or (member x *save-vbles*)
                                      (member x key-params :key #'car)))
-                             (set-difference (append *declared_vbles*
-                                                     *undeclared_vbles*)
-                                             *subprog_common_vars*))))
+                             (set-difference (append *declared-vbles*
+                                                     *undeclared-vbles*)
+                                             *subprog-common-vars*))))
             :test #'(lambda (a b)
                       (eq (first a) (first b)))))
 
@@ -2095,19 +2095,19 @@
                                                     :vble-is-formal-arg nil))
                               (remove-if
                                #'(lambda (x)
-                                   (or (member x *save_vbles*)))
+                                   (or (member x *save-vbles*)))
                                (set-difference
                                 (append
-                                 (set-difference *declared_vbles* 
+                                 (set-difference *declared-vbles* 
                                                  (mapcar #'car key-params))
-                                 *undeclared_vbles*)
-                                *subprog_common_vars*))))
+                                 *undeclared-vbles*)
+                                *subprog-common-vars*))))
               :test #'(lambda (a b)
                         (eq (third (second a))
                             (third (second b))))))))
 
      ;; If we have saved variables, setup their declarations too.
-     ;;(format t "*save_vbles* = ~S~%" *save_vbles*)
+     ;;(format t "*save-vbles* = ~S~%" *save-vbles*)
      (setq saved-decls
            (pretty-decls
             (remove-if
@@ -2118,7 +2118,7 @@
                       (mapcar #'(lambda (vble)
                                   (make-declaration vble
                                                     :vble-is-formal-arg nil))
-                              *save_vbles*))
+                              *save-vbles*))
               :test #'(lambda (a b)
                         (eq (third (second a))
                             (third (second b))))))))
@@ -2133,7 +2133,7 @@
                             (remove-if 
                              #'(lambda (x)
                                  (member x key-params :key #'car))
-                             *save_vbles*)))
+                             *save-vbles*)))
             :test #'(lambda (a b)
                       (eq (first a) (first b)))))
 
@@ -2161,10 +2161,10 @@
                                                          (find-data-var (check-reserved-lisp-names v)))))
                                               (second (second (second init)))))
                                         vars)
-                                ;; Look through explicit_vble_decls
+                                ;; Look through explicit-vble-decls
                                 (mapcar #'(lambda (v)
                                             (let ((v (find-data-var (check-reserved-lisp-names v))))
-                                              (dolist (d *explicit_vble_decls*)
+                                              (dolist (d *explicit-vble-decls*)
                                                 (destructuring-bind (vtype &rest vars)
                                                     d
                                                   (when (member v vars :key #'car)
@@ -2215,8 +2215,8 @@
             vble-decls
             `(,@body ,@*data-init*)
             (append arglist
-                    *save_vbles*
-                    *subprog_common_vars*
+                    *save-vbles*
+                    *subprog-common-vars*
                     (mapcar #'first key-params)))
          (setf local-vbles new-vbles
                vble-decls new-decls)))
@@ -2237,11 +2237,11 @@
      ;; into all-decls.
      ;;
      ;; process-local-decls doesn't mutate any of the globals.
-     (multiple-value-setq (local-vbles vble-decls *subprog_stmt_fns_bodies*)
+     (multiple-value-setq (local-vbles vble-decls *subprog-stmt-fns-bodies*)
        (process-local-decls local-vbles vble-decls body
                             arglist key-params
-                            *subprog_stmt_fns_bodies*
-                            *save_vbles* *subprog_common_vars*
+                            *subprog-stmt-fns-bodies*
+                            *save-vbles* *subprog-common-vars*
                             *data-init* *prune-unused-vars*))
 
      ;;(format t "local-vbles     = ~S~%" local-vbles)
@@ -2314,16 +2314,16 @@
      ;;(format t "entry-points = ~A~%" entry-points)
        
      (setq prog-bit
-           (if (or *save_vbles* *auto-save-data*)
+           (if (or *save-vbles* *auto-save-data*)
                ;; If we have SAVE'd variables, don't put their inits
                ;; into the function.  Put them in the let outside the function
                ;; where they belong.
                (if *subprog-stmt-fns*
-                   `(labels ,*subprog_stmt_fns_bodies* ,@stmt-fcn-decls
+                   `(labels ,*subprog-stmt-fns-bodies* ,@stmt-fcn-decls
                      (prog ,local-vbles ,@all-decls ,@entry-points ,@body))
                    `(prog ,local-vbles ,@all-decls ,@entry-points ,@body))
                (if *subprog-stmt-fns*
-                   `(labels ,*subprog_stmt_fns_bodies* ,@stmt-fcn-decls
+                   `(labels ,*subprog-stmt-fns-bodies* ,@stmt-fcn-decls
                      (prog ,local-vbles ,@all-decls ,@*data-init* ,@entry-points ,@body))
                    `(prog ,local-vbles ,@all-decls ,@*data-init* ,@entry-points ,@body)))
                )
@@ -2346,7 +2346,7 @@
      (setf prog-bit (optimize-integer-arithmetic prog-bit))
      ;;(format t "after opt int:~%~A~%" prog-bit)
      ;;(format t "opt prog = ~%~S~%" prog-bit)
-     ;;(format t "*save_vbles* = ~a~%" *save_vbles*)
+     ;;(format t "*save-vbles* = ~a~%" *save-vbles*)
      ;;(format t "*data-init* = ~S~%" *data-init*)
      ;;(format t "save-inits  = ~S~%" save-inits)
 
@@ -2354,10 +2354,10 @@
        ;; Common variables are always SAVE'd in f2cl, so remove those
        ;; from the save-inits list.
        
-       ;;(format t "*subprog_common_vars* = ~A~%" *subprog_common_vars*)
+       ;;(format t "*subprog-common-vars* = ~A~%" *subprog-common-vars*)
        (let ((non-common-save-inits
               (remove-if #'(lambda (item)
-                             (member (first item) *subprog_common_vars*))
+                             (member (first item) *subprog-common-vars*))
                          save-inits)))
          ;;(format t "non-common-save-inits  = ~S~%" non-common-save-inits)
          (multiple-value-setq (save-inits *data-init*)
@@ -2410,16 +2410,16 @@
 
      (when (member :insert-declaration *f2cl-trace*)
        (format t "key-params            = ~A~%" key-params)
-       (format t "*declared_vbles*      = ~A~%" *declared_vbles*)
-       (format t "*undeclared_vbles*    = ~A~%" *undeclared_vbles*)
-       (format t "*subprog_common_vars* = ~A~%" *subprog_common_vars*)
+       (format t "*declared-vbles*      = ~A~%" *declared-vbles*)
+       (format t "*undeclared-vbles*    = ~A~%" *undeclared-vbles*)
+       (format t "*subprog-common-vars* = ~A~%" *subprog-common-vars*)
        (format t "arglist               = ~A~%" arglist))
      (setf prog-bit
            (fixup-external-function-refs
             prog-bit
             (set-difference *intrinsic-function-names*
-                            (append *declared_vbles*
-                                    *undeclared_vbles*
+                            (append *declared-vbles*
+                                    *undeclared-vbles*
                                     arglist
                                     (mapcar #'first key-params)))))
 
@@ -2650,7 +2650,7 @@
        ((and (let* ((sub-name (string (second defun-bit)))
                     (name-len (min 10 (length sub-name))))
                (string-equal sub-name "/blockdata" :end1 name-len :end2 name-len))
-             *subprog_common_vars*)
+             *subprog-common-vars*)
         ;; Block data subprograms need to be handled specially.  The
         ;; data-init part needs to be moved inside the body and
         ;; massaged to initialize the data.  
@@ -2702,7 +2702,7 @@
         ;; Return 3 pieces: Any proclamations for special variables, the
         ;; declarations for the special variables, and, finally, the
         ;; function itself.
-        (when *subprog_common_vars*
+        (when *subprog-common-vars*
           (multiple-value-bind (sym-macs sym-lets)
               (create-sym-macros prog-bit)
             (setf prog-bit `(let ,sym-lets
@@ -2725,7 +2725,7 @@
                                   ,@(unless (equal formal-arg-decls '((declare)))
                                             formal-arg-decls)
                                   ,prog-bit)))
-               (save-stuff (if (and (or *save_vbles* *auto-save-data*)
+               (save-stuff (if (and (or *save-vbles* *auto-save-data*)
                                     save-inits)
                                `(let ,save-inits
                                  ,@saved-decls
@@ -2786,14 +2786,14 @@
       #+nil
       (progn
         (format t "*data-init* = ~A~%" *data-init*)
-        (format t "*explicit_vble_decls* = ~a~%" *explicit_vble_decls*)
-        (format t "*declared_vbles* = ~S~%" *declared_vbles*)
-        (format t "*common_array_dims* = ~S~%" *common_array_dims*)
+        (format t "*explicit-vble-decls* = ~a~%" *explicit-vble-decls*)
+        (format t "*declared-vbles* = ~S~%" *declared-vbles*)
+        (format t "*common-array-dims* = ~S~%" *common-array-dims*)
         (format t "vble = ~a~%" vble)
         (format t "init-val = ~S~%" init-val))
       (cond
         ;;check for vble with two declarations i.e. an array
-        ((setf decl1 (vble-declared-twice-p vble *explicit_vble_decls*))
+        ((setf decl1 (vble-declared-twice-p vble *explicit-vble-decls*))
          #+nil
          (progn
            (format t "declared twice~%")
@@ -2821,12 +2821,12 @@
          nil
          )
         ;; check for declared variable
-        ((member vble *declared_vbles*)
+        ((member vble *declared-vbles*)
          #+nil
          (progn
            (format t "make-init: declared var:  ~A = ~A~%" vble init-val)
-           (format t "explicit_vble_decls = ~A~%" *explicit_vble_decls*))
-         (do ((type-clauses *explicit_vble_decls* (cdr type-clauses))
+           (format t "explicit-vble-decls = ~A~%" *explicit-vble-decls*))
+         (do ((type-clauses *explicit-vble-decls* (cdr type-clauses))
               (decl nil))
              ((null type-clauses) )
            (setq type (caar type-clauses))
@@ -2877,19 +2877,19 @@
                   (progn
                     (format t "vble = ~S~%" vble)
                     (format t "vble_name = ~S~%" vble_name)
-                    (format t "dims = ~S~%" *common_array_dims*)
-                    (format t "subprog = ~S~%" *subprog_common_vars*))
+                    (format t "dims = ~S~%" *common-array-dims*)
+                    (format t "subprog = ~S~%" *subprog-common-vars*))
 
                   ;; If vble was dimensioned in a common block, we
                   ;; don't need to initialize it here.  I think.
-                  (when (member vble *common_array_dims*)
+                  (when (member vble *common-array-dims*)
                     (return nil))
 
                   ;; If this variable is in a common block, we don't
                   ;; need to initialize it either.  It would have been
                   ;; initialized in the clauses above.  I think.
                   (when (and (setq decl (member vble (cdar type-clauses) :key #'car))
-                             (not (member vble *subprog_common_vars*)))
+                             (not (member vble *subprog-common-vars*)))
                     (return 
                       (if (cdar decl) 
                           `(,vble_name
@@ -2989,7 +2989,7 @@
 ;; create a labels form for when statement functions are present
 
 (defun make-labels-form (local-vbles vble-decls *data-init* body)
-    `(labels ,*subprog_stmt_fns_bodies*
+    `(labels ,*subprog-stmt-fns-bodies*
       (prog ,local-vbles ,@vble-decls ,@*data-init* ,@body)))
 
 
@@ -3020,7 +3020,7 @@
   (return
    (cond
      ;;check for vble with two declarations i.e. an array
-     ((setf decl1 (vble-declared-twice-p vble *explicit_vble_decls*))
+     ((setf decl1 (vble-declared-twice-p vble *explicit-vble-decls*))
       (destructuring-bind (decl1 decl2)
           decl1
         (when (eq (car decl2) 'array)
@@ -3044,9 +3044,9 @@
       nil
       )
      ;; check for declared variable
-     ((member vble *declared_vbles*)
+     ((member vble *declared-vbles*)
       ;;(format t "~a is declared~%" vble)
-      (do ((type-clauses *explicit_vble_decls* (cdr type-clauses))
+      (do ((type-clauses *explicit-vble-decls* (cdr type-clauses))
            (decl nil))
           ((null type-clauses) )
         (setq type (caar type-clauses))
@@ -3186,7 +3186,7 @@
 
 
 (defun get-implicit-type (vble)
-  (do ((decls *implicit_vble_decls* (cdr decls))
+  (do ((decls *implicit-vble-decls* (cdr decls))
        (vble-str (aref (string vble) 0)))
       ((null decls) nil)
     (if
@@ -3204,8 +3204,8 @@
 (defun get_array_type (decl vble-is-formal-arg) 
   (prog (type)
       (return
-       (cond ((and (member decl *common_array_dims*)
-                   (setq type (car (member decl *explicit_vble_decls* :key #'caadr)))
+       (cond ((and (member decl *common-array-dims*)
+                   (setq type (car (member decl *explicit-vble-decls* :key #'caadr)))
                    (not (eq (car type) 'array)))
               (car type))
              ((setq type (get-implicit-type decl))
@@ -3218,7 +3218,7 @@
 (defun get_array_type (decl) 
   (prog (type)
       (return
-       (cond ((member decl *common_array_dims*)
+       (cond ((member decl *common-array-dims*)
               (lookup-vble-type decl))
              ((setq type (get-implicit-type decl))
               type)
@@ -3233,8 +3233,8 @@
 
 ;; Test whether or not a given symbol has been defined as an array.
 (defun vble-is-array-p (v)
-  ;;(format t "common_array_dims = ~A~%" *common_array_dims*)
-  ;;(format t "declard_vbles     = ~A~%" *declared_vbles*)
+  ;;(format t "common-array-dims = ~A~%" *common-array-dims*)
+  ;;(format t "declard_vbles     = ~A~%" *declared-vbles*)
 
   ;; If it's an explicitly declared name, look through the
   ;; declarations to see if there are dimensions associated.
@@ -3244,8 +3244,8 @@
   ;;
   ;; ### This is pretty gross!  Why can't we keep this info all in one
   ;; place?
-  (when (member v *declared_vbles*)
-    (do ((decls *explicit_vble_decls* (cdr decls)))
+  (when (member v *declared-vbles*)
+    (do ((decls *explicit-vble-decls* (cdr decls)))
         ((null decls) nil)
       (if (do ((vbles (cdar decls) (cdr vbles)))
               ((null vbles) nil)
@@ -3253,8 +3253,8 @@
                 (return-from vble-is-array-p t)))
           (return-from vble-is-array-p t))))
   ;; else check if v is a common variable and an array or has 2 declarations
-  (or (member v *common_array_dims*)
-      (vble-declared-twice-p v *explicit_vble_decls*)))
+  (or (member v *common-array-dims*)
+      (vble-declared-twice-p v *explicit-vble-decls*)))
 
 
 
@@ -3287,7 +3287,7 @@
 
 ; declare a special (common) variable
 (defun make-special-var-decl (v)
-  (let ((dim (member v *common_array_dims*)))
+  (let ((dim (member v *common-array-dims*)))
     (cond                               ; check if v is an array 
       (dim
        `(declare (type (,*array-type* ,(get_array_type v)
@@ -3491,7 +3491,7 @@
 ;----------------------------------------------------------------------------- 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)  
-  (proclaim '(special *format_stmts* *current_label* *SP* *dlist-flag*)))
+  (proclaim '(special *format-stmts* *current-label* *SP* *dlist-flag*)))
 
 ;;; When non-NIL, get_format_stmt prefers the raw Fortran format string
 ;;; (stashed by parse-format) over the CL-cilist representation, so
@@ -3566,7 +3566,7 @@ surrounded by parentheses."
   ;; single quotes, nested groups with mixed repeat counts, and
   ;; bare X/comma spacers; see edgetest.f.
   ;;
-  ;; Stored as the third field of each *format_stmts* entry;
+  ;; Stored as the third field of each *format-stmts* entry;
   ;; consulted by get_format_stmt when *use-fortran-format-printer*
   ;; is T.
   ;;
@@ -3581,13 +3581,13 @@ surrounded by parentheses."
   (prog (*SP*)
    (declare (special *SP*))
    (setq *SP* nil)
-   (setq *format_stmts*
-         (cons (list *current_label*
+   (setq *format-stmts*
+         (cons (list *current-label*
                      (unless *use-fortran-format-printer*
                        (parse-format1 (cadr x)))
                      (or raw-string
                          (%fortran-format-body-to-string (cadr x))))
-               *format_stmts*)))
+               *format-stmts*)))
 )
 
 ;; x is of form: '(WRITE (* |,| 8000) |,| J |,| K)
@@ -4018,7 +4018,7 @@ surrounded by parentheses."
            ;; List-directed output
            :list-directed)
           (t
-           (do ((lis *format_stmts* (cdr lis)))
+           (do ((lis *format-stmts* (cdr lis)))
                ((null lis)
                 (error "Format statement ~A not found" fmt-num))
              (when (equal fmt-num (caar lis))
@@ -4919,7 +4919,7 @@ surrounded by parentheses."
 ;;; f2cl5.l:
 ;;; o Find the entire array bounds.
 ;;; o Don't use make-declaration to get the array type.  Explicitly look
-;;;   through *explicit_vble_decls* to find the type.  (Are there other
+;;;   through *explicit-vble-decls* to find the type.  (Are there other
 ;;;   places we need to look?)
 ;;;
 ;;; macros.l:
@@ -5121,7 +5121,7 @@ surrounded by parentheses."
 ;;;
 ;;;   Do this by adding the parent to the list pushed on *entry-points*.
 ;;;
-;;; o Set *subprog_name* to the function name.  (Is this right?)
+;;; o Set *subprog-name* to the function name.  (Is this right?)
 ;;;
 ;;; src/f2cl5.l:
 ;;; o If possible, use the parent name to figure out the calling info for
@@ -5581,7 +5581,7 @@ surrounded by parentheses."
 ;;; o In GET-FUN-ARG-TYPE, we weren't correctly handling the case of unary
 ;;;   + and -.
 ;;; o When looking up the type of a variable, we need to check for the
-;;;   variable in *subprog-arglist* as well as *declared_vbles*!
+;;;   variable in *subprog-arglist* as well as *declared-vbles*!
 ;;;
 ;;; Thanks to Mike Koerber for sending sample code where this fails.
 ;;;

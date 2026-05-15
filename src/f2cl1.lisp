@@ -118,13 +118,13 @@
 (defvar *external-function-names* nil
   "Subprogram names declared EXTERNAL in the current Fortran unit.")
 
-(defvar *undeclared_vbles* nil
+(defvar *undeclared-vbles* nil
   "Variables in the current subprogram that have no explicit type declaration.")
 
-(defvar *declared_vbles* nil
+(defvar *declared-vbles* nil
   "Variables in the current subprogram that have been explicitly typed.")
 
-(defvar *implicit_vble_decls* nil
+(defvar *implicit-vble-decls* nil
   "Type clauses from the IMPLICIT statement(s) of the current subprogram.")
 
 (defvar *subprog-arglist* nil
@@ -133,43 +133,43 @@
 (defvar *data-init* nil
   "Accumulated DATA-statement initializers for the current subprogram.")
 
-(defvar *explicit_vble_decls* nil
+(defvar *explicit-vble-decls* nil
   "Type clauses from explicit type declarations in the current subprogram.")
 
 (defvar *function-flag* nil
   "Non-NIL while parsing a FUNCTION subprogram (vs. subroutine or program).")
 
-(defvar *key_params* nil
+(defvar *key-params* nil
   "Alist of PARAMETER bindings for the current subprogram.")
 
-(defvar *save_vbles* nil
+(defvar *save-vbles* nil
   "Variables marked SAVE in the current subprogram, or %SAVE-ALL-LOCALS%.")
 
 (defvar *program-flag* nil
   "Non-NIL while parsing a PROGRAM unit (vs. function or subroutine).")
 
-(defvar *subprog_name* nil
+(defvar *subprog-name* nil
   "Name of the current subprogram.")
 
-(defvar *subprog_common_vars* nil
+(defvar *subprog-common-vars* nil
   "Variables in the current subprogram that appear in COMMON blocks.")
 
-(defvar *common_array_dims* nil
+(defvar *common-array-dims* nil
   "Array-dimension info for COMMON variables in the current subprogram.")
 
-(defvar *format_stmts* nil
+(defvar *format-stmts* nil
   "FORMAT statements collected from the current subprogram.")
 
-(defvar *current_label* nil
+(defvar *current-label* nil
   "Statement label currently being attached to the next translated form.")
 
 (defvar *subprog-stmt-fns* nil
   "Statement-function names defined in the current subprogram.")
 
-(defvar *subprog_stmt_fns_bodies* nil
+(defvar *subprog-stmt-fns-bodies* nil
   "Bodies of the statement functions defined in the current subprogram.")
 
-(defvar *prune_labels* t
+(defvar *prune-labels* t
   "If non-NIL, prune labels that aren't the target of any GO/branch.")
 
 (defvar *prune-unused-vars* nil
@@ -432,7 +432,7 @@ correctly"
              (eq array-type :simple-array))
     (warn ":array-slicing is T, so specified :array-type of :simple-array is overridden"))
   (let ((*verbose* verbose)
-        (*prune_labels* prune-labels)
+        (*prune-labels* prune-labels)
         (*prune-unused-vars* prune-unused-vars)
         (*comments* include-comments)
         (*auto-save-data* auto-save)
@@ -722,7 +722,7 @@ COMPILE-FILE.
         ;; *float-format* so that the generated output has the desired
         ;; style for printed numbers.
         (*read-default-float-format* (maybe-promote-type 'single-float))
-        *common_array_dims* *format_stmts* *statement-labels*)
+        *common-array-dims* *format-stmts* *statement-labels*)
     (when *verbose*
       (format t "beginning the main translation ...~%"))
     (with-open-file (inport file :direction :input)
@@ -731,11 +731,11 @@ COMPILE-FILE.
         (let ((*print-level* nil)
               (*print-length* nil))
           (print-header outport declaim package options))
-        (setq *common_array_dims* nil)
+        (setq *common-array-dims* nil)
         (do ((char (peek-char nil inport nil 'eof) 
                    (peek-char nil inport nil 'eof)))
             ((eq char 'eof) )
-          (setq *format_stmts* nil)
+          (setq *format-stmts* nil)
           (setq *statement-labels* nil)
           (let ((*print-level* nil)
                 (*print-length* nil))
@@ -823,7 +823,7 @@ COMPILE-FILE.
 ;-----------------------------------------------------------------------------
 #+nil
 (defun readsubprog-extract-format-stmts (inport)
-  (let (input-list output-list margin *current_label*)
+  (let (input-list output-list margin *current-label*)
     (when *verbose*
       (format t "~&extracting format statements ...~%"))
 
@@ -832,7 +832,7 @@ COMPILE-FILE.
         (setq margin (unless (eq (peek-char nil inport nil 'eof) 'eof)
                        (read-six-chars inport)))
         ;; Set the label (line number), if any
-        (setq *current_label*
+        (setq *current-label*
               (let ((label (read-from-string (coerce margin 'string) nil)))
                 (if (integerp label)
                     label)))
@@ -848,7 +848,7 @@ COMPILE-FILE.
         ;;(format t "extract format-stmts~%")
         (if (eq (car input-list) 'format)
             (parse-format (brackets-check (concat-operators input-list)))
-            (push (list *current_label* input-list) output-list))
+            (push (list *current-label* input-list) output-list))
         ;; Check for end of subprogram
         (if (and (eq (car input-list) 'end) (null (cdr input-list)))
             (return (nreverse output-list))))))
@@ -920,7 +920,7 @@ COMPILE-FILE.
 (defun readsubprog-extract-format-stmts (inport)
   (let ((extended-label 100000)         ; Must be bigger than any possible valid Fortran label.
         (extended-do-label-stack '())
-        input-list output-list leading-comments margin *current_label*)
+        input-list output-list leading-comments margin *current-label*)
     (when *verbose*
       (format t "~&extracting format statements ...~%"))
     (loop
@@ -928,13 +928,13 @@ COMPILE-FILE.
         (setq margin (unless (eq (peek-char nil inport nil 'eof) 'eof)
                        (read-six-chars inport)))
         ;; Set the label (line number), if any
-        (setq *current_label*
+        (setq *current-label*
               (let ((label (read-from-string (coerce margin 'string) nil)))
                 (if (integerp label)
                     label)))
         ;; Add to list
-        (when *current_label*
-          (push *current_label* *statement-labels*))
+        (when *current-label*
+          (push *current-label* *statement-labels*))
         ;; Make sure we aren't hosed if we break out of this!
         (with-fortran-syntax
           ;; read body of a line
@@ -992,7 +992,7 @@ COMPILE-FILE.
              ;; (99999), since Fortran labels are limited to 5
              ;; digits.
              (push extended-label extended-do-label-stack)
-             (push `(,*current_label* ,(rewrite-extended-do extended-label input-list))
+             (push `(,*current-label* ,(rewrite-extended-do extended-label input-list))
                    output-list)
              (incf extended-label))
             ((id-do-while input-list)
@@ -1050,8 +1050,8 @@ COMPILE-FILE.
                                 ,@(nthcdr 8 input-list))
                         `(write |(| ,(third input-list) |,| ,extended-label |)|
                                 ,@(nthcdr 6 input-list)))))
-               (push `(,*current_label* ,new) output-list))
-             (setf *current_label* extended-label)
+               (push `(,*current-label* ,new) output-list))
+             (setf *current-label* extended-label)
              (incf extended-label)
              ;; Convert the string format into the appropriate format
              (let ((fmt (with-fortran-syntax
@@ -1067,7 +1067,7 @@ COMPILE-FILE.
             ((eq (car input-list) 'format)
              (parse-format (brackets-check (concat-operators input-list))))
             (t
-             (push (list *current_label* input-list) output-list)))))
+             (push (list *current-label* input-list) output-list)))))
         
       ;; Check for end of subprogram
       (when (and (eq (car input-list) 'end) (null (cdr input-list)))
@@ -1216,15 +1216,15 @@ COMPILE-FILE.
                                                            ; of do
                                                            ; integers
         fort-fun *external-function-names*
-        *undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
-        *save_vbles* *key_params* *subprog_common_vars* 
-        *subprog-stmt-fns* *subprog_stmt_fns_bodies* *subprog_name*
+        *undeclared-vbles* *declared-vbles* *implicit-vble-decls* *explicit-vble-decls*
+        *save-vbles* *key-params* *subprog-common-vars* 
+        *subprog-stmt-fns* *subprog-stmt-fns-bodies* *subprog-name*
         *function-flag* *program-flag*
         *subprog-arglist* *data-init* *functions-used* *vble-declaration-done*
         *parsing-lhs*
         *equivalenced-vars*
         *equivalence-aliases*
-        *common_array_dims*
+        *common-array-dims*
         *non-intrinsic-function-names*)
 
      (setq fort-fun
@@ -1710,11 +1710,11 @@ COMPILE-FILE.
 ; program definition
 (defun parse-prog-definition (bindings) 
    (setq *program-flag* t)
-   (setq *subprog_name* (check-reserved-lisp-names (variable-value '%name bindings)))
-   (list 'defun (if *subprog_name* *subprog_name* '*MAIN*)
+   (setq *subprog-name* (check-reserved-lisp-names (variable-value '%name bindings)))
+   (list 'defun (if *subprog-name* *subprog-name* '*MAIN*)
 ;         (read-from-string 
 ;             (concatenate 'string "*MAIN*"
-;                    (princ-to-string *subprog_name*)))
+;                    (princ-to-string *subprog-name*)))
          nil
          ))
 
@@ -1727,11 +1727,11 @@ COMPILE-FILE.
 ; subroutine definition
 (defun parse-subr-definition (bindings) 
   (prog (arg-list)
-   (setq *subprog_name* (check-reserved-lisp-names (variable-value '%name bindings)))
+   (setq *subprog-name* (check-reserved-lisp-names (variable-value '%name bindings)))
    (setq arg-list (mapcar #'check-subprogram-arg-names
                           (remove '|,| (variable-value '%arg-list bindings))))
    (setq *subprog-arglist* arg-list)
-   (return (list 'defun *subprog_name* 
+   (return (list 'defun *subprog-name* 
                     (if arg-list arg-list nil)))))
 
 ; typed function definition
@@ -1739,14 +1739,14 @@ COMPILE-FILE.
   (setq *function-flag* t)
   (prog (fun-name)
    (setq fun-name (check-reserved-lisp-names (variable-value '%name bindings))
-         *declared_vbles* (list fun-name)
-         *explicit_vble_decls* 
+         *declared-vbles* (list fun-name)
+         *explicit-vble-decls* 
               (list (list (convert-data-type (variable-value '%type bindings))
                           (list fun-name))))
    (setq *subprog-arglist*
          (mapcar #'check-subprogram-arg-names
                  (remove '|,| (variable-value '%arg-list bindings))))
-   (setf *subprog_name* fun-name)
+   (setf *subprog-name* fun-name)
    (return
    (list 'defun 
          fun-name 
@@ -1759,7 +1759,7 @@ COMPILE-FILE.
          (mapcar #'check-subprogram-arg-names
                  (remove '|,| (variable-value '%arg-list bindings))))
    (list 'defun 
-         (setf *subprog_name*
+         (setf *subprog-name*
                (check-reserved-lisp-names (variable-value '%name bindings)))
          *subprog-arglist*))
 
@@ -1769,8 +1769,8 @@ COMPILE-FILE.
   (let* ((entry-name (variable-value '%name bindings))
          (arglist (remove '|,| (variable-value '%arg-list bindings)))
          (args (mapcar #'check-reserved-lisp-names arglist)))
-    ;;(format t "parent = ~A~%" *subprog_name*)
-    (push (list entry-name args *subprog_name*) *entry-points*)
+    ;;(format t "parent = ~A~%" *subprog-name*)
+    (push (list entry-name args *subprog-name*) *entry-points*)
     (list entry-name)))
 
 ;goto
@@ -1872,7 +1872,7 @@ COMPILE-FILE.
 
 ;declaration
 (defun parse-declaration (x)            ; x is the line
-  (setq *declared_vbles*
+  (setq *declared-vbles*
         (append (mapcar #'(lambda (v)
                             #+nil
                             (when (member (first v) *intrinsic-function-names*)
@@ -1883,7 +1883,7 @@ COMPILE-FILE.
                          (if (eq (cadr x) '*)
                              (cdddr x)
                              (cdr x))))
-                *declared_vbles*))
+                *declared-vbles*))
   ;; If we declared an intrinsic function name, remove that from the
   ;; list of declared variables.
 
@@ -1892,8 +1892,8 @@ COMPILE-FILE.
   ;; function.  I'll need to check the Fortran 77 standard to see what
   ;; is supposed to happen here.
   #+nil
-  (setf *declared_vbles*
-        (set-difference *declared_vbles* *intrinsic-function-names*))
+  (setf *declared-vbles*
+        (set-difference *declared-vbles* *intrinsic-function-names*))
 
   (let ((type (find (first x) '((integer integer4)
                                 (integer4 integer4)
@@ -1911,8 +1911,8 @@ COMPILE-FILE.
                     :key #'car)))
     (when type
       (cond ((symbolp (second type))
-             (setq *explicit_vble_decls* 
-                   (build_decl_list *explicit_vble_decls* (maybe-promote-type (second type)) (cdr x))))
+             (setq *explicit-vble-decls* 
+                   (build_decl_list *explicit-vble-decls* (maybe-promote-type (second type)) (cdr x))))
             ((consp (second type))
              (funcall (second (second type)) x))
             (t
@@ -1932,7 +1932,7 @@ COMPILE-FILE.
          ;; declared so we should be ok.  (We don't have to check
          ;; because the Fortran code is supposed to be valid.)
          #+nil
-         (setq *implicit_vble_decls* '((:none (a z))))
+         (setq *implicit-vble-decls* '((:none (a z))))
          )
         (t
          (let ((decls 
@@ -1957,7 +1957,7 @@ COMPILE-FILE.
                        (push `(,type-name
                                ,@(list-split '|,|
                                              (remove '- (car (last y)))))
-                             *implicit_vble_decls*)))
+                             *implicit-vble-decls*)))
                    (list-split '|,| (cdr decls))))))
   nil)
 
@@ -2128,14 +2128,14 @@ COMPILE-FILE.
                    (make-f2cl-finfo :arg-types arg-types :return-values (make-list (length arg-types)))))
            
            (setq *subprog-stmt-fns* (append *subprog-stmt-fns* (list (car lhs)))
-                 *subprog_stmt_fns_bodies*
-                 (append *subprog_stmt_fns_bodies* 
+                 *subprog-stmt-fns-bodies*
+                 (append *subprog-stmt-fns-bodies* 
                          `((,(car lhs) ,(cdr lhs) ,rhs-expr))))
            nil))))
 ;       (and (setq *subprog-stmt-fns* (append *subprog-stmt-fns* (list (car lhs))))
 ;            `((defun ,(read-from-string 
 ;                           (concatenate 'string 
-;                                   (princ-to-string *subprog_name*)
+;                                   (princ-to-string *subprog-name*)
 ;                                   (princ-to-string (car lhs))))
 ;                     ,(cdr lhs) ,rhs)))))
 
@@ -2173,10 +2173,10 @@ COMPILE-FILE.
              (cond ((stringp sym)
                     t)
                    ((symbolp sym)
-                    ;; Look through explicit_vble_decls for sym and
+                    ;; Look through explicit-vble-decls for sym and
                     ;; see if it's a character array.
-                    ;;(format t "explicit-vble-decls = ~S~%" *explicit_vble_decls*)
-                    (do ((type-clauses *explicit_vble_decls* (cdr type-clauses)))
+                    ;;(format t "explicit-vble-decls = ~S~%" *explicit-vble-decls*)
+                    (do ((type-clauses *explicit-vble-decls* (cdr type-clauses)))
                         ((null type-clauses))
                       (let ((vars (cdar type-clauses)))
                         ;;(format t "type-clauses = ~S~%" type-clauses)
@@ -2222,7 +2222,7 @@ COMPILE-FILE.
                #+(or)
                (progn
                  (format t "arg ~S: ~%" (car arg))
-                 (format t "  explicit: ~S~%" *explicit_vble_decls*))
+                 (format t "  explicit: ~S~%" *explicit-vble-decls*))
                (push `(make-array 1 :element-type (type-of ,(car arg))
                                   :initial-element ,(car arg))
                      new-arglist))
@@ -2250,13 +2250,13 @@ COMPILE-FILE.
                     (gethash checked *f2cl-function-info*))))
     (cond
       ((and finfo (f2cl-finfo-return-values finfo))
-       (let ((this (gethash *subprog_name* *f2cl-function-info*)))
+       (let ((this (gethash *subprog-name* *f2cl-function-info*)))
          (unless this
-           (setf (gethash *subprog_name* *f2cl-function-info*)
+           (setf (gethash *subprog-name* *f2cl-function-info*)
                  (make-f2cl-finfo)))
          ;; Add this function to the list of called functions
          (pushnew (first routine-name)
-                  (f2cl-finfo-calls (gethash *subprog_name*
+                  (f2cl-finfo-calls (gethash *subprog-name*
                                              *f2cl-function-info*)))))
       ;; (funcall <name>) means a call through a function value -- a
       ;; formal parameter declared EXTERNAL.  We know it's a function
@@ -2264,7 +2264,7 @@ COMPILE-FILE.
       ((eq (first routine) 'funcall))
       (t
        (warn "In ~A: generating call to unknown function ~A.  Check generated call!"
-             *subprog_name* routine-name)))
+             *subprog-name* routine-name)))
 
     (let ((ret-finfo (if (and *use-function-info* finfo)
                          (f2cl-finfo-return-values finfo)
@@ -2630,8 +2630,8 @@ COMPILE-FILE.
                    (list-split '|,| (cadr x))))
 
    ;;(format t "~&split x = ~A~%" x)
-   (setq *key_params*
-         (append *key_params* 
+   (setq *key-params*
+         (append *key-params* 
                  (mapcar #'(lambda (l)
                              (list (first l) (id-expression (rest l))))
                          x)))
@@ -2647,11 +2647,11 @@ COMPILE-FILE.
   ;; all local variables.  This can't be a valid Fortran variable, so
   ;; we're safe.
   (if (rest x)
-      (setq *save_vbles*
-            (append *save_vbles*
+      (setq *save-vbles*
+            (append *save-vbles*
                     (mapcar #'check-reserved-lisp-names
                             (remove '|,| (if (eq (first (cdr x)) '/) (cddddr x) (cdr x))))))
-      (setq *save_vbles* '%save-all-locals%))
+      (setq *save-vbles* '%save-all-locals%))
    nil) 
   
 (defun parse-common (common-statement)
@@ -2697,9 +2697,9 @@ COMPILE-FILE.
                                     (remove-if-not #'symbolp varlist)))))))
 
    
-    ;; pick out lists of vblenames and add to *subprog_common_vars*
-    (setq *subprog_common_vars* 
-          (append *subprog_common_vars*
+    ;; pick out lists of vblenames and add to *subprog-common-vars*
+    (setq *subprog-common-vars* 
+          (append *subprog-common-vars*
                   (do ((list x (cddr list))
                        (ret nil (append (extract-atoms (cadr list))
                                         ret)))
@@ -2716,8 +2716,8 @@ COMPILE-FILE.
                                                    (cadr nlist))
                              (setq nlist (cdr nlist)))
                             ;; check if array dimensioned elsewhere
-                            ((member (car nlist) *declared_vbles*)
-                             (do ((decls *explicit_vble_decls* (cdr decls)))
+                            ((member (car nlist) *declared-vbles*)
+                             (do ((decls *explicit-vble-decls* (cdr decls)))
                                  ((null decls) nil)
                                (do ((vbles (cdar decls) (cdr vbles)))
                                    ((null vbles) nil)
@@ -2738,20 +2738,20 @@ COMPILE-FILE.
                                                              (second v)))
                                                    (cdar vbles))))))))
                             )))))
-    ;;(format t "*common_array_dims* = ~A~%" *common_array_dims*)
+    ;;(format t "*common-array-dims* = ~A~%" *common-array-dims*)
     nil))
 
-; append list of vble and dims to *common_array_dims* if vble not already in list
+; append list of vble and dims to *common-array-dims* if vble not already in list
 ; when vble in list check dims match with that stored
 (defun update_cm_array_dims (vble dims)
-  (let ((stored-dims (member vble *common_array_dims*))
+  (let ((stored-dims (member vble *common-array-dims*))
         (parsed-dims (parse_dimension_specs dims)))
     (if stored-dims
         (when (not (equal (cadr stored-dims) parsed-dims))
           (error "common array ~A dimensions not equivalent between subprograms" vble))
-        (setq *common_array_dims*
+        (setq *common-array-dims*
               (append (list vble parsed-dims)
-                      *common_array_dims*)))))
+                      *common-array-dims*)))))
 
 (defun extract-atoms (x)
    (do ((l x (cdr l))
@@ -2802,7 +2802,7 @@ COMPILE-FILE.
                                          ;; A simple character string
                                          (list name))))))
                            (list-split '|,| (cdddr x))))
-               *explicit_vble_decls*))
+               *explicit-vble-decls*))
         (t
          ;; The length may have been given as part of the variable.
          ;; Put the length with the variable type.
@@ -2815,7 +2815,7 @@ COMPILE-FILE.
                       ;; This is a character string of unknown length
                       (push `((character ,(or (third decl) 1))
                               (,(check-reserved-lisp-names (first decl))))
-                            *explicit_vble_decls*))
+                            *explicit-vble-decls*))
                      (t
                       (destructuring-bind (name &optional dim-or-len &rest len)
                           (remove '* decl)
@@ -2826,10 +2826,10 @@ COMPILE-FILE.
                                `((character ,@len) (,name ,@(parse_dimension_specs dim-or-len)))
                                ;; A simple character string
                                `((character ,(or dim-or-len 1)) (,name)))
-                           *explicit_vble_decls*))))))
+                           *explicit-vble-decls*))))))
                (list-split '|,| (cdr x)))))
      
-  ;;(format t "explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
+  ;;(format t "explicit-vble-decls* = ~A~%" *explicit-vble-decls*)
   )
 
 
@@ -2853,7 +2853,7 @@ COMPILE-FILE.
                    ;; so we use EVAL to compute it for us.
                    (nreps (if (numberp (first item))
                               (first item)
-                              (eval `(let ,*key_params* ,(first item))))))
+                              (eval `(let ,*key-params* ,(first item))))))
                (dotimes (k nreps)
                  (push val result))))
             ((and (listp item)
@@ -3083,9 +3083,9 @@ COMPILE-FILE.
                     (format t "vble-is-array = ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
                     (format t "replace case ~%")
                     (format t "l = ~A~%" l)
-                    (format t "*declared = ~A~%" *declared_vbles*)
-                    (format t "*explicit = ~A~%" *explicit_vble_decls*)
-                    (format t "*common   = ~A~%" *common_array_dims*))
+                    (format t "*declared = ~A~%" *declared-vbles*)
+                    (format t "*explicit = ~A~%" *explicit-vble-decls*)
+                    (format t "*common   = ~A~%" *common-array-dims*))
                   `(replace ,(check-reserved-lisp-names (first v))
                             ',(mapcar #'fix-up-negative-number
                                       (handle-data-reps l))))
@@ -3914,7 +3914,7 @@ loop2
 ;;;   the string, parse it as a format statement and return the result.
 ;;;
 ;;; Revision 1.178  2007/09/24 20:05:55  rtoy
-;;; o Need to clear out *common_array_dims* on each subprogram!
+;;; o Need to clear out *common-array-dims* on each subprogram!
 ;;; o Add FIND-DATA-VAR to return the data variable for DATA
 ;;;   statements. (The nesting is dependent on the whether the variable is
 ;;;   being initialized in an implied do loop or not, and on how the do
@@ -4019,7 +4019,7 @@ loop2
 ;;;
 ;;;   Do this by adding the parent to the list pushed on *entry-points*.
 ;;;
-;;; o Set *subprog_name* to the function name.  (Is this right?)
+;;; o Set *subprog-name* to the function name.  (Is this right?)
 ;;;
 ;;; src/f2cl5.l:
 ;;; o If possible, use the parent name to figure out the calling info for
@@ -4575,7 +4575,7 @@ loop2
 ;;;
 ;;; Revision 1.75  2001/06/04 17:14:38  rtoy
 ;;; Handle IMPLICIT NONE by putting ":NONE (A-Z)" as the type for
-;;; *implicit_vble_decls*.
+;;; *implicit-vble-decls*.
 ;;;
 ;;; Revision 1.74  2001/06/04 14:31:20  rtoy
 ;;; Recognize IMPLICIT NONE, but the semantics are NOT currently

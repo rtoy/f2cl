@@ -2539,7 +2539,7 @@ ERR, IOSTAT is independently optional."
 ;;; f2cl5.l:
 ;;; o Find the entire array bounds.
 ;;; o Don't use make-declaration to get the array type.  Explicitly look
-;;;   through *explicit_vble_decls* to find the type.  (Are there other
+;;;   through *explicit-vble-decls* to find the type.  (Are there other
 ;;;   places we need to look?)
 ;;;
 ;;; macros.l:
