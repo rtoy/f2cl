@@ -307,6 +307,7 @@ correctly"
 
   :VERBOSE                 verbose output. Default = NIL.
   :PRUNE-LABELS            Prune unused labels. Default = NIL.
+  :PRUNE-UNUSED-VARS       Prune unused vars in functions.
   :INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be
                             buggy.) Default = NIL
   :AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
@@ -431,19 +432,19 @@ correctly"
         (delete-file processed-file))
       (values output-file))))
 
-(defun remove-f2cl-keys (keys)
-  (do ((key keys (cddr key))
-       (result nil))
-      ((null key)
-       (nreverse result))
-    (unless (member (car key)
-                    '(:output-file :error-file :prune-labels :include-comments
-                      :auto-save :relaxed-array-decls :coerce-assigns
-                      :keep-lisp-file :array-type :array-slicing :package
-                      :declaim :declare-common :float-format :common-as-array
-                      :common-block-file :copy-array-parameter :promote-to-double))
-      (push (car key) result)
-      (push (second key) result))))
+;; Remove the keyword args from KEYS, which are keywords args for
+;; f2cl-compile.  The result is the keys passed to cl:compile.
+(let ((f2cl-keys
+        '(:output-file :error-file :prune-labels :prune-unused-vars :include-comments
+          :auto-save :relaxed-array-decls :coerce-assigns
+          :keep-lisp-file :array-type :array-slicing :package
+          :declaim :declare-common :float-format :common-as-array
+          :common-block-file :copy-array-parameter :promote-to-double)))
+  (defun remove-f2cl-keys (keys)
+    (loop for (k v) on keys by #'cddr
+          unless (member k f2cl-keys)
+            collect k
+            and collect v)))
 
 (defun f2cl-compile (filename &rest all-keys
                      &key
@@ -452,6 +453,7 @@ correctly"
 
                      (output-file (compile-file-pathname filename))
                      prune-labels
+                     prune-unused-vars
                      include-comments
                      (auto-save t)
                      (relaxed-array-decls t)
@@ -474,6 +476,7 @@ correctly"
 
   :VERBOSE                 verbose output. Default = NIL.
   :PRUNE-LABELS            Prune unused labels. Default = NIL.
+  :PRUNE-UNUSED-VARS       Prune unused vars in functions.
   :INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be
                             buggy.) Default = NIL
   :AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
@@ -526,17 +529,20 @@ correctly"
   #-(or cmucl scl)
   (declare (ignore error-file))
   (let ((lisp-file
-         (f2cl filename :prune-labels prune-labels :include-comments include-comments
-               :auto-save auto-save :relaxed-array-decls relaxed-array-decls
-               :coerce-assigns coerce-assigns
-               :array-type array-type
-               :array-slicing array-slicing
-               :package package :declaim declaim
-               :declare-common declare-common
-               :float-format float-format
-               :common-as-array common-as-array
-               :copy-array-parameter copy-array-parameter
-               :promote-to-double promote-to-double))
+          (f2cl filename
+                :prune-labels prune-labels
+                :prune-unused-vars prune-unused-vars
+                :include-comments include-comments
+                :auto-save auto-save :relaxed-array-decls relaxed-array-decls
+                :coerce-assigns coerce-assigns
+                :array-type array-type
+                :array-slicing array-slicing
+                :package package :declaim declaim
+                :declare-common declare-common
+                :float-format float-format
+                :common-as-array common-as-array
+                :copy-array-parameter copy-array-parameter
+                :promote-to-double promote-to-double))
         (*read-default-float-format* float-format))
     (let ((compiler-keys (remove-f2cl-keys all-keys)))
       (multiple-value-prog1

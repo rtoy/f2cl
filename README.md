@@ -150,6 +150,7 @@ shared; the two have a few additional options of their own.
 | `:copy-array-parameter` | `nil` | When an array of one type is passed where another type is expected, allocate a new array and copy the data.  Off by default because the copy is slow. |
 | `:include-comments` | `nil` | Preserve Fortran comments in the Lisp output.  Marked as possibly buggy. |
 | `:prune-labels` | `nil` | Delete unreferenced labels. |
+| `:prune-unused-vars` | `nil` | Remove `let`-bound variables that the translated code never reads.  Reduces compile-time warnings on the generated Lisp. |
 | `:promote-to-double` | `nil` | Promote `REAL`/`COMPLEX` constants, variables, and arrays to `REAL*8`/`COMPLEX*16`. |
 | `:float-format` | `*read-default-float-format*` | Float format used when printing literal values. |
 | `:declaim` | none | `(declaim ...)` form to prepend to the output. |
@@ -161,7 +162,6 @@ shared; the two have a few additional options of their own.
 | `:verbose` | `nil` | Trace translation activity. |
 | `:keep-temp-file` | `nil` | Keep `prep.tmp` after translation for debugging. |
 | `:extension` | `"lisp"` | Output file extension (overrides `*default-lisp-extension*`). |
-| `:prune-unused-vars` | `nil` | Remove `let`-bound variables that the translated code never reads.  Reduces compile-time warnings on the generated Lisp. |
 | `:common-block-file` | `nil` | When a common block is declared, write its `defstruct` to a separate file named after the block with extension `cmn`. |
 
 ### `f2cl:f2cl-compile`-only options
