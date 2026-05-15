@@ -108,37 +108,96 @@
   `(array string (*)))
 ;;------------------------------------------------------------------------------
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (proclaim '(special *sentable*))
-  (proclaim '(special
-              *external-function-names*
-              *undeclared_vbles* *declared_vbles* *implicit_vble_decls*
-              *subprog-arglist* *data-init*
-              *explicit_vble_decls* *function-flag* *key_params*
-              *save_vbles* *program-flag* *subprog_name*
-              *subprog_common_vars*  *common_array_dims*
-              *format_stmts* *current_label*
-              *subprog-stmt-fns* *subprog_stmt_fns_bodies* *prune_labels*
-              *prune-unused-vars*
-              *auto-save-data*
-              *functions-used*
-              *vble-declaration-done*
-              ;; Specifies how Fortran arrays should be declared (array or simple-array)
-              *array-type*
-              ;; If non-NIL, treat all array references in calls to
-              ;; routines as a slice of the array.  Thus, we create a
-              ;; displaced array.  (Implies *array-type* is array.)
-              *array-slicing*
-              ;; If non-NIL, apply array slicing (in ID-FACTOR)
-              *apply-array-slice*
-              ;; If non-NIL, we are parsing the LHS of an assignment.
-              ;; (Used mostly so we don't incorrectly convert the
-              ;; definition of a statement function into a call of the
-              ;; function with mutliple-value-bind.)
-              *parsing-lhs*
-              ;; List of statement labels in a subprogram
-              *statement-labels*
-              )))
+;; Per-translation special variables.  Each is freshly bound (usually
+;; via LET in TRANSLATE-AND-WRITE-SUBPROG) before any subprogram is
+;; processed; default top-level value is NIL.
+
+(defvar *sentable* nil
+  "Hash table of Fortran read-syntax handlers, set up by SET-FORTRAN-READ.")
+
+(defvar *external-function-names* nil
+  "Subprogram names declared EXTERNAL in the current Fortran unit.")
+
+(defvar *undeclared_vbles* nil
+  "Variables in the current subprogram that have no explicit type declaration.")
+
+(defvar *declared_vbles* nil
+  "Variables in the current subprogram that have been explicitly typed.")
+
+(defvar *implicit_vble_decls* nil
+  "Type clauses from the IMPLICIT statement(s) of the current subprogram.")
+
+(defvar *subprog-arglist* nil
+  "Formal argument list of the current subprogram.")
+
+(defvar *data-init* nil
+  "Accumulated DATA-statement initializers for the current subprogram.")
+
+(defvar *explicit_vble_decls* nil
+  "Type clauses from explicit type declarations in the current subprogram.")
+
+(defvar *function-flag* nil
+  "Non-NIL while parsing a FUNCTION subprogram (vs. subroutine or program).")
+
+(defvar *key_params* nil
+  "Alist of PARAMETER bindings for the current subprogram.")
+
+(defvar *save_vbles* nil
+  "Variables marked SAVE in the current subprogram, or %SAVE-ALL-LOCALS%.")
+
+(defvar *program-flag* nil
+  "Non-NIL while parsing a PROGRAM unit (vs. function or subroutine).")
+
+(defvar *subprog_name* nil
+  "Name of the current subprogram.")
+
+(defvar *subprog_common_vars* nil
+  "Variables in the current subprogram that appear in COMMON blocks.")
+
+(defvar *common_array_dims* nil
+  "Array-dimension info for COMMON variables in the current subprogram.")
+
+(defvar *format_stmts* nil
+  "FORMAT statements collected from the current subprogram.")
+
+(defvar *current_label* nil
+  "Statement label currently being attached to the next translated form.")
+
+(defvar *subprog-stmt-fns* nil
+  "Statement-function names defined in the current subprogram.")
+
+(defvar *subprog_stmt_fns_bodies* nil
+  "Bodies of the statement functions defined in the current subprogram.")
+
+(defvar *prune_labels* t
+  "If non-NIL, prune labels that aren't the target of any GO/branch.")
+
+(defvar *prune-unused-vars* nil
+  "If non-NIL, prune unused local variables from translated subprograms.")
+
+(defvar *auto-save-data* nil
+  "If non-NIL, variables initialised by DATA are automatically SAVE'd.")
+
+(defvar *functions-used* nil
+  "Subprograms called from the current subprogram (with arg-type info).")
+
+(defvar *vble-declaration-done* nil
+  "Non-NIL once declarations have been emitted; suppresses duplicate decls.")
+
+(defvar *array-type* nil
+  "How Fortran arrays are declared in the output: ARRAY or SIMPLE-ARRAY.")
+
+(defvar *array-slicing* nil
+  "If non-NIL, array refs passed to subprograms are treated as subarrays.")
+
+(defvar *apply-array-slice* nil
+  "If non-NIL, ID-FACTOR applies array slicing to references it processes.")
+
+(defvar *parsing-lhs* nil
+  "Non-NIL while parsing the LHS of an assignment (affects stmt-fn handling).")
+
+(defvar *statement-labels* nil
+  "All statement labels seen in the current subprogram.")
 
 (defvar *common-blocks* (make-hash-table)
   "Hash table of all common blocks.  The key is the name of the common

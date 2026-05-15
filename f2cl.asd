@@ -335,7 +335,8 @@
 	     (:file "f2cl1")
 	     (:file "f2cl2")
 	     (:file "f2cl4")
-	     (:file "f2cl5")
+	     (:file "f2cl5"
+		    :depends-on ("f2cl1"))
 	     (:file "f2cl6")
 	     (:file "f2cl7")
 	     #+cmu(:file "f2cl8")

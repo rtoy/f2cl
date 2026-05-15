@@ -53,16 +53,9 @@
   "$Id$")
 
 ;; functions for setting up varaible declarations and initialisations
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (proclaim '(special *intrinsic-function-names* *external-function-names*
-              *declared_vbles* *undeclared_vbles* *key_params* *save_vbles*
-              *explicit_vble_decls* *implicit_vble_decls* *common_array_dims*
-              *subprog_common_vars* *program-flag* 
-              *subprog-stmt-fns* *subprog_stmt_fns_bodies*
-              *auto-save-data*
-              *functions-used*
-              *vble-declaration-done*))
-)
+;;
+;; The specials touched in this file are all defvar'd in f2cl1.lisp,
+;; which is loaded first, so no proclaim is needed here.
 
 (defvar *fortran-keywords*
   '(assign if then go to goto call continue do fdo else elseif return
