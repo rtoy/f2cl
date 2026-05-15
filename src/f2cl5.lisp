@@ -3576,12 +3576,22 @@ surrounded by parentheses."
   ;; Stored as the third field of each *format_stmts* entry;
   ;; consulted by get_format_stmt when *use-fortran-format-printer*
   ;; is T.
+  ;;
+  ;; The second field is the legacy cilist representation produced by
+  ;; parse-format1 / parse-format-descriptor-list.  When the new
+  ;; printer is enabled (the default), get_format_stmt always returns
+  ;; the raw string and the cilist is never read; in that case we skip
+  ;; the parse-format1 call entirely and store NIL.  Bind
+  ;; *use-fortran-format-printer* to NIL before translation if you
+  ;; need the legacy cilist path -- note that it does not support the
+  ;; newer edit descriptors (EN, ES, B, O, Z, etc.).
   (prog (*SP*)
    (declare (special *SP*))
    (setq *SP* nil)
    (setq *format_stmts*
          (cons (list *current_label*
-                     (parse-format1 (cadr x))
+                     (unless *use-fortran-format-printer*
+                       (parse-format1 (cadr x)))
                      (or raw-string
                          (%fortran-format-body-to-string (cadr x))))
                *format_stmts*)))
