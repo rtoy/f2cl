@@ -297,8 +297,7 @@ correctly"
              common-as-array
              common-block-file
              copy-array-parameter
-             promote-to-double
-             &allow-other-keys)
+             promote-to-double)
   "Fortran to Common Lisp converter
 
   INPUT-FILE               File containing Fortran code
@@ -432,127 +431,94 @@ correctly"
         (delete-file processed-file))
       (values output-file))))
 
-;; Remove the keyword args from KEYS, which are keywords args for
-;; f2cl-compile.  The result is the keys passed to cl:compile.
-(let ((f2cl-keys
-        '(:output-file :error-file :prune-labels :prune-unused-vars :include-comments
-          :auto-save :relaxed-array-decls :coerce-assigns
-          :keep-lisp-file :array-type :array-slicing :package
-          :declaim :declare-common :float-format :common-as-array
-          :common-block-file :copy-array-parameter :promote-to-double)))
-  (defun remove-f2cl-keys (keys)
-    (loop for (k v) on keys by #'cddr
-          unless (member k f2cl-keys)
-            collect k
-            and collect v)))
+(defparameter *f2cl-keys*
+  '(:output-file :prune-labels :prune-unused-vars :include-comments
+    :auto-save :relaxed-array-decls :coerce-assigns
+    :array-type :array-slicing :package
+    :declaim :declare-common :float-format :common-as-array
+    :common-block-file :copy-array-parameter :promote-to-double
+    :verbose :keep-temp-file :extension)
+  "Keyword arguments accepted by F2CL.  F2CL-COMPILE forwards
+these to F2CL and removes them from the keyword arguments passed
+to COMPILE-FILE.")
+
+(defparameter *f2cl-compile-only-keys*
+  '(:error-file :keep-lisp-file :load)
+  "Keyword arguments accepted by F2CL-COMPILE but not by F2CL.
+These (and the COMPILE-FILE-only keys) are removed before
+forwarding to F2CL.")
+
+(defun keep-keys (plist keep)
+  "Return a fresh plist containing only those key/value pairs from
+PLIST whose key is a member of KEEP."
+  (loop for (k v) on plist by #'cddr
+        when (member k keep)
+          collect k and collect v))
+
+(defun remove-keys (plist drop)
+  "Return a fresh plist with every key/value pair from PLIST whose
+key is a member of DROP removed."
+  (loop for (k v) on plist by #'cddr
+        unless (member k drop)
+          collect k and collect v))
+
+(defun remove-f2cl-keys (keys)
+  "Return KEYS with all F2CL- and F2CL-COMPILE-specific arguments
+removed, so the result is safe to pass to COMPILE-FILE."
+  (remove-keys keys (append *f2cl-keys* *f2cl-compile-only-keys*)))
 
 (defun f2cl-compile (filename &rest all-keys
                      &key
                      error-file
                      (keep-lisp-file t)
-
                      (output-file (compile-file-pathname filename))
-                     prune-labels
-                     prune-unused-vars
-                     include-comments
-                     (auto-save t)
-                     (relaxed-array-decls t)
-                     (coerce-assigns :as-needed)
-                     (array-type :array)
-                     (array-slicing t)
-                     (package :common-lisp-user)
-                     declaim
-                     declare-common
-                     (float-format *read-default-float-format*)
-                     common-as-array
-                     copy-array-parameter
-                     promote-to-double
+                     load
                      &allow-other-keys)
-  "Convert the Fortran to Common Lisp and compile the resulting Lisp file
+  "Convert the Fortran to Common Lisp and compile the resulting
+Lisp file.  All keyword arguments accepted by F2CL are forwarded
+unchanged; in addition F2CL-COMPILE accepts the following.
 
-  FILENAME                 File containing Fortran code
+  FILENAME          File containing Fortran code.
+  :OUTPUT-FILE      Output fasl path.  Defaults to
+                    (COMPILE-FILE-PATHNAME FILENAME).  Note this
+                    differs from F2CL's :OUTPUT-FILE, which names
+                    a Lisp source file.
+  :ERROR-FILE       Passed through to COMPILE-FILE on CMUCL/SCL.
+  :KEEP-LISP-FILE   If T (the default), keep the intermediate
+                    .lisp file after the fasl is produced.
+  :LOAD             If T, LOAD the resulting fasl after compiling.
+                    Provided portably here because the underlying
+                    COMPILE-FILE accepts :LOAD only on some
+                    implementations (e.g. CMUCL).
 
-  :OUTPUT-FILE             File to contain Lisp code
-
-  :VERBOSE                 verbose output. Default = NIL.
-  :PRUNE-LABELS            Prune unused labels. Default = NIL.
-  :PRUNE-UNUSED-VARS       Prune unused vars in functions.
-  :INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be
-                            buggy.) Default = NIL
-  :AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
-                            Default = T.
-  :RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal
-                           parameters to functions.  Default = T.
-  :COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements
-                            automatically coerce the RHS to the
-                            appropriate type for the assignment.  If NIL
-                            or :NEVER, coercion never happens.
-                            Otherwise, coercion happens as needed.  The
-                            Default = :AS-NEEDED
-
-  :KEEP-LISP-FILE          If T, the converted Lisp file is not deleted.
-                            Default = NIL.
-  :ARRAY-TYPE              The type of array f2cl should use.  Should be
-                            'simple-array or 'array.
-  :ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an
-                            array reference in a call to a subroutine or
-                            function, we are really passing a subarray
-                            to the routine instead of just the single
-                            value.
-  :PACKAGE                 A string or symbol specifying what package the
-                            result code should be in. (Basically puts a
-                            (in-package <p>) at the top.)  Default:
-                            :common-lisp-user.
-  :DECLAIM                 Declaim compilation options  (Basically puts a
-                            (declaim <declaim>) at the top.)
-  :DECLARE-COMMON          When non-NIL, any structures for common blocks
-                            are declared here.  Otherwise, the
-                            structures for the common blocks are not
-                            declared.
-  :FLOAT-FORMAT            Float format to use when printing the result.
-                            Default is *READ-DEFAULT-FLOAT-FORMAT*
-  :COMMON-AS-ARRAY         Common blocks are created as a set of arrays, and the
-                            common block variables are offsets into the
-                            arrays.  This mimics Fortran common block
-                            layouts.  Default = NIL.
-  :COMMON-BLOCK-FILE       If common blocks are to be declared, then
-                            each common block is written to a file whose name
-                            is the name of the common block, with the extension
-                            \"cmn\"
-  :COPY-ARRAY-PARAMETER    In some Fortran code an array of one type is passed to
-                            a routine expecting a different type.  F2CL implements
-                            this by creating an array and copying the data.  The
-                            default is not to copy since it is relatively slow.
-  :PROMOTE-TO-DOUBLE       Promote REAL and COMPLEX constants, variables, and
-                            arrays to REAL*8 and COMPLEX*16 types. 
+Any other keyword argument is forwarded unchanged to
+COMPILE-FILE.
 "
   #-(or cmucl scl)
   (declare (ignore error-file))
-  (let ((lisp-file
-          (f2cl filename
-                :prune-labels prune-labels
-                :prune-unused-vars prune-unused-vars
-                :include-comments include-comments
-                :auto-save auto-save :relaxed-array-decls relaxed-array-decls
-                :coerce-assigns coerce-assigns
-                :array-type array-type
-                :array-slicing array-slicing
-                :package package :declaim declaim
-                :declare-common declare-common
-                :float-format float-format
-                :common-as-array common-as-array
-                :copy-array-parameter copy-array-parameter
-                :promote-to-double promote-to-double))
-        (*read-default-float-format* float-format))
-    (let ((compiler-keys (remove-f2cl-keys all-keys)))
-      (multiple-value-prog1
-          #+(or cmu scl)
-          (apply #'compile-file lisp-file :output-file output-file
-                 :error-file error-file compiler-keys)
-          #-(or cmu scl)
-          (apply #'compile-file lisp-file :output-file output-file compiler-keys)
-          (unless keep-lisp-file
-            (delete-file lisp-file))))))
+  ;; F2CL's :OUTPUT-FILE names a Lisp source file; F2CL-COMPILE's
+  ;; :OUTPUT-FILE names a fasl.  They share a key name but have
+  ;; different meanings, so let F2CL compute its own default for
+  ;; the intermediate Lisp file by stripping :OUTPUT-FILE from
+  ;; what we forward.
+  (let* ((f2cl-keys (remove-keys (keep-keys all-keys *f2cl-keys*)
+                                 '(:output-file)))
+         (lisp-file (apply #'f2cl filename f2cl-keys))
+         (*read-default-float-format* (or (getf all-keys :float-format)
+                                          *read-default-float-format*))
+         (compiler-keys (remove-f2cl-keys all-keys)))
+    (multiple-value-bind (fasl warnings-p failure-p)
+        #+(or cmu scl)
+        (apply #'compile-file lisp-file :output-file output-file
+               :error-file error-file compiler-keys)
+        #-(or cmu scl)
+        (apply #'compile-file lisp-file :output-file output-file
+               compiler-keys)
+      (unless keep-lisp-file
+        (delete-file lisp-file))
+      (when load
+        (load fasl))
+      (values fasl warnings-p failure-p))))
 ;---------------------------------------------------------------------------
 (defun process-data (x) 
    (print x)
