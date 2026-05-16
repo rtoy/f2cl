@@ -38,7 +38,7 @@
          (pending-fn (find-symbol "PENDING-TESTS"      rt-pkg))
          (expected-v (find-symbol "*EXPECTED-FAILURES*" rt-pkg))
          (entries-v  (find-symbol "*ENTRIES-TABLE*"    rt-pkg))
-         (log-name   (substitute #\- #\/ label)
+         (log-name   (substitute #\- #\/ label))
          (log-path   (make-pathname :name log-name :type "log"
                                     :defaults
                                     (or *load-truename*
