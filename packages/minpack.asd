@@ -36,7 +36,14 @@
 	     (:file "qrfac" :depends-on ("dpmpar" "enorm")) (:file "qrsolv")
 	     (:file "r1mpyq")
 	     (:file "r1updt" :depends-on ("dpmpar")))))
-  :in-order-to ((test-op (test-op "minpack-tests-lmdif"))))
+  ;; (asdf:test-system "minpack") routes here.  The stub
+  ;; "minpack-rt-tests" primary system in
+  ;; packages/minpack-rt-tests.asd signals an error directing the
+  ;; user to load minpack-rt-tests/hybrd or minpack-rt-tests/lmdif
+  ;; (those two can't coexist in one Lisp image, so picking one
+  ;; can't be automated here).  Previously this referenced an
+  ;; undefined "minpack-tests-lmdif" system.
+  :in-order-to ((test-op (test-op "minpack-rt-tests"))))
 
 (setf (logical-pathname-translations "minpack")
       (list (list "**;*.*.*"
