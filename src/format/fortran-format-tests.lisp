@@ -699,6 +699,23 @@
     (write-format "(ES10.2)" 0.0d0)
   "  0.00E+00")
 
+(rt:deftest fmt.write.trailing-x-trimmed
+    (write-format "(I3, 5X)" 1)
+  "  1")
+
+(rt:deftest fmt.write.trailing-tr-trimmed
+    (write-format "(A, TR3)" "abc")
+  "abc")
+
+(rt:deftest fmt.write.trailing-t-trimmed
+    (write-format "(I3, T20)" 1)
+  "  1")
+
+(rt:deftest fmt.write.trailing-x-before-slash-trimmed
+    (write-format "(I3, 5X, /, I3)" 1 2)
+  "  1
+  2")
+
 ;;; --------------------------------------------------------------
 ;;; Corpus tests
 ;;;
