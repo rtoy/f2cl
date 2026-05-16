@@ -272,14 +272,13 @@
   "    3.14")
 
 ;;; --------------------------------------------------------------
-;;; T / TR positioning (forward only)
+;;; T / TR / TL positioning
 ;;;
-;;; T n jumps to absolute 1-based column n; TR n advances n columns.
-;;; Backward T (target column < current) and TL are not supported
-;;; in this implementation -- both signal invalid-format.  A full
-;;; mutable-record buffer would be required to support them, and
-;;; backward T isn't used in any of the f2cl-translated packages
-;;; (BLAS, LAPACK, ODEPACK, QUADPACK, MINPACK, ...).
+;;; T n jumps to absolute 1-based column n; TR n advances n columns;
+;;; TL n retreats n columns (clamped at 1).  A forward jump that
+;;; isn't followed by any write produces no trailing whitespace --
+;;; the record's emitted length is the high-water mark of committed
+;;; output.
 ;;; --------------------------------------------------------------
 
 (rt:deftest fmt.write.t5-a3
@@ -318,31 +317,17 @@
     (write-format "(I3,I3,T15,A)" 1 2 "Z")
   "  1  2        Z")
 
-(rt:deftest fmt.write.backward-t-errors
-    ;; T1 after writing "abc" would have to overwrite -- we refuse.
-    (handler-case (write-format "(A3,T1,A3)" "abc" "def")
-      (invalid-format () :rejected))
-  :rejected)
-
-(rt:deftest fmt.write.tl-errors
-    (handler-case (write-format "(A,TL2,A)" "abc" "X")
-      (invalid-format () :rejected))
-  :rejected)
-
 (rt:deftest fmt.write.t-does-not-leak-between-calls
     (progn (write-format "(T5,A)" "X")
            (write-format "(A)" "Q"))
   "Q")
 
 ;;; --------------------------------------------------------------
-;;; T/TL backward positioning -- expected to fail
+;;; T/TL backward positioning -- overwrite semantics
 ;;;
-;;; These exercise the real Fortran behavior of backward T and TL:
-;;; overwriting earlier columns while leaving later columns intact.
-;;; A correct implementation would need a positionable record
-;;; buffer rather than a one-pass stream.  Until that's done, both
-;;; tests fail; they're marked in *expected-failures* below so they
-;;; show up as known issues rather than regressions.
+;;; Backward T and TL move the record cursor leftward; subsequent
+;;; writes overwrite earlier columns while leaving later columns
+;;; intact.
 
 (rt:deftest fmt.write.tl2-overwrites
     ;; gfortran: (A,TL2,A) of "abc","X" -> "aXc"
@@ -735,9 +720,8 @@
 ;;; inside a larger suite (e.g. f2cl/tests) doesn't clobber other
 ;;; expected failures registered by sibling test files.  The
 ;;; corpus tests have their own per-file expected-failures lists.
-(dolist (name '(fmt.write.tl2-overwrites
-                fmt.write.backward-t-overwrites))
-  (pushnew name rt:*expected-failures*))
+
+;;; (None currently in the generic suite.)
 
 ;;; CLISP-specific:
 ;;;   * ~,3F rounds 99.9995d0 to "100.000" rather than "99.999".
