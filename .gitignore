@@ -59,5 +59,6 @@
 /barrier
 /already.dat
 *.p
-# Per-run output from minpack regression test
+# Per-run output from minpack regression tests
 /packages/minpack/tst-hybrd.actual.txt
+/packages/minpack/tst-lmdif.actual.txt

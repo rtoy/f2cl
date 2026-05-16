@@ -1,0 +1,34 @@
+;;; -*- Mode: lisp -*-
+;;;
+;;; mk-defsystem definition for the rt-based tst-hybrd regression
+;;; tests.  Mirrors the ASDF "minpack-rt-tests/hybrd" system in
+;;; minpack-rt-tests.asd.
+;;;
+;;; Named "minpack-rt-tests-hybrd" (with a dash, not the slash that
+;;; ASDF uses) because mk-defsystem's central-registry lookup is by
+;;; exact filename match -- a system called "foo/bar" wouldn't be
+;;; found in "foo-bar.system".  The mk-defsystem name also avoids
+;;; the existing (mk:defsystem minpack-tests ...) in
+;;; packages/minpack.system, which is a different thing entirely
+;;; (it drives tst-lmdif/tst-lmder via (minpack::run-minpack-tests)
+;;; writing to .txt files).
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *minpack-rt-tests-hybrd-root*
+    (let ((load-path #-gcl *load-truename*
+                     #+gcl sys:*load-truename*))
+      (make-pathname :host (pathname-host load-path)
+                     :device (pathname-device load-path)
+                     :directory (append (pathname-directory load-path)
+                                        '("minpack"))))))
+
+(mk:defsystem minpack-rt-tests-hybrd
+    :source-pathname *minpack-rt-tests-hybrd-root*
+    :source-extension "lisp"
+    :depends-on (f2cl minpack)
+    :components
+    ((:file "minpack-tests-package")
+     (:file "minpack-tests-helpers"
+            :depends-on ("minpack-tests-package"))
+     (:file "tst-hybrd-test"
+            :depends-on ("minpack-tests-helpers"))))
