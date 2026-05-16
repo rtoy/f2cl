@@ -20,13 +20,19 @@
   "Run RT's deftests and signal on unexpected outcomes.  Shared
 between the f2cl-tests and fortran-format-tests systems below.
 LABEL appears in the error message so the user can see which
-suite produced surprises.
+suite produced surprises, and as the basename of the log file.
 
 Fires after every mk:oos invocation (compile or load).  We only
 want it to do work when the regression-test files have actually
 been loaded into the image -- if entries-table is empty, either
 RT didn't load yet (compile pass under some configurations) or
-no tests.lisp was loaded, and \"0 out of 0\" isn't useful."
+no tests.lisp was loaded, and \"0 out of 0\" isn't useful.
+
+The per-test chatter from RT's DO-TESTS goes to <LABEL>.log in
+the current directory rather than to *standard-output*; the
+end-of-run summary is printed to both places (see the patched
+DO-ENTRIES in regression/rt.lsp).  CI should pick up the log
+file as a build artifact."
   (let ((rt (find-package :regression-test)))
     (when rt
       (let ((pending-fn    (find-symbol "PENDING-TESTS"      rt))
@@ -37,7 +43,17 @@ no tests.lisp was loaded, and \"0 out of 0\" isn't useful."
                    (boundp entries-table)
                    (plusp (hash-table-count
                            (symbol-value entries-table))))
-          (funcall do-tests-fn)
+          (let ((log-path (make-pathname :name label :type "log"
+                                         :defaults
+                                         (or *load-truename*
+                                             *default-pathname-defaults*))))
+            (format t "~&~A: running tests; log -> ~A~%" label log-path)
+            (finish-output)
+            (with-open-file (log log-path :direction :output
+                                          :if-exists :supersede
+                                          :if-does-not-exist :create)
+              (funcall do-tests-fn :out log))
+            (format t "~&~A: log written to ~A~%" label log-path))
           (let* ((total    (hash-table-count (symbol-value entries-table)))
                  (pending  (funcall pending-fn))
                  (expected (and (boundp expected-var)
@@ -262,6 +278,15 @@ f2cl/fortran-format/tests in f2cl.asd."
        (:file "tr-l-ed-output.tests")
        (:file "tr-l-ed-output.expected-failures"
               :depends-on ("tr-l-ed-output.tests"))
+       (:file "tl-a-ed-output.tests")
+       (:file "tl-a-ed-output.expected-failures"
+              :depends-on ("tl-a-ed-output.tests"))
+       (:file "tl-d-ed-output.tests")
+       (:file "tl-d-ed-output.expected-failures"
+              :depends-on ("tl-d-ed-output.tests"))
+       (:file "tl-l-ed-output.tests")
+       (:file "tl-l-ed-output.expected-failures"
+              :depends-on ("tl-l-ed-output.tests"))
        (:file "bn-a-ed-output.tests")
        (:file "bn-a-ed-output.expected-failures"
               :depends-on ("bn-a-ed-output.tests"))

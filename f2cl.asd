@@ -28,12 +28,25 @@
 ;;; signals an error if there are unexpected failures or surprising
 ;;; successes.  Mirrors %run-rt-tests in f2cl.system.
 (defun %f2cl-asd-run-rt-tests (label)
+  ;; Per-test chatter goes to <LABEL>.log; the summary is printed to
+  ;; *standard-output* by the patched DO-ENTRIES in rt.lsp.  CI
+  ;; should pick up the log file as a build artifact.
   (let* ((rt-pkg     (find-package :regression-test))
          (do-tests   (find-symbol "DO-TESTS"           rt-pkg))
          (pending-fn (find-symbol "PENDING-TESTS"      rt-pkg))
          (expected-v (find-symbol "*EXPECTED-FAILURES*" rt-pkg))
-         (entries-v  (find-symbol "*ENTRIES-TABLE*"    rt-pkg)))
-    (funcall do-tests)
+         (entries-v  (find-symbol "*ENTRIES-TABLE*"    rt-pkg))
+         (log-path   (make-pathname :name label :type "log"
+                                    :defaults
+                                    (or *load-truename*
+                                        *default-pathname-defaults*))))
+    (format t "~&~A: running tests; log -> ~A~%" label log-path)
+    (finish-output)
+    (with-open-file (log log-path :direction :output
+                                  :if-exists :supersede
+                                  :if-does-not-exist :create)
+      (funcall do-tests :out log))
+    (format t "~&~A: log written to ~A~%" label log-path)
     (let* ((total      (hash-table-count (symbol-value entries-v)))
            (pending    (funcall pending-fn))
            (expected   (symbol-value expected-v))
@@ -224,6 +237,15 @@
        (:file "tr-l-ed-output.tests")
        (:file "tr-l-ed-output.expected-failures"
         :depends-on ("tr-l-ed-output.tests"))
+       (:file "tl-a-ed-output.tests")
+       (:file "tl-a-ed-output.expected-failures"
+        :depends-on ("tl-a-ed-output.tests"))
+       (:file "tl-d-ed-output.tests")
+       (:file "tl-d-ed-output.expected-failures"
+        :depends-on ("tl-d-ed-output.tests"))
+       (:file "tl-l-ed-output.tests")
+       (:file "tl-l-ed-output.expected-failures"
+        :depends-on ("tl-l-ed-output.tests"))
        (:file "bn-a-ed-output.tests")
        (:file "bn-a-ed-output.expected-failures"
         :depends-on ("bn-a-ed-output.tests"))
