@@ -3525,6 +3525,15 @@ by its symbol name."
                  (when (char= c #\') (write-char #\' s)))
            (write-char #\' s)))
         ((eq tok '|,|) ",")
+        ;; lineread tokenises consecutive slashes `//' as the single
+        ;; symbol f2cl-// (so they don't get misread as the Fortran
+        ;; string-concatenation operator).  Inside a FORMAT body that
+        ;; symbol stands for two record separators -- reconstruct it
+        ;; as the two slashes the user wrote.  Without this case its
+        ;; symbol-name "F2CL-//" leaks into the reconstructed format
+        ;; string and fortran-format:write-format bails with
+        ;; "Unexpected character C".
+        ((eq tok 'f2cl-//) "//")
         ((symbolp tok) (symbol-name tok))
         ((numberp tok) (princ-to-string tok))
         ((listp tok)

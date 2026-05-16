@@ -96,6 +96,6 @@
 ;;; underlying reasons.
 
 (setf rt:*expected-failures*
-      (append rt:*expected-failures*
-              '(fortran-format.cz-full-precision
-                fortran-format.cz-eform)))
+      (union rt:*expected-failures*
+             '(fortran-format.cz-full-precision
+               fortran-format.cz-eform)))
