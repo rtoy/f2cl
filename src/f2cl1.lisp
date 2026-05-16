@@ -1291,7 +1291,9 @@ COMPILE-FILE.
        ;; Only load the function info if the F2CL package exists.
        (format outport "~2&#+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))~%")
        ;; Write out the sexp that sets up the function info database
-       ;; for this function.
+       ;; for this function.  Binding *PACKAGE* is important so that
+       ;; the package qualifiers are printed for symbols from
+       ;; FORTRAN-TO-LISP.
        (let* ((*package* (find-package '#:cl-user))
               (fname (second fort-fun))
               (info (gethash fname *f2cl-function-info*)))
