@@ -28,7 +28,9 @@
 ;;; signals an error if there are unexpected failures or surprising
 ;;; successes.  Mirrors %run-rt-tests in f2cl.system.
 (defun %f2cl-asd-run-rt-tests (label)
-  ;; Per-test chatter goes to <LABEL>.log; the summary is printed to
+  ;; Per-test chatter goes to <LABEL>.log (slashes in LABEL replaced
+  ;; with dashes so the asdf-style "f2cl/fortran-format/tests" maps
+  ;; to "f2cl-fortran-format-tests.log"); the summary is printed to
   ;; *standard-output* by the patched DO-ENTRIES in rt.lsp.  CI
   ;; should pick up the log file as a build artifact.
   (let* ((rt-pkg     (find-package :regression-test))
@@ -36,7 +38,8 @@
          (pending-fn (find-symbol "PENDING-TESTS"      rt-pkg))
          (expected-v (find-symbol "*EXPECTED-FAILURES*" rt-pkg))
          (entries-v  (find-symbol "*ENTRIES-TABLE*"    rt-pkg))
-         (log-path   (make-pathname :name label :type "log"
+         (log-name   (substitute #\- #\/ label)
+         (log-path   (make-pathname :name log-name :type "log"
                                     :defaults
                                     (or *load-truename*
                                         *default-pathname-defaults*))))
