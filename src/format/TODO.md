@@ -10,7 +10,7 @@ These are documented divergences from gfortran's list-directed output. Output is
 
 ## F77 output
 
-- **TL / backward-T** — currently signal `invalid-format`. Two RT tests already registered as expected failures: `fmt.write.tl2-overwrites`, `fmt.write.backward-t-overwrites`. Requires a positionable record buffer rather than the current one-pass stream — non-trivial refactor.
+- (None currently.)
 
 ## F77 input
 

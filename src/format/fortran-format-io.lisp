@@ -29,8 +29,19 @@
 ;;; reversion descriptors run again on a new record).
 ;;;
 ;;; Sign-control descriptors (SP/SS/S) set a dynamic flag,
-;;; *INCLUDE-PLUS*, which the per-type emit-ed methods consult.  P
-;;; and T/TL/TR are not yet implemented on output.
+;;; *INCLUDE-PLUS*, which the per-type emit-ed methods consult.
+;;;
+;;; Each record is assembled in *RECORD-BUFFER*, an adjustable
+;;; string whose fill pointer is the record's high-water mark of
+;;; committed output.  *COLUMN* is a 1-based cursor that may
+;;; range past the fill pointer (after X/TR/T) or land inside it
+;;; (after TL or a backward T); only value-bearing and literal
+;;; descriptors actually write into the buffer, gap-filling with
+;;; spaces or overwriting in place as needed.  EMIT-NEWLINE and
+;;; end-of-format flush whatever's in the buffer to the underlying
+;;; stream, so a trailing X/TR/T -- which only repositioned the
+;;; cursor and never triggered a write -- produces no trailing
+;;; whitespace, matching gfortran.
 
 (defvar *include-plus* nil
   "When non-nil, force a leading '+' on non-negative numeric output.
@@ -44,10 +55,22 @@ D (shuffles digits between mantissa and exponent), and G (when G
 falls back to E mode).  Has no effect on ES, EN, I, or BOZ output.")
 
 (defvar *column* 1
-  "Current 1-based output column in the record being assembled.
-Bound fresh at each WRITE-FORMAT call.  Updated by EMIT-OUT and
-EMIT-NEWLINE; consulted by the T-family of skip descriptors so
-they can know how far forward to space.")
+  "Current 1-based output column for the next write.  This is a
+cursor; it may exceed the fill pointer of *RECORD-BUFFER* (after
+X, TR, or a forward T moved past the last written column) or land
+inside it (after TL or a backward T).  Bound fresh at each
+WRITE-FORMAT call.")
+
+(defvar *record-buffer* nil
+  "Adjustable string holding the record currently being assembled.
+The fill pointer is the high-water mark of committed output: every
+character below it was either written by a value-bearing or literal
+descriptor, or space-filled to bridge a gap left by an earlier
+forward jump.  EMIT-OUT does the gap-fill or in-place overwrite as
+needed; positional descriptors (X/TR/TL/T) only move *COLUMN* and
+never touch the buffer directly, so a trailing positional move
+leaves no trailing whitespace in the eventual record.  Bound fresh
+at each WRITE-FORMAT call.")
 
 (defvar *colon-stop* nil
   "Set by the colon edit descriptor when it fires while the value
@@ -65,21 +88,63 @@ the platform's default Fortran integer kind: 64 on 64-bit hosts,
 a different platform (e.g. set to 32 to match a corpus generated
 by a 32-bit gfortran).")
 
-(defun emit-out (stream string-or-char)
-  "Write STRING-OR-CHAR to STREAM and advance *COLUMN* accordingly.
-The only legal way to write to the output stream from inside the
-emit-ed methods; using WRITE-CHAR or WRITE-STRING directly would
-leave *COLUMN* stale and break T/TR positioning."
-  (cond
-    ((characterp string-or-char)
-     (write-char string-or-char stream)
-     (incf *column*))
-    (t
-     (write-string string-or-char stream)
-     (incf *column* (length string-or-char)))))
+(defun make-record-buffer ()
+  "Return an empty adjustable character vector for use as *RECORD-BUFFER*.
+Initial capacity is small but the vector grows as VECTOR-PUSH-EXTEND
+requires."
+  (make-array 32
+              :element-type 'character
+              :fill-pointer 0
+              :adjustable t))
+
+(defun flush-record (stream)
+  "Write the current record's committed contents to STREAM and
+empty *RECORD-BUFFER*.  Does not emit a record terminator -- the
+caller (EMIT-NEWLINE or the WRITE-FORMAT epilogue) decides whether
+a terminator follows."
+  (write-string *record-buffer* stream)
+  (setf (fill-pointer *record-buffer*) 0))
+
+(defun emit-out (string-or-char)
+  "Commit STRING-OR-CHAR to the record at the current *COLUMN*.
+The only legal way to write value-bearing or literal output; doing
+so via raw WRITE-CHAR / WRITE-STRING on the output stream would
+bypass *RECORD-BUFFER* and break T/TL positioning as well as the
+trailing-positional trim.
+
+If *COLUMN* is past the buffer's fill pointer, the intervening
+gap is space-filled (Fortran 95 12.5.3: positional descriptors are
+realized only when something is written past them).  If *COLUMN*
+is inside the buffer, the existing characters there are
+overwritten in place (TL / backward-T case)."
+  (let* ((s (if (characterp string-or-char)
+                (string string-or-char)
+                string-or-char))
+         (start (1- *column*))
+         (n     (length s))
+         (end   (+ start n))
+         (fp    (fill-pointer *record-buffer*)))
+    ;; Gap-fill with blanks if we're writing past the high-water mark.
+    (loop while (< (fill-pointer *record-buffer*) start) do
+      (vector-push-extend #\Space *record-buffer*))
+    ;; Overwrite the region [start, min(end, fp)) in place.
+    (loop for i from start
+          for j from 0
+          while (and (< i fp) (< j n)) do
+            (setf (char *record-buffer* i) (char s j)))
+    ;; Extend the buffer for any tail past fp.
+    (loop for i from (max start fp) below end
+          for j = (- i start) do
+            (vector-push-extend (char s j) *record-buffer*))
+    (setf *column* (1+ end))))
 
 (defun emit-newline (stream)
-  "Emit a record separator and reset *COLUMN* to 1."
+  "Finish the current record: write its committed contents to
+STREAM, append a newline, and reset the buffer and *COLUMN*.  Any
+pending positional moves past the buffer's high-water mark are
+discarded -- a trailing X/TR/T before a slash produces no trailing
+whitespace in the just-finished record."
+  (flush-record stream)
   (terpri stream)
   (setf *column* 1))
 
@@ -98,35 +163,26 @@ leave *COLUMN* stale and break T/TR positioning."
 the new values-cursor (a cons of remaining values)."))
 
 (defmethod emit-ed ((ed quoted-ed) stream values)
-  (emit-out stream (quoted-ed-text ed))
+  (declare (ignore stream))
+  (emit-out (quoted-ed-text ed))
   values)
 
 (defmethod emit-ed ((ed skip-ed) stream values)
+  ;; All four positional descriptors only move *COLUMN*; they never
+  ;; touch *RECORD-BUFFER*.  A subsequent EMIT-OUT will gap-fill or
+  ;; overwrite as needed.  *COLUMN* is clamped at 1 (TL or T to a
+  ;; column less than 1 lands at 1, matching gfortran).
+  (declare (ignore stream))
   (let ((n (skip-ed-num-chars ed)))
     (case (edit-descriptor-name ed)
-      (:x  (emit-out stream (make-string n :initial-element #\Space)))
-      (:tr (emit-out stream (make-string n :initial-element #\Space)))
-      (:t
-       ;; T n is absolute (1-based).  We support only forward T --
-       ;; jumping backwards would require a positionable record
-       ;; buffer rather than a one-pass stream.  Backward T is
-       ;; vanishingly rare in numerical Fortran (grep across the
-       ;; f2cl packages found zero uses) so we signal cleanly rather
-       ;; than implement a buffer.
-       (cond
-         ((< n *column*)
-          (invalid-format
-           "Backward T (T~D from column ~D) is not supported"
-           n *column*))
-         (t
-          (emit-out stream (make-string (- n *column*)
-                                        :initial-element #\Space)))))
-      (:tl
-       (invalid-format
-        "TL descriptor not supported (would require a positionable buffer)"))))
+      (:x  (incf *column* n))
+      (:tr (incf *column* n))
+      (:tl (setf *column* (max 1 (- *column* n))))
+      (:t  (setf *column* (max 1 n)))))
   values)
 
 (defmethod emit-ed ((ed integer-ed) stream values)
+  (declare (ignore stream))
   (let* ((v (car values))
          (w (width-ed-width ed))
          (m (integer-ed-min-digits ed))
@@ -144,7 +200,7 @@ the new values-cursor (a cons of remaining values)."))
       ;; F77 10.6.1.1: if min-digits is explicitly 0 and the value
       ;; is 0, the field is all blanks; no digit is produced.
       ((and m (zerop m) (zerop v))
-       (emit-out stream (make-string w :initial-element #\Space)))
+       (emit-out (make-string w :initial-element #\Space)))
       (t
        (let* ((digits (let ((d (format nil "~vR" base (abs v))))
                         ;; ~vR formats in BASE; upper-cased for hex.
@@ -164,23 +220,24 @@ the new values-cursor (a cons of remaining values)."))
                 (pad  (max 0 (- w (length body)))))
            (cond
              ((> (length body) w)
-              (emit-out stream (make-string w :initial-element #\*)))
+              (emit-out (make-string w :initial-element #\*)))
              (t
-              (emit-out stream (make-string pad :initial-element #\Space))
-              (emit-out stream body))))))))
+              (emit-out (make-string pad :initial-element #\Space))
+              (emit-out body))))))))
   (cdr values))
 
 (defmethod emit-ed ((ed logical-ed) stream values)
   ;; Fortran L format writes (w-1) spaces followed by 'T' or 'F'.
+  (declare (ignore stream))
   (let* ((v (car values))
          (w (width-ed-width ed))
          (ch (if v #\T #\F)))
     (cond
       ((or (null w) (zerop w))
-       (emit-out stream ch))
+       (emit-out ch))
       (t
-       (emit-out stream (make-string (1- w) :initial-element #\Space))
-       (emit-out stream ch))))
+       (emit-out (make-string (1- w) :initial-element #\Space))
+       (emit-out ch))))
   (cdr values))
 
 (defmethod emit-ed ((ed flag-ed) stream values)
@@ -632,18 +689,19 @@ behavior."
   ;; tail), but per the Fortran standard it emits the same E-form
   ;; layout as E with `D' as the exponent character.  gfortran and
   ;; py-fortranformat both follow this rule.
+  (declare (ignore stream))
   (let ((v (car values))
         (w (width-ed-width ed))
         (d (real-fixed-ed-decimal-places ed))
         (name (edit-descriptor-name ed)))
-    (emit-out stream
-              (ecase name
+    (emit-out (ecase name
                 (:f (format-f v w d *scale-factor* *include-plus*))
                 (:d (format-e v w d nil *scale-factor* *include-plus*
                               :expchar #\D)))))
   (cdr values))
 
 (defmethod emit-ed ((ed real-exp-ed) stream values)
+  (declare (ignore stream))
   (let* ((v (car values))
          (w (width-ed-width ed))
          (d (real-exp-ed-decimal-places ed))
@@ -663,18 +721,19 @@ behavior."
              (otherwise
               (warn "Unknown real-exp descriptor ~A" name)
               (make-string w :initial-element #\?)))))
-    (emit-out stream out))
+    (emit-out out))
   (cdr values))
 
 (defmethod emit-ed ((ed alpha-ed) stream values)
+  (declare (ignore stream))
   (let* ((s (string (car values)))
          (w (or (width-ed-width ed) (length s))))
     (cond
       ((>= (length s) w)
-       (emit-out stream (subseq s 0 w)))
+       (emit-out (subseq s 0 w)))
       (t
-       (emit-out stream (make-string (- w (length s)) :initial-element #\Space))
-       (emit-out stream s))))
+       (emit-out (make-string (- w (length s)) :initial-element #\Space))
+       (emit-out s))))
   (cdr values))
 
 (defmethod emit-ed ((ed newline-ed) stream values)
@@ -699,11 +758,13 @@ remaining values stops format processing immediately."
            (rev  (expand-repeats rev-eds))
            (out  (make-string-output-stream))
            (vs   values)
-           ;; Bind sign-control, scale, column, and colon-stop state
-           ;; fresh so per-call state cannot leak into the next call.
+           ;; Bind sign-control, scale, column, record-buffer, and
+           ;; colon-stop state fresh so per-call state cannot leak
+           ;; into the next call.
            (*include-plus* nil)
            (*scale-factor* 0)
            (*column* 1)
+           (*record-buffer* (make-record-buffer))
            (*colon-stop* nil))
       ;; Main pass
       (dolist (ed main)
@@ -727,6 +788,9 @@ remaining values stops format processing immediately."
               (when *colon-stop* (return))
               (when (null vs) (return))
               (setf vs (emit-ed ed out vs))))))
+      ;; Flush the final record (without a trailing newline -- the
+      ;; caller's FORMAT-WRITE wrapper appends its own).
+      (flush-record out)
       (get-output-stream-string out))))
 
 ;;; ---------------------------------------------------------------

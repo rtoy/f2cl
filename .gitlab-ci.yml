@@ -42,6 +42,10 @@ asdf-tests:
           (error (c)
             (format *error-output* "~&FAIL: ~A~%" c)
             (ext:quit nil 1)))'
+  artifacts:
+    when: always
+    paths:
+      - f2cl-tests.log
 
 # Run the mk-defsystem flow.  Mirrors the documented user sequence:
 # load f2cl.system, build f2cl, build f2cl-tests; the :finally-do
@@ -70,6 +74,10 @@ mk-defsys-tests:
           (error (c)
             (format *error-output* "~&FAIL: ~A~%" c)
             (ext:quit nil 1)))'
+  artifacts:
+    when: always
+    paths:
+      - f2cl-tests.log
 
 # Run the fortran-format corpus suite under ASDF in a fresh Lisp.
 # Kept separate from f2cl/tests above because f2cl/fortran-format/tests
@@ -94,6 +102,10 @@ asdf-fortran-format-tests:
           (error (c)
             (format *error-output* "~&FAIL: ~A~%" c)
             (ext:quit nil 1)))'
+  artifacts:
+    when: always
+    paths:
+      - f2cl-fortran-format-tests.log
 
 # Run the fortran-format corpus suite under mk-defsystem in a fresh
 # Lisp.  Mirrors the asdf-fortran-format-tests job above; load
@@ -116,3 +128,7 @@ mk-defsys-fortran-format-tests:
           (error (c)
             (format *error-output* "~&FAIL: ~A~%" c)
             (ext:quit nil 1)))'
+  artifacts:
+    when: always
+    paths:
+      - fortran-format-tests.log
