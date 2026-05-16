@@ -240,7 +240,14 @@ JFUN RETURNS    5.50000
 ;;; The above two have outstanding issues; declaring them up front
 ;;; lets the suite exit clean while still keeping them visible in
 ;;; the test list.
-(setf rt:*expected-failures* '(solvde tst-parse))
+;;;
+;;; UNION rather than SETF: test-fortran-format.lisp and any other
+;;; future test file may also add to *expected-failures*, and SETF
+;;; would clobber whatever it had built up.  UNION is also idempotent
+;;; under reloads -- reloading this file at the REPL does not
+;;; duplicate entries or remove ones added elsewhere.
+(setf rt:*expected-failures*
+      (union rt:*expected-failures* '(solvde tst-parse)))
 
 ;; INTRINSIC declaration for a standard 77 intrinsic, called
 ;; directly.  Verifies that parse-intrinsic's no-op handling of
@@ -397,4 +404,45 @@ JFUN RETURNS    5.50000
  M     =            5
  B(1..M) =           10          20          30          40          50
  BSUM  =          150
+")
+
+;;;----------------------------------------------------------------------
+;;; Hollerith + slash regression.
+;;;
+;;; Before the *raw-format-bodies* refactor, the new printer ran each
+;;; labeled FORMAT body through process-format-line + lineread, then
+;;; reconstructed a Fortran format string from the resulting token
+;;; list and handed *that* to fortran-format:write-format.  Two bugs
+;;; lived in that round trip:
+;;;
+;;;   1. `//' was tokenised as the symbol f2cl-//, whose symbol-name
+;;;      "F2CL-//" leaked into the reconstructed string and caused
+;;;      the new parser to bail with `Unexpected character C'.
+;;;
+;;;   2. process-format-line injected a spurious comma after every
+;;;      Hollerith conversion, leaving `,,I5'-style artefacts in the
+;;;      reconstructed string.  Output was still correct (the parser
+;;;      was lenient about extra commas) but the string was wrong.
+;;;
+;;; parse-format now reads the raw body straight from the preprocessor
+;;; stash and bypasses the lineread/reconstruction round trip
+;;; entirely.  This test exercises ////, trailing //, leading-1
+;;; carriage control via Hollerith, the `''` single-quote escape,
+;;; and a plain Hollerith-with-trailing-slash line.
+
+(rt:deftest holfmt
+    (f2cl-regression:run-program "val/holfmt.f" "holfmt")
+  "
+
+
+
+      PROBLEM    7      DIMENSION    9
+
+
+1SUMMARY OF   7 CALLS TO HYBRD1
+
+     it's  42 calls
+
+ NPROB   N    NFEV  INFO  FINAL L2 NORM
+
 ")
