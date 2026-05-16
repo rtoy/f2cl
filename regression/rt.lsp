@@ -353,64 +353,78 @@
         (do-entries stream))))
 
 (defun do-entries (s)
-  (format s "~&Doing ~A pending test~:P ~
-             of ~A tests total.~%"
-          (count t (the list (cdr *entries*)) :key #'pend)
-          (length (cdr *entries*)))
-  (finish-output s)
-  (dolist (entry (cdr *entries*))
-    (when (and (pend entry)
-               (not (has-disabled-note entry)))
-      (let ((success? (do-entry entry s)))
-        (if success?
-          (push (name entry) *passed-tests*)
-          (push (name entry) *failed-tests*))
-        (format s "~@[~<~%~:; ~:@(~S~)~>~]" success?))
-      (finish-output s)
-      ))
-  (let ((pending (pending-tests))
-        (expected-table (make-hash-table :test #'equal)))
-    (dolist (ex *expected-failures*)
-      (setf (gethash ex expected-table) t))
-    (let ((new-failures
-           (loop for pend in pending
-                 unless (gethash pend expected-table)
-                 collect pend)))
-      (if (null pending)
-          (format s "~&No tests failed.")
-        (progn
-          (format t "~&~A out of ~A total tests failed: ~%(~{~a~^~%~})"
-                  (length pending)
-                  (length (cdr *entries*))
-                  pending)
-          (if (null new-failures)
-              (format s "~&No unexpected failures.")
+  ;; Per-test chatter (the "Doing N tests" header and the per-test
+  ;; name on each line) goes to S only.  The end-of-run summary goes
+  ;; to a "summary" stream that broadcasts to both S and
+  ;; *standard-output* -- so when S is a log file, a caller running
+  ;; do-tests still sees the verdict on screen, and when S is
+  ;; *standard-output* the summary still prints exactly once.
+  ;;
+  ;; (f2cl-local change vs upstream RT: upstream wrote some of the
+  ;; summary lines to T and some to S, which double-printed when the
+  ;; caller passed :out *standard-output* and lost lines when they
+  ;; didn't.  Keep this in mind when resyncing rt.lsp from upstream.)
+  (let ((summary (if (eq s *standard-output*)
+                     s
+                     (make-broadcast-stream s *standard-output*))))
+    (format s "~&Doing ~A pending test~:P ~
+               of ~A tests total.~%"
+            (count t (the list (cdr *entries*)) :key #'pend)
+            (length (cdr *entries*)))
+    (finish-output s)
+    (dolist (entry (cdr *entries*))
+      (when (and (pend entry)
+                 (not (has-disabled-note entry)))
+        (let ((success? (do-entry entry s)))
+          (if success?
+            (push (name entry) *passed-tests*)
+            (push (name entry) *failed-tests*))
+          (format s "~@[~<~%~:; ~:@(~S~)~>~]" success?))
+        (finish-output s)
+        ))
+    (let ((pending (pending-tests))
+          (expected-table (make-hash-table :test #'equal)))
+      (dolist (ex *expected-failures*)
+        (setf (gethash ex expected-table) t))
+      (let ((new-failures
+             (loop for pend in pending
+                   unless (gethash pend expected-table)
+                   collect pend)))
+        (if (null pending)
+            (format summary "~&No tests failed.~%")
+          (progn
+            (format summary "~&~A out of ~A total tests failed: ~%(~{~a~^~%~})~%"
+                    (length pending)
+                    (length (cdr *entries*))
+                    pending)
+            (if (null new-failures)
+                (format summary "~&No unexpected failures.~%")
+              (when *expected-failures*
+                (setf *unexpected-failures* new-failures)
+                (format summary "~&~A unexpected failures: ~
+                     ~:@(~{~<~%   ~1:;~S~>~
+                           ~^, ~}~).~%"
+                      (length new-failures)
+                      new-failures)))
             (when *expected-failures*
-              (setf *unexpected-failures* new-failures)
-              (format s "~&~A unexpected failures: ~
-                   ~:@(~{~<~%   ~1:;~S~>~
-                         ~^, ~}~)."
-                    (length new-failures)
-                    new-failures)))
-          (when *expected-failures*
-            (let ((pending-table (make-hash-table :test #'equal)))
-              (dolist (ex pending)
-                (setf (gethash ex pending-table) t))
-              (let ((unexpected-successes
-                     (loop :for ex :in *expected-failures*
-                       :unless (gethash ex pending-table) :collect ex)))
-                (if unexpected-successes
-                    (progn
-                      (setf *unexpected-successes* unexpected-successes)
-                      (format t "~&~:D unexpected successes: ~
-                   ~:@(~{~<~%   ~1:;~S~>~
-                         ~^, ~}~)."
-                              (length unexpected-successes)
-                              unexpected-successes))
-                    (format t "~&No unexpected successes.")))))
-          ))
-      (finish-output s)
-      (null pending))))
+              (let ((pending-table (make-hash-table :test #'equal)))
+                (dolist (ex pending)
+                  (setf (gethash ex pending-table) t))
+                (let ((unexpected-successes
+                       (loop :for ex :in *expected-failures*
+                         :unless (gethash ex pending-table) :collect ex)))
+                  (if unexpected-successes
+                      (progn
+                        (setf *unexpected-successes* unexpected-successes)
+                        (format summary "~&~:D unexpected successes: ~
+                     ~:@(~{~<~%   ~1:;~S~>~
+                           ~^, ~}~).~%"
+                                (length unexpected-successes)
+                                unexpected-successes))
+                      (format summary "~&No unexpected successes.~%")))))
+            ))
+        (finish-output s)
+        (null pending)))))
 
 ;;; Note handling functions and macros
 
