@@ -148,7 +148,7 @@
   :in-order-to ((test-op (test-op "quadpack/tests"))))
 
 (defsystem "quadpack/tests"
-  :depends-on ("quadpack" "rt")
+  :depends-on ("quadpack" "f2cl-rt")
   :components
   ((:module quadpack
 	    :components

@@ -131,7 +131,7 @@
 
 (defsystem "minpack/rt-tests-hybrd"
   :description "rt-based regression tests for f2cl-translated tst-hybrd from MINPACK"
-  :depends-on ("minpack" "minpack/test-hybrd" "rt")
+  :depends-on ("minpack" "minpack/test-hybrd" "f2cl-rt")
   :pathname "minpack-tests/"
   :components
   ((:cl-source-file "minpack-tests-package")
@@ -145,7 +145,7 @@
 
 (defsystem "minpack/rt-tests-lmdif"
   :description "rt-based regression tests for f2cl-translated tst-lmdif from MINPACK"
-  :depends-on ("minpack" "minpack/test-lmdif" "rt")
+  :depends-on ("minpack" "minpack/test-lmdif" "f2cl-rt")
   :pathname "minpack-tests/"
   :components
   ((:cl-source-file "minpack-tests-package")
@@ -159,7 +159,7 @@
 
 (defsystem "minpack/rt-tests-lmder"
   :description "rt-based regression tests for f2cl-translated tst-lmder from MINPACK"
-  :depends-on ("minpack" "minpack/test-lmder" "rt")
+  :depends-on ("minpack" "minpack/test-lmder" "f2cl-rt")
   :pathname "minpack-tests/"
   :components
   ((:cl-source-file "minpack-tests-package")

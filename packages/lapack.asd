@@ -306,7 +306,7 @@
   :in-order-to ((test-op (test-op "lapack/tests"))))
 
 (defsystem "lapack/tests"
-  :depends-on ("lapack" "rt")
+  :depends-on ("lapack" "f2cl-rt")
   :components ((:file "lapack/lapack-tests"))
   :perform (test-op (o c)
              (or (symbol-call :rt :do-tests) (error "TEST-OP failed for lapack/tests"))))
