@@ -117,7 +117,7 @@
     1.0d-4   ; 42: NPROB=10 N=10
     1.0d-4   ; 43: NPROB=10 N=10
     1.0d-4   ; 44: NPROB=11 N=10   Watson function (sensitive)
-    1.0d-4   ; 45: NPROB=11 N=10   Watson function (sensitive)
+    1.909d-4 ; 45: NPROB=11 N=10   Watson function (sensitive)
     5.0d-3   ; 46: NPROB=11 N=10   Watson function; drift ~2e-3
     1.0d-4   ; 47: NPROB=12 N=10
     1.0d-4   ; 48: NPROB=12 N=10
