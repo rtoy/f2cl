@@ -46,12 +46,19 @@
 (defvar *compile-tests* nil "When true, compile the tests before running them.")
 (defvar *expanded-eval* nil "When true, convert the tests into a form that is less likely to have compiler optimizations.")
 (defvar *optimization-settings* '((safety 3)))
+(defvar *compile-batch-size*
+  #+ecl 512
+  #-ecl 16
+  "Number of tests to compile at the same time.")
 
 (defvar *failed-tests* nil "After DO-TESTS, becomes the list of names of tests that have failed")
 (defvar *passed-tests* nil "After DO-TESTS, becomes the list of names of tests that have passed")
 
 (defvar *expected-failures* nil
   "A list of test names that are expected to fail.")
+
+(defvar *unknown-expected-failures* nil
+  "A list of test names that are expected to fail but are not valid names.")
 
 (defvar *unexpected-successes* nil
   "A list of tests that passed but were expected to fail.")
@@ -63,7 +70,7 @@
   "A mapping from names of notes to note objects.")
 
 (defstruct (entry (:conc-name nil))
-  pend name props form vals)
+  pend name props form test-function vals)
 
 ;;; Note objects are used to attach information to tests.
 ;;; A typical use is to mark tests that depend on a particular
@@ -232,6 +239,24 @@
     (equal x y))
    (t (eql x y))))
 
+(defun compile* (lambda-expr &optional do-not-muffle-warnings)
+  (if do-not-muffle-warnings
+      (compile nil lambda-expr)
+      (handler-bind
+          ((style-warning #'(lambda (c) (muffle-warning c))))
+        ;; redirecting *error-output* is the best way to get rid of
+        ;; annoying output from the compiler
+        (let ((*error-output* (make-broadcast-stream)))
+          (compile nil lambda-expr)))))
+
+(defun compile-test-function (entry)
+  (or (test-function entry)
+      (setf (test-function entry)
+            (compile* `(lambda ()
+                         (declare (optimize ,@*optimization-settings*))
+                         ,(form entry))
+                      (has-note entry :do-not-muffle-warnings)))))
+
 (defun do-entry (entry &optional
                        (s *standard-output*))
   (catch '*in-test*
@@ -255,12 +280,7 @@
                            (cond
                             (*compile-tests*
                              (multiple-value-list
-                              (funcall (compile
-                                        nil
-                                        `(lambda ()
-                                           (declare
-                                            (optimize ,@*optimization-settings*))
-                                           ,(form entry))))))
+                              (funcall (compile-test-function entry))))
                             (*expanded-eval*
                              (multiple-value-list
                               (expanded-eval (form entry))))
@@ -269,15 +289,15 @@
                               (eval (form entry))))))))
                 (if *catch-errors*
                     (handler-bind
-                     (#-ecl (style-warning #'(lambda (c) (if (has-note entry :do-not-muffle-warnings)
-                                                             c
-                                                           (muffle-warning c))))
-                            (error #'(lambda (c)
-                                       (setf aborted t)
-                                       (setf r (list c))
-                                       (return-from aborted nil))))
-                     (%do))
-                  (%do)))))
+                     ((style-warning #'(lambda (c) (if (has-note entry :do-not-muffle-warnings)
+                                                       c
+                                                       (muffle-warning c))))
+                      (error #'(lambda (c)
+                                 (setf aborted t)
+                                 (setf r (list c))
+                                 (return-from aborted nil))))
+                      (%do))
+                    (%do)))))
 
       (setf (pend entry)
             (or aborted
@@ -339,31 +359,147 @@
       (throw '*in-test* nil)
       (do-entries *standard-output*)))
 
+(defun exit (successp &aux (code (if successp 0 1)))
+  #+abcl (ext:quit :status code)
+  #+acl (excl:exit code :no-unwind t :quiet t)
+  #+ccl (ccl:quit code)
+  #+cmucl (handler-case (ext:quit nil code)
+            ;; Only the most recent versions of cmucl support an exit code.
+            ;; If it doesn't, we get a program error (wrong number of args),
+            ;; so catch that and just call quit without the arg.
+            (program-error ()
+              (ext:quit)))
+  #+(or clasp clisp ecl) (ext:quit code)
+  #+gcl (lisp:quit code)
+  #+lispworks (lispworks:quit :status code :ignore-errors-p t)
+  #+sbcl (sb-ext:exit :code code))
+
+(defun load-expected-failures (expected-failures &key (if-does-not-exist :error))
+  "Initialize *expected-failures* and disabled notes from expected-failures.
+If expected-failures is a list then just iterate through the list. If the
+item is a keyword then disable the note by that name. Otherwise add the test
+name to *expected-failures*. If expected-failures is a string or a pathname
+then repeatedly READ each symbol from the file and use the same logic as
+above. if-does-not-exist is passed to OPEN so it behaves as it does there."
+  ;; f2cl-local: upstream wraps the body in
+  ;; (let ((*package* (find-package "CL-TEST"))) ...); there is no
+  ;; CL-TEST package in f2cl, so we leave *package* alone.
+  (flet ((add-expected-failure (name)
+           (cond ((and (keywordp name) (disable-note name nil)))
+                 ((member name (cdr *entries*) :key #'name)
+                  (push name *expected-failures*))
+                 (t
+                  (push name *unknown-expected-failures*)))))
+    (maphash (lambda (key note)
+               (declare (ignore key))
+               (enable-note note))
+             *notes*)
+    (setf *expected-failures* nil)
+    (if (or (stringp expected-failures)
+            (pathnamep expected-failures))
+        (with-open-file (stream expected-failures :if-does-not-exist if-does-not-exist)
+          (cond (stream
+                 (format t "Loading expected failures from ~s~%" expected-failures)
+                 (do ((name (read stream nil stream) (read stream nil stream)))
+                     ((eq name stream))
+                   (add-expected-failure name)))
+                (t
+                 (format t "Expected failures file ~s not found~%" expected-failures))))
+        (dolist (name expected-failures)
+          (add-expected-failure name))))
+  (setq *unknown-expected-failures* (nreverse *unknown-expected-failures*)
+        *expected-failures* (nreverse *expected-failures*)))
+
+(defparameter *sandbox-path* (ignore-errors (truename #P"sandbox/")))
+
 (defun do-tests (&key (out *standard-output*)
                       ((:catch-errors *catch-errors*) *catch-errors*)
-                      ((:compile *compile-tests*) *compile-tests*))
+                      ((:compile *compile-tests*) *compile-tests*)
+                      (expected-failures nil expected-failures-p)
+                      exit)
+  ;; f2cl-local: upstream rebinds *package* to (find-package "CL-TEST")
+  ;; here and in load-expected-failures / do-extended-tests.  There's
+  ;; no CL-TEST package in f2cl, so we leave *package* alone.
   (setq *failed-tests* nil
-        *passed-tests* nil)
+        *passed-tests* nil
+        *unexpected-failures* nil
+        *unexpected-successes* nil)
   (dolist (entry (cdr *entries*))
     (setf (pend entry) t))
-  (if (streamp out)
-      (do-entries out)
-      (with-open-file
-          (stream out :direction :output)
-        (do-entries stream))))
+  (when expected-failures-p
+    (load-expected-failures expected-failures))
+  ;; f2cl-local: only rebind *default-pathname-defaults* when
+  ;; *sandbox-path* is non-NIL.  Upstream always runs from a
+  ;; directory containing sandbox/; f2cl doesn't, so *sandbox-path*
+  ;; ends up NIL and the upstream LET* would fail with a type-error
+  ;; when binding *default-pathname-defaults* to NIL.
+  (let* ((*default-pathname-defaults* (or *sandbox-path* *default-pathname-defaults*))
+         (successp (if (streamp out)
+                       (do-entries out)
+                       (with-open-file
+                           (stream out :direction :output)
+                         (do-entries stream)))))
+    (when exit
+      (exit successp))
+    successp))
+
+(defun compile-entries (stream entries &optional
+                                         (number-of-entries (length entries))
+                                         (batch-size (min number-of-entries *compile-batch-size*))
+                                         silent)
+  "Compile all test functions in batches"
+  (do ((remaining-entries entries (nthcdr batch-size remaining-entries))
+       (remaining-number-of-entries number-of-entries (- remaining-number-of-entries batch-size))
+       (body nil nil))
+      ((or (null remaining-entries) (<= remaining-number-of-entries 0)))
+    (unless (or silent
+                (let ((processed-number-of-entries
+                       (- number-of-entries remaining-number-of-entries)))
+                  ;; only output the message every 1024 entries
+                  (= (ceiling processed-number-of-entries 1024)
+                     (ceiling (+ processed-number-of-entries batch-size)
+                              1024))))
+      (format stream "~&~A of ~A tests remaining to be compiled.~%"
+              remaining-number-of-entries number-of-entries))
+    (do ((n 0 (1+ n))
+         (current-entries remaining-entries (rest current-entries)))
+        ((or (null current-entries) (>= n batch-size)
+             (>= n remaining-number-of-entries)))
+      (let ((entry (first current-entries)))
+        (unless (has-note entry :do-not-muffle-warnings)
+          (push `(setf (test-function ,entry)
+                       (lambda ()
+                         (declare (optimize ,@*optimization-settings*))
+                         ,(form entry)))
+                body))))
+    (multiple-value-bind (function warnings-p failure-p)
+        (handler-case
+            (compile* `(lambda () ,@body))
+          (warning () (values nil t t))
+          (error () (values nil t t)))
+      (declare (ignore warnings-p))
+      (if (not failure-p)
+          (funcall function)
+          (if (= batch-size 1)
+              (format stream "~&Cannot compile test function for entry ~A.~%"
+                      (name (first remaining-entries)))
+              ;; Something went wrong, try to narrow down where
+              (compile-entries stream remaining-entries
+                               batch-size (floor batch-size 2)
+                               t))))))
 
 (defun do-entries (s)
-  ;; Per-test chatter (the "Doing N tests" header and the per-test
-  ;; name on each line) goes to S only.  The end-of-run summary goes
-  ;; to a "summary" stream that broadcasts to both S and
-  ;; *standard-output* -- so when S is a log file, a caller running
-  ;; do-tests still sees the verdict on screen, and when S is
-  ;; *standard-output* the summary still prints exactly once.
+  ;; f2cl-local: when S is a log file we still want the end-of-run
+  ;; summary to appear on *standard-output*, so the final summary
+  ;; goes to a broadcast stream.  Per-test chatter stays on S only.
   ;;
-  ;; (f2cl-local change vs upstream RT: upstream wrote some of the
-  ;; summary lines to T and some to S, which double-printed when the
-  ;; caller passed :out *standard-output* and lost lines when they
-  ;; didn't.  Keep this in mind when resyncing rt.lsp from upstream.)
+  ;; f2cl-local: upstream computes *unexpected-failures* /
+  ;; *unexpected-successes* per-test inline and emits a single
+  ;; one-line summary at the end.  f2cl emits a multi-line summary
+  ;; ("N out of M total tests failed: ...", "N unexpected failures:
+  ;; ...", etc.) and computes the unexpected sets at the end from
+  ;; pending vs *expected-failures*.  CI may grep for these phrases,
+  ;; so keep the f2cl format.
   (let ((summary (if (eq s *standard-output*)
                      s
                      (make-broadcast-stream s *standard-output*))))
@@ -372,16 +508,17 @@
             (count t (the list (cdr *entries*)) :key #'pend)
             (length (cdr *entries*)))
     (finish-output s)
+    (when *compile-tests*
+      (compile-entries s (cdr *entries*)))
     (dolist (entry (cdr *entries*))
       (when (and (pend entry)
                  (not (has-disabled-note entry)))
         (let ((success? (do-entry entry s)))
           (if success?
-            (push (name entry) *passed-tests*)
-            (push (name entry) *failed-tests*))
+              (push (name entry) *passed-tests*)
+              (push (name entry) *failed-tests*))
           (format s "~@[~<~%~:; ~:@(~S~)~>~]" success?))
-        (finish-output s)
-        ))
+        (finish-output s)))
     (let ((pending (pending-tests))
           (expected-table (make-hash-table :test #'equal)))
       (dolist (ex *expected-failures*)
@@ -392,37 +529,35 @@
                    collect pend)))
         (if (null pending)
             (format summary "~&No tests failed.~%")
-          (progn
-            (format summary "~&~A out of ~A total tests failed: ~%(~{~a~^~%~})~%"
-                    (length pending)
-                    (length (cdr *entries*))
-                    pending)
-            (if (null new-failures)
-                (format summary "~&No unexpected failures.~%")
+            (progn
+              (format summary "~&~A out of ~A total tests failed: ~%(~{~a~^~%~})~%"
+                      (length pending)
+                      (length (cdr *entries*))
+                      pending)
+              (cond ((null new-failures)
+                     (format summary "~&No unexpected failures.~%"))
+                    (*expected-failures*
+                     (setf *unexpected-failures* new-failures)
+                     (format summary "~&~A unexpected failures: ~
+                                      ~:@(~{~<~%   ~1:;~S~>~^, ~}~).~%"
+                             (length new-failures)
+                             new-failures)))
               (when *expected-failures*
-                (setf *unexpected-failures* new-failures)
-                (format summary "~&~A unexpected failures: ~
-                     ~:@(~{~<~%   ~1:;~S~>~
-                           ~^, ~}~).~%"
-                      (length new-failures)
-                      new-failures)))
-            (when *expected-failures*
-              (let ((pending-table (make-hash-table :test #'equal)))
-                (dolist (ex pending)
-                  (setf (gethash ex pending-table) t))
-                (let ((unexpected-successes
-                       (loop :for ex :in *expected-failures*
-                         :unless (gethash ex pending-table) :collect ex)))
-                  (if unexpected-successes
-                      (progn
-                        (setf *unexpected-successes* unexpected-successes)
-                        (format summary "~&~:D unexpected successes: ~
-                     ~:@(~{~<~%   ~1:;~S~>~
-                           ~^, ~}~).~%"
-                                (length unexpected-successes)
-                                unexpected-successes))
-                      (format summary "~&No unexpected successes.~%")))))
-            ))
+                (let ((pending-table (make-hash-table :test #'equal)))
+                  (dolist (ex pending)
+                    (setf (gethash ex pending-table) t))
+                  (let ((unexpected-successes
+                         (loop for ex in *expected-failures*
+                               unless (gethash ex pending-table)
+                               collect ex)))
+                    (cond (unexpected-successes
+                           (setf *unexpected-successes* unexpected-successes)
+                           (format summary "~&~:D unexpected successes: ~
+                                            ~:@(~{~<~%   ~1:;~S~>~^, ~}~).~%"
+                                   (length unexpected-successes)
+                                   unexpected-successes))
+                          (t
+                           (format summary "~&No unexpected successes.~%"))))))))
         (finish-output s)
         (null pending)))))
 
@@ -436,19 +571,27 @@
        (setf (gethash (note-name note) *notes*) note)
        note)))
 
-(defun disable-note (n)
+(defun disable-note (n &optional (errorp t))
   (let ((note (if (note-p n) n
-                (setf n (gethash n *notes*)))))
-    (unless note (error "~A is not a note or note name." n))
-    (setf (note-disabled note) t)
-    note))
+                  (setf n (gethash n *notes*)))))
+    (cond (note
+           (setf (note-disabled note) t)
+           note)
+          (errorp
+           (error "~A is not a note or note name." n))
+          (t
+           nil))))
 
-(defun enable-note (n)
+(defun enable-note (n &optional (errorp t))
   (let ((note (if (note-p n) n
                 (setf n (gethash n *notes*)))))
-    (unless note (error "~A is not a note or note name." n))
-    (setf (note-disabled note) nil)
-    note))
+    (cond (note
+           (setf (note-disabled note) nil)
+           note)
+          (errorp
+           (error "~A is not a note or note name." n))
+          (t
+           nil))))
 
 ;;; Extended random regression
 
@@ -457,7 +600,13 @@
                                ((:compile *compile-tests*) *compile-tests*))
   "Execute randomly chosen tests from TESTS until one fails or until
    COUNT is an integer and that many tests have been executed."
-  (let ((test-vector (coerce tests 'simple-vector)))
+  ;; f2cl-local: upstream rebinds *package* to (find-package "CL-TEST")
+  ;; here too; we leave *package* alone since CL-TEST doesn't exist.
+  (let ((*default-pathname-defaults* (make-pathname :directory (append (pathname-directory (or *compile-file-pathname*
+                                                                                                *load-pathname*
+                                                                                                *default-pathname-defaults*))
+                                                                        '("sandbox"))))
+        (test-vector (coerce tests 'simple-vector)))
     (let ((n (length test-vector)))
       (when (= n 0) (error "Must provide at least one test."))
       (loop for i from 0
