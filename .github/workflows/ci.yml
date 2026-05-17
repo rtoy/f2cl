@@ -76,3 +76,79 @@ jobs:
                      (error (c)
                        (format *error-output* "~&FAIL: ~A~%" c)
                        (sb-ext:exit :code 1)))'
+
+      # MINPACK rt-tests, one driver per fresh-SBCL step (each
+      # --eval'd sbcl invocation is a separate process, so the
+      # FCN/INITPT/SSQFCN definitions from one driver's tst-*.f
+      # don't leak into the next).  Each step does
+      # (asdf:load-system "f2cl") first to trigger the registry
+      # side-effect in f2cl.asd that makes packages/ findable;
+      # without it ASDF can't locate packages/minpack.asd to
+      # resolve the rt-tests-* systems.
+      #
+      # The use of string system names ("f2cl" vs :f2cl) is
+      # deliberate: under SBCL the keyword form
+      # (asdf:load-system :f2cl) fails with "Component :F2CL not
+      # found", while "f2cl" works.
+      - name: Run MINPACK rt-tests-hybrd
+        run: |
+          sbcl --non-interactive --no-sysinit --no-userinit \
+            --eval '(require :asdf)' \
+            --eval '(handler-case
+                       (progn
+                         (setf asdf:*compile-file-warnings-behaviour* :ignore
+                               asdf:*compile-file-failure-behaviour*  :ignore)
+                         (push (truename "./") asdf:*central-registry*)
+                         (asdf:load-system "f2cl")
+                         (asdf:test-system "minpack/rt-tests-hybrd")
+                         (sb-ext:exit :code 0))
+                     (error (c)
+                       (format *error-output* "~&FAIL: ~A~%" c)
+                       (sb-ext:exit :code 1)))'
+
+      # TST-LMDIF-25 (NPROB=10, Meyer function, finite-difference
+      # Jacobian) is registered in tst-lmdif-test.lisp as a
+      # #+sbcl expected failure: SBCL hits the iteration limit
+      # (INFO=3) on this badly-conditioned problem where gfortran
+      # reports convergence (INFO=1).  All other 52 rows pass.
+      - name: Run MINPACK rt-tests-lmdif
+        run: |
+          sbcl --non-interactive --no-sysinit --no-userinit \
+            --eval '(require :asdf)' \
+            --eval '(handler-case
+                       (progn
+                         (setf asdf:*compile-file-warnings-behaviour* :ignore
+                               asdf:*compile-file-failure-behaviour*  :ignore)
+                         (push (truename "./") asdf:*central-registry*)
+                         (asdf:load-system "f2cl")
+                         (asdf:test-system "minpack/rt-tests-lmdif")
+                         (sb-ext:exit :code 0))
+                     (error (c)
+                       (format *error-output* "~&FAIL: ~A~%" c)
+                       (sb-ext:exit :code 1)))'
+
+      - name: Run MINPACK rt-tests-lmder
+        run: |
+          sbcl --non-interactive --no-sysinit --no-userinit \
+            --eval '(require :asdf)' \
+            --eval '(handler-case
+                       (progn
+                         (setf asdf:*compile-file-warnings-behaviour* :ignore
+                               asdf:*compile-file-failure-behaviour*  :ignore)
+                         (push (truename "./") asdf:*central-registry*)
+                         (asdf:load-system "f2cl")
+                         (asdf:test-system "minpack/rt-tests-lmder")
+                         (sb-ext:exit :code 0))
+                     (error (c)
+                       (format *error-output* "~&FAIL: ~A~%" c)
+                       (sb-ext:exit :code 1)))'
+
+      # Upload .log artifacts produced by %f2cl-asd-run-rt-tests
+      # so CI failures can be diagnosed from the run output.
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: '*.log'
+          if-no-files-found: ignore
