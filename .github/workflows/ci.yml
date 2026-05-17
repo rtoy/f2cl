@@ -175,7 +175,7 @@ jobs:
       - name: Run MINPACK rt-tests-hybrd
         run: |
           clisp -q -norc -E utf-8 \
-            -x '(load "/usr/share/common-lisp/source/cl-asdf/asdf.lisp")
+            -x '(require "asdf")
                 (handler-case
                     (progn
                       (setf asdf:*compile-file-warnings-behaviour* :ignore
@@ -191,7 +191,7 @@ jobs:
       - name: Run MINPACK rt-tests-lmdif
         run: |
           clisp -q -norc -E utf-8 \
-            -x '(load "/usr/share/common-lisp/source/cl-asdf/asdf.lisp")
+            -x '(require "asdf")
                 (handler-case
                     (progn
                       (setf asdf:*compile-file-warnings-behaviour* :ignore
@@ -207,7 +207,7 @@ jobs:
       - name: Run MINPACK rt-tests-lmder
         run: |
           clisp -q -norc -E utf-8 \
-            -x '(load "/usr/share/common-lisp/source/cl-asdf/asdf.lisp")
+            -x '(require "asdf")
                 (handler-case
                     (progn
                       (setf asdf:*compile-file-warnings-behaviour* :ignore
