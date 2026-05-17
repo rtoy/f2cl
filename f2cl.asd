@@ -11,16 +11,17 @@
                :defaults *load-pathname*)))
     (pushnew pkgs asdf:*central-registry* :test #'equal)))
 
-;;; Force our copy of RT to win over any other "rt" ASDF system
-;;; (notably the older one shipped with Quicklisp's ansi-test, which
-;;; lacks *expected-failures* and would silently mishandle our test
-;;; suite).
+;; Make regression/f2cl-rt.asd findable so the RT-based test systems
+;; can :depends-on ("f2cl-rt").  See regression/README.md for why
+;; we use "f2cl-rt" rather than the bare "rt" -- short version: to
+;; avoid colliding with Quicklisp's broken rt-20101006-git.
 (eval-when (:load-toplevel :execute)
-  (asdf:load-asd
-   (make-pathname :directory (append (pathname-directory *load-pathname*)
-                                     '("regression"))
-                  :name "rt" :type "asd"
-                  :defaults *load-pathname*)))
+  (let ((regdir (make-pathname
+                 :directory (append (pathname-directory *load-pathname*)
+                                    '("regression"))
+                 :name nil :type nil :version nil
+                 :defaults *load-pathname*)))
+    (pushnew regdir asdf:*central-registry* :test #'equal)))
 
 ;;; Shared helper for the RT-based :perform methods below.  Runs
 ;;; do-tests, prints a one-line summary (total / passed / failed,
@@ -79,7 +80,7 @@
                (= (length surprises) 1))))))
 
 (defsystem "f2cl/fortran-format"
-  :defsystem-depends-on ("rt")
+  :defsystem-depends-on ("f2cl-rt")
   :in-order-to ((test-op (test-op "f2cl/fortran-format/tests")))
   :components
   ((:module "src/format"
@@ -91,7 +92,7 @@
       :depends-on ("package" "fortran-format-parser"))))))
 
 (defsystem "f2cl/fortran-format/tests"
-  :depends-on ("rt" "f2cl/fortran-format")
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
   :components
   ((:module "src/format"
     :components
@@ -372,7 +373,7 @@
 ;;; Regression suite.  Run with (asdf:test-system "f2cl").
 ;;;
 ;;; Depends on:
-;;;   "rt"            -- vendored ansi-test RT, in regression/rt.asd
+;;;   "f2cl-rt"       -- vendored ansi-test RT, in regression/f2cl-rt.asd
 ;;;   "f2cl"          -- the translator itself
 ;;;   "quadpack/tests"-- f2cl-translated quadpack with its own RT tests,
 ;;;                      in packages/quadpack.asd
@@ -383,7 +384,7 @@
 
 (defsystem "f2cl/tests"
   :description "Regression tests for F2CL and f2cl-translated quadpack"
-  :depends-on ("rt" "f2cl" "quadpack/tests")
+  :depends-on ("f2cl-rt" "f2cl" "quadpack/tests")
   :components
   ((:module "regression"
             :serial t

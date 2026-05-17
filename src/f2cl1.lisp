@@ -1286,13 +1286,14 @@ COMPILE-FILE.
        (setf fun (fixup-f2cl-lib fun (cons (cadr fort-fun) *external-function-names*)))
 
        (special-print fun outport)
-       ;; Dump out the function info this function.  We need to be in
-       ;; the CL-USER package.
-       (format outport "~2&(in-package #:cl-user)~%")
+       ;; Dump out the function info this function.
+       ;;
        ;; Only load the function info if the F2CL package exists.
-       (format outport "#+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))~%")
+       (format outport "~2&#+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))~%")
        ;; Write out the sexp that sets up the function info database
-       ;; for this function.
+       ;; for this function.  Binding *PACKAGE* is important so that
+       ;; the package qualifiers are printed for symbols from
+       ;; FORTRAN-TO-LISP.
        (let* ((*package* (find-package '#:cl-user))
               (fname (second fort-fun))
               (info (gethash fname *f2cl-function-info*)))

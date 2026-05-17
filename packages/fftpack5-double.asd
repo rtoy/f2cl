@@ -212,7 +212,7 @@
   (:use :cl :fftpack5))
 
 (defsystem "fftpack5-double/tests"
-  :depends-on ("fftpack5-double" "rt")
+  :depends-on ("fftpack5-double" "f2cl-rt")
   :components
   ((:module "fftpack5"
     :components
