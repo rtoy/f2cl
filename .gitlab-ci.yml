@@ -132,3 +132,78 @@ mk-defsys-fortran-format-tests:
     when: always
     paths:
       - fortran-format-tests.log
+
+# Run the MINPACK rt-tests-hybrd suite in a fresh Lisp.  Each minpack
+# driver suite runs in its own job because tst-hybrd.f, tst-lmdif.f,
+# and tst-lmder.f all define top-level FCN/INITPT subroutines with
+# incompatible signatures; loading any two into the same image
+# clobbers the first.  mk-defsystem isn't supported for these suites.
+asdf-minpack-rt-tests-hybrd:
+  stage: test
+  script:
+    - |
+      cmucl -batch -noinit -nositeinit -quiet \
+        -eval '(require :asdf)' \
+        -eval '
+        (handler-case
+            (progn
+              (setf asdf:*compile-file-warnings-behaviour* :ignore
+                    asdf:*compile-file-failure-behaviour*  :ignore)
+              (push (truename "./") asdf:*central-registry*)
+              (asdf:load-system :f2cl)
+              (asdf:test-system "minpack/rt-tests-hybrd")
+              (ext:quit nil 0))
+          (error (c)
+            (format *error-output* "~&FAIL: ~A~%" c)
+            (ext:quit nil 1)))'
+  artifacts:
+    when: always
+    paths:
+      - minpack-rt-tests-hybrd.log
+
+asdf-minpack-rt-tests-lmdif:
+  stage: test
+  script:
+    - |
+      cmucl -batch -noinit -nositeinit -quiet \
+        -eval '(require :asdf)' \
+        -eval '
+        (handler-case
+            (progn
+              (setf asdf:*compile-file-warnings-behaviour* :ignore
+                    asdf:*compile-file-failure-behaviour*  :ignore)
+              (push (truename "./") asdf:*central-registry*)
+              (push (truename "./packages/") asdf:*central-registry*)
+              (asdf:load-system :f2cl)
+              (asdf:test-system "minpack/rt-tests-lmdif")
+              (ext:quit nil 0))
+          (error (c)
+            (format *error-output* "~&FAIL: ~A~%" c)
+            (ext:quit nil 1)))'
+  artifacts:
+    when: always
+    paths:
+      - minpack-rt-tests-lmdif.log
+
+asdf-minpack-rt-tests-lmder:
+  stage: test
+  script:
+    - |
+      cmucl -batch -noinit -nositeinit -quiet \
+        -eval '(require :asdf)' \
+        -eval '
+        (handler-case
+            (progn
+              (setf asdf:*compile-file-warnings-behaviour* :ignore
+                    asdf:*compile-file-failure-behaviour*  :ignore)
+              (push (truename "./") asdf:*central-registry*)
+              (asdf:load-system :f2cl)
+              (asdf:test-system "minpack/rt-tests-lmder")
+              (ext:quit nil 0))
+          (error (c)
+            (format *error-output* "~&FAIL: ~A~%" c)
+            (ext:quit nil 1)))'
+  artifacts:
+    when: always
+    paths:
+      - minpack-rt-tests-lmder.log

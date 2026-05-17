@@ -131,7 +131,7 @@
 
 (defsystem "minpack/rt-tests-hybrd"
   :description "rt-based regression tests for f2cl-translated tst-hybrd from MINPACK"
-  :depends-on ("minpack" "minpack/test-hybrd" "f2cl-rt")
+  :depends-on ("f2cl" "minpack" "minpack/test-hybrd" "f2cl-rt")
   :pathname "minpack-tests/"
   :components
   ((:cl-source-file "minpack-tests-package")
@@ -140,12 +140,13 @@
    (:cl-source-file "tst-hybrd-test"
                     :depends-on ("minpack-tests-helpers")))
   :perform (test-op (o c)
-             (or (symbol-call :rt :do-tests)
-                 (error "TEST-OP failed for minpack/rt-tests-hybrd"))))
+             (declare (ignore o c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "minpack/rt-tests-hybrd")))
 
 (defsystem "minpack/rt-tests-lmdif"
   :description "rt-based regression tests for f2cl-translated tst-lmdif from MINPACK"
-  :depends-on ("minpack" "minpack/test-lmdif" "f2cl-rt")
+  :depends-on ("f2cl" "minpack" "minpack/test-lmdif" "f2cl-rt")
   :pathname "minpack-tests/"
   :components
   ((:cl-source-file "minpack-tests-package")
@@ -154,12 +155,13 @@
    (:cl-source-file "tst-lmdif-test"
                     :depends-on ("minpack-tests-helpers")))
   :perform (test-op (o c)
-             (or (symbol-call :rt :do-tests)
-                 (error "TEST-OP failed for minpack/rt-tests-lmdif"))))
+             (declare (ignore o c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "minpack/rt-tests-lmdif")))
 
 (defsystem "minpack/rt-tests-lmder"
   :description "rt-based regression tests for f2cl-translated tst-lmder from MINPACK"
-  :depends-on ("minpack" "minpack/test-lmder" "f2cl-rt")
+  :depends-on ("f2cl" "minpack" "minpack/test-lmder" "f2cl-rt")
   :pathname "minpack-tests/"
   :components
   ((:cl-source-file "minpack-tests-package")
@@ -168,5 +170,6 @@
    (:cl-source-file "tst-lmder-test"
                     :depends-on ("minpack-tests-helpers")))
   :perform (test-op (o c)
-             (or (symbol-call :rt :do-tests)
-                 (error "TEST-OP failed for minpack/rt-tests-lmder"))))
+             (declare (ignore o c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "minpack/rt-tests-lmder")))
