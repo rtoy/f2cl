@@ -39,61 +39,61 @@ TOMS715 = \
 	rybesl.o
 
 algtst : algtst.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 anrtst : anrtst.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 dawtst : dawtst.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 eitest : eitest.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 erftst : erftst.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 gamtst : gamtst.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 i0test : i0test.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 i1test : i1test.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 j0test : j0test.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 j1test : j1test.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 k0test : k0test.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 k1test : k1test.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 psitst : psitst.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 ritest : ritest.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 rjtest : rjtest.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 rktest : rktest.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 rytest : rytest.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 y0test : y0test.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 y1test : y1test.o $(TOMS715)
-	$(F77) -o $@ $^
+	$(FC) -o $@ $^
 
 PROGS = algtst anrtst dawtst eitest erftst gamtst i0test i1test j0test j1test k0test k1test psitst ritest rjtest rktest rytest y0test y1test
 
