@@ -152,3 +152,154 @@ jobs:
           name: test-logs
           path: '*.log'
           if-no-files-found: ignore
+
+  # MINPACK rt-tests under clisp.  Smaller scope than the SBCL job
+  # above -- this only exercises the three minpack drivers, not the
+  # core f2cl/tests suite -- because that's where the cross-impl
+  # numerical behavior is most interesting.  All three drivers pass
+  # cleanly under clisp.
+  minpack-clisp:
+    name: MINPACK / clisp
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clisp
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y clisp
+
+      - name: Show clisp version
+        run: clisp --version
+
+      - name: Run MINPACK rt-tests-hybrd
+        run: |
+          clisp -q -norc -E utf-8 \
+            -x '(load "/usr/share/common-lisp/source/cl-asdf/asdf.lisp")
+                (handler-case
+                    (progn
+                      (setf asdf:*compile-file-warnings-behaviour* :ignore
+                            asdf:*compile-file-failure-behaviour*  :ignore)
+                      (push (truename "./") asdf:*central-registry*)
+                      (asdf:load-system "f2cl")
+                      (asdf:test-system "minpack/rt-tests-hybrd")
+                      (ext:quit 0))
+                  (error (c)
+                    (format *error-output* "~&FAIL: ~A~%" c)
+                    (ext:quit 1)))'
+
+      - name: Run MINPACK rt-tests-lmdif
+        run: |
+          clisp -q -norc -E utf-8 \
+            -x '(load "/usr/share/common-lisp/source/cl-asdf/asdf.lisp")
+                (handler-case
+                    (progn
+                      (setf asdf:*compile-file-warnings-behaviour* :ignore
+                            asdf:*compile-file-failure-behaviour*  :ignore)
+                      (push (truename "./") asdf:*central-registry*)
+                      (asdf:load-system "f2cl")
+                      (asdf:test-system "minpack/rt-tests-lmdif")
+                      (ext:quit 0))
+                  (error (c)
+                    (format *error-output* "~&FAIL: ~A~%" c)
+                    (ext:quit 1)))'
+
+      - name: Run MINPACK rt-tests-lmder
+        run: |
+          clisp -q -norc -E utf-8 \
+            -x '(load "/usr/share/common-lisp/source/cl-asdf/asdf.lisp")
+                (handler-case
+                    (progn
+                      (setf asdf:*compile-file-warnings-behaviour* :ignore
+                            asdf:*compile-file-failure-behaviour*  :ignore)
+                      (push (truename "./") asdf:*central-registry*)
+                      (asdf:load-system "f2cl")
+                      (asdf:test-system "minpack/rt-tests-lmder")
+                      (ext:quit 0))
+                  (error (c)
+                    (format *error-output* "~&FAIL: ~A~%" c)
+                    (ext:quit 1)))'
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-clisp
+          path: '*.log'
+          if-no-files-found: ignore
+
+  # MINPACK rt-tests under ECL.  See *close-enough-abs-floor* in
+  # minpack-tests-helpers.lisp for the ECL-specific noise floor
+  # (1d-8) needed to absorb iteration-path drift on hybrd; the
+  # standard floor (1.5d-12) keeps the other implementations strict.
+  # Like SBCL, ECL also requires the #+(or sbcl ecl) xfail on
+  # TST-LMDIF-25 (Meyer function, INFO=3 vs gfortran's INFO=1).
+  minpack-ecl:
+    name: MINPACK / ECL
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ECL
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ecl
+
+      - name: Show ECL version
+        run: ecl --version
+
+      - name: Run MINPACK rt-tests-hybrd
+        run: |
+          ecl --norc \
+            -eval '(require :asdf)' \
+            -eval '(handler-case
+                      (progn
+                        (setf asdf:*compile-file-warnings-behaviour* :ignore
+                              asdf:*compile-file-failure-behaviour*  :ignore)
+                        (push (truename "./") asdf:*central-registry*)
+                        (asdf:load-system "f2cl")
+                        (asdf:test-system "minpack/rt-tests-hybrd")
+                        (ext:quit 0))
+                    (error (c)
+                      (format *error-output* "~&FAIL: ~A~%" c)
+                      (ext:quit 1)))'
+
+      - name: Run MINPACK rt-tests-lmdif
+        run: |
+          ecl --norc \
+            -eval '(require :asdf)' \
+            -eval '(handler-case
+                      (progn
+                        (setf asdf:*compile-file-warnings-behaviour* :ignore
+                              asdf:*compile-file-failure-behaviour*  :ignore)
+                        (push (truename "./") asdf:*central-registry*)
+                        (asdf:load-system "f2cl")
+                        (asdf:test-system "minpack/rt-tests-lmdif")
+                        (ext:quit 0))
+                    (error (c)
+                      (format *error-output* "~&FAIL: ~A~%" c)
+                      (ext:quit 1)))'
+
+      - name: Run MINPACK rt-tests-lmder
+        run: |
+          ecl --norc \
+            -eval '(require :asdf)' \
+            -eval '(handler-case
+                      (progn
+                        (setf asdf:*compile-file-warnings-behaviour* :ignore
+                              asdf:*compile-file-failure-behaviour*  :ignore)
+                        (push (truename "./") asdf:*central-registry*)
+                        (asdf:load-system "f2cl")
+                        (asdf:test-system "minpack/rt-tests-lmder")
+                        (ext:quit 0))
+                    (error (c)
+                      (format *error-output* "~&FAIL: ~A~%" c)
+                      (ext:quit 1)))'
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-ecl
+          path: '*.log'
+          if-no-files-found: ignore
