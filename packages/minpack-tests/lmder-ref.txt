@@ -753,7 +753,7 @@
 
       NUMBER OF JACOBIAN EVALUATIONS         116
 
-      EXIT PARAMETER                           3
+      EXIT PARAMETER                           2
 
       FINAL APPROXIMATE SOLUTION
 
@@ -767,17 +767,17 @@
 
       INITIAL L2 NORM OF THE RESIDUALS  0.4168217D+07
 
-      FINAL L2 NORM OF THE RESIDUALS    0.7946427D+03
+      FINAL L2 NORM OF THE RESIDUALS    0.7994074D+03
 
       NUMBER OF FUNCTION EVALUATIONS         400
 
-      NUMBER OF JACOBIAN EVALUATIONS         346
+      NUMBER OF JACOBIAN EVALUATIONS         345
 
       EXIT PARAMETER                           5
 
       FINAL APPROXIMATE SOLUTION
 
-       0.1287736D-10  0.3389184D+05  0.9041030D+03
+       0.9728217D-11  0.3444310D+05  0.9120287D+03
  Enter prob no, dimensions n, m, and the number of            tries
   1: linear function, full rank. m >= n
   2: linear function, rank 1. m >= n
@@ -1059,7 +1059,7 @@
 
       INITIAL L2 NORM OF THE RESIDUALS  0.3211158D+02
 
-      FINAL L2 NORM OF THE RESIDUALS    0.2830524D-15
+      FINAL L2 NORM OF THE RESIDUALS    0.2419675D-15
 
       NUMBER OF FUNCTION EVALUATIONS           7
 
@@ -1149,7 +1149,7 @@
 
       FINAL APPROXIMATE SOLUTION
 
-      -0.1159126D+02  0.1320249D+02 -0.4035743D+00  0.2367364D+00
+      -0.1159126D+02  0.1320249D+02 -0.4035745D+00  0.2367363D+00
 
 
 
@@ -1189,7 +1189,7 @@
 
       FINAL APPROXIMATE SOLUTION
 
-      -0.1159026D+02  0.1320206D+02 -0.4036881D+00  0.2366650D+00
+      -0.1159026D+02  0.1320206D+02 -0.4036877D+00  0.2366653D+00
  Enter prob no, dimensions n, m, and the number of            tries
   1: linear function, full rank. m >= n
   2: linear function, rank 1. m >= n
@@ -1698,8 +1698,8 @@
     9    4   11    18    16     1   0.1753584D-01
     9    4   11    78    70     1   0.3205219D-01
     9    4   11   500   380     5   0.1753584D-01
-   10    3   16   126   116     3   0.9377945D+01
-   10    3   16   400   346     5   0.7946427D+03
+   10    3   16   126   116     2   0.9377945D+01
+   10    3   16   400   345     5   0.7994074D+03
    11    6   31     8     7     1   0.4782959D-01
    11    6   31    14    13     1   0.4782959D-01
    11    6   31    15    14     1   0.4782959D-01
@@ -1709,7 +1709,7 @@
    11   12   31    10     9     3   0.2173104D-04
    11   12   31    13    12     3   0.2173104D-04
    11   12   31    34    28     2   0.2173104D-04
-   12    3   10     7     6     2   0.2830524D-15
+   12    3   10     7     6     2   0.2419675D-15
    13    2   10    21    12     1   0.1115178D+02
    14    4   20   254   236     1   0.2929543D+03
    14    4   20    53    42     1   0.2929543D+03

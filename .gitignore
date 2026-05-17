@@ -62,3 +62,4 @@
 # Per-run output from minpack regression tests
 /packages/minpack-tests/tst-hybrd.actual.txt
 /packages/minpack-tests/tst-lmdif.actual.txt
+/packages/minpack-tests/tst-lmder.actual.txt
