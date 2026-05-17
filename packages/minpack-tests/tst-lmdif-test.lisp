@@ -43,7 +43,9 @@
 ;;; both drivers define FCN and INITPT with different signatures.
 ;;; To run both test suites, restart Lisp between them.
 ;;;
-;;; Loaded via the "minpack-rt-tests/lmdif" ASDF system.
+;;; Loaded via the "minpack/rt-tests-lmdif" ASDF system in
+;;; packages/minpack.asd.  Shares minpack-tests-helpers.lisp with
+;;; tst-hybrd-test.lisp.
 
 (in-package #:minpack-tests)
 
@@ -147,7 +149,7 @@
                       :defaults (or *compile-file-pathname* *load-pathname*)))
   "Receives the captured output of every TLMDIF invocation.  Useful
   for inspecting:
-      diff packages/minpack/{lmdif-ref.txt,tst-lmdif.actual.txt}
+      diff packages/minpack-tests/{lmdif-ref.txt,tst-lmdif.actual.txt}
   Not checked into git; regenerated every test invocation.")
 
 (defparameter *tst-lmdif-actual-rows* nil

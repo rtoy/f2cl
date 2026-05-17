@@ -55,9 +55,9 @@
 ;;; Per-row tolerances live in *TST-HYBRD-TOLERANCES* below.  Edit
 ;;; that defparameter to retune.  NFEV is read off but discarded.
 ;;;
-;;; Loaded via the "minpack-rt-tests/hybrd" ASDF system; see that
-;;; .asd for file order (helpers must load before this).  Shares
-;;; minpack-tests-helpers.lisp with tst-lmdif-test.lisp.
+;;; Loaded via the "minpack/rt-tests-hybrd" ASDF system in
+;;; packages/minpack.asd.  Shares minpack-tests-helpers.lisp with
+;;; tst-lmdif-test.lisp.
 
 (in-package #:minpack-tests)
 
@@ -155,7 +155,7 @@
                       :defaults (or *compile-file-pathname* *load-pathname*)))
   "Receives the captured output of every THYBRD invocation.  Useful
   for inspecting:
-      diff packages/minpack/{hybrd-ref.txt,tst-hybrd.actual.txt}
+      diff packages/minpack-tests/{hybrd-ref.txt,tst-hybrd.actual.txt}
   Not checked into git; regenerated every test invocation.")
 
 (defparameter *tst-hybrd-actual-rows* nil

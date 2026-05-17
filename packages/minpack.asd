@@ -35,15 +35,7 @@
 	     (:file "qform")
 	     (:file "qrfac" :depends-on ("dpmpar" "enorm")) (:file "qrsolv")
 	     (:file "r1mpyq")
-	     (:file "r1updt" :depends-on ("dpmpar")))))
-  ;; (asdf:test-system "minpack") routes here.  The stub
-  ;; "minpack-rt-tests" primary system in
-  ;; packages/minpack-rt-tests.asd signals an error directing the
-  ;; user to load minpack-rt-tests/hybrd or minpack-rt-tests/lmdif
-  ;; (those two can't coexist in one Lisp image, so picking one
-  ;; can't be automated here).  Previously this referenced an
-  ;; undefined "minpack-tests-lmdif" system.
-  :in-order-to ((test-op (test-op "minpack-rt-tests"))))
+	     (:file "r1updt" :depends-on ("dpmpar"))))))
 
 (setf (logical-pathname-translations "minpack")
       (list (list "**;*.*.*"
@@ -98,3 +90,46 @@
 	    ((:file "tst-hybrd"
 		    :f2cl-options (:declare-common t)))))
   :perform (test-op (o c) (symbol-call :minpack :run-minpack-test-hybrd)))
+
+
+;; ----------------------------------------------------------------
+;; Rt-based regression tests for the minpack drivers.  See
+;; packages/minpack-tests/ for the deftest sources, the per-row
+;; tolerance tables (*tst-hybrd-tolerances*, *tst-lmdif-tolerances*),
+;; the native-Fortran references they compare against
+;; (hybrd-ref.txt, lmdif-ref.txt, produced by the Makefile in that
+;; same directory), and a longer rationale in the test-file headers.
+;;
+;; Two siblings, one per driver.  They can't coexist in a single
+;; Lisp image because the underlying tst-hybrd.f and tst-lmdif.f
+;; both define top-level FCN and INITPT subroutines with
+;; incompatible signatures, so loading the second clobbers the
+;; first.  To run both, restart Lisp between them.
+
+(defsystem "minpack/rt-tests-hybrd"
+  :description "rt-based regression tests for f2cl-translated tst-hybrd from MINPACK"
+  :depends-on ("minpack" "minpack/test-hybrd" "rt")
+  :pathname "minpack-tests/"
+  :components
+  ((:cl-source-file "minpack-tests-package")
+   (:cl-source-file "minpack-tests-helpers"
+                    :depends-on ("minpack-tests-package"))
+   (:cl-source-file "tst-hybrd-test"
+                    :depends-on ("minpack-tests-helpers")))
+  :perform (test-op (o c)
+             (or (symbol-call :rt :do-tests)
+                 (error "TEST-OP failed for minpack/rt-tests-hybrd"))))
+
+(defsystem "minpack/rt-tests-lmdif"
+  :description "rt-based regression tests for f2cl-translated tst-lmdif from MINPACK"
+  :depends-on ("minpack" "minpack/test-lmdif" "rt")
+  :pathname "minpack-tests/"
+  :components
+  ((:cl-source-file "minpack-tests-package")
+   (:cl-source-file "minpack-tests-helpers"
+                    :depends-on ("minpack-tests-package"))
+   (:cl-source-file "tst-lmdif-test"
+                    :depends-on ("minpack-tests-helpers")))
+  :perform (test-op (o c)
+             (or (symbol-call :rt :do-tests)
+                 (error "TEST-OP failed for minpack/rt-tests-lmdif"))))
