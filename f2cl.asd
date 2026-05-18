@@ -91,94 +91,133 @@
      (:file "fortran-format-io"
       :depends-on ("package" "fortran-format-parser"))))))
 
-(defsystem "f2cl/fortran-format/tests"
+;;; --------------------------------------------------------------
+;;; fortran-format test systems.
+;;;
+;;; The corpus has roughly 102K rt:deftests across ~65 generated
+;;; .tests.lisp files plus 135 hand-written smoke tests.  Loading
+;;; the whole set every dev cycle is expensive, so the tests are
+;;; split into per-descriptor-family subsystems.  Each subsystem
+;;; can be loaded and tested independently, e.g.
+;;;
+;;;   (asdf:test-system "f2cl/fortran-format/tests/i")
+;;;
+;;; runs only the i-ed output and input tests (~2.8K deftests).
+;;;
+;;; Grouping:
+;;;
+;;;   Plain descriptors (output, plus input-1/-2 where present):
+;;;     a, b, d, e, en, es, f, g, i, l, o, z
+;;;   Modifier-prefixed (output-only, one subsystem per modifier
+;;;   covering every descriptor under it):
+;;;     bn, bz, colon, slash, sp, t, tl, tr, x
+;;;   Hand-written smoke tests (fortran-format-tests.lisp):
+;;;     smoke
+;;;
+;;; The umbrella "f2cl/fortran-format/tests" :depends-on every
+;;; subsystem, so loading or testing it pulls in everything; the
+;;; :perform method then runs rt:do-tests once across the union.
+;;; Mirror these systems in f2cl.system if you change them here.
+
+(defsystem "f2cl/fortran-format/tests/a"
   :depends-on ("f2cl-rt" "f2cl/fortran-format")
   :components
   ((:module "src/format"
     :components
     ((:file "fortran-format-corpus")
-     ;; Each corpus directory contributes a pair of files per
-     ;; .test source: an auto-generated .tests.lisp of deftests,
-     ;; and a hand-maintained .expected-failures.lisp.  The tests
-     ;; depend on the corpus runner (for write-format and friends);
-     ;; expected-failures depend on the corresponding tests file
-     ;; so the deftest entries exist before pushnew runs.
      (:module "corpus/gfortran-4.4.1"
       :depends-on ("fortran-format-corpus")
       :components
-      ((:file "i-ed-output.tests")
-       (:file "i-ed-output.expected-failures"
-        :depends-on ("i-ed-output.tests"))
-       (:file "f-ed-output.tests")
-       (:file "f-ed-output.expected-failures"
-        :depends-on ("f-ed-output.tests"))
-       (:file "e-ed-output.tests")
-       (:file "e-ed-output.expected-failures"
-        :depends-on ("e-ed-output.tests"))
-       (:file "a-ed-output.tests")
+      ((:file "a-ed-output.tests")
        (:file "a-ed-output.expected-failures"
-        :depends-on ("a-ed-output.tests"))
-       (:file "g-ed-output.tests")
-       (:file "g-ed-output.expected-failures"
-        :depends-on ("g-ed-output.tests"))
-       (:file "d-ed-output.tests")
-       (:file "d-ed-output.expected-failures"
-        :depends-on ("d-ed-output.tests"))
-       (:file "es-ed-output.tests")
-       (:file "es-ed-output.expected-failures"
-        :depends-on ("es-ed-output.tests"))
-       (:file "en-ed-output.tests")
-       (:file "en-ed-output.expected-failures"
-        :depends-on ("en-ed-output.tests"))
-       (:file "l-ed-output.tests")
-       (:file "l-ed-output.expected-failures"
-        :depends-on ("l-ed-output.tests"))
-       (:file "b-ed-output.tests")
+        :depends-on ("a-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/a")))
+
+(defsystem "f2cl/fortran-format/tests/b"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "b-ed-output.tests")
        (:file "b-ed-output.expected-failures"
-        :depends-on ("b-ed-output.tests"))
-       (:file "o-ed-output.tests")
-       (:file "o-ed-output.expected-failures"
-        :depends-on ("o-ed-output.tests"))
-       (:file "z-ed-output.tests")
-       (:file "z-ed-output.expected-failures"
-        :depends-on ("z-ed-output.tests"))
-       (:file "sp-a-ed-output.tests")
-       (:file "sp-a-ed-output.expected-failures"
-        :depends-on ("sp-a-ed-output.tests"))
-       (:file "sp-b-ed-output.tests")
-       (:file "sp-b-ed-output.expected-failures"
-        :depends-on ("sp-b-ed-output.tests"))
-       (:file "sp-d-ed-output.tests")
-       (:file "sp-d-ed-output.expected-failures"
-        :depends-on ("sp-d-ed-output.tests"))
-       (:file "sp-e-ed-output.tests")
-       (:file "sp-e-ed-output.expected-failures"
-        :depends-on ("sp-e-ed-output.tests"))
-       (:file "sp-en-ed-output.tests")
-       (:file "sp-en-ed-output.expected-failures"
-        :depends-on ("sp-en-ed-output.tests"))
-       (:file "sp-es-ed-output.tests")
-       (:file "sp-es-ed-output.expected-failures"
-        :depends-on ("sp-es-ed-output.tests"))
-       (:file "sp-f-ed-output.tests")
-       (:file "sp-f-ed-output.expected-failures"
-        :depends-on ("sp-f-ed-output.tests"))
-       (:file "sp-g-ed-output.tests")
-       (:file "sp-g-ed-output.expected-failures"
-        :depends-on ("sp-g-ed-output.tests"))
-       (:file "sp-i-ed-output.tests")
-       (:file "sp-i-ed-output.expected-failures"
-        :depends-on ("sp-i-ed-output.tests"))
-       (:file "sp-l-ed-output.tests")
-       (:file "sp-l-ed-output.expected-failures"
-        :depends-on ("sp-l-ed-output.tests"))
-       (:file "sp-o-ed-output.tests")
-       (:file "sp-o-ed-output.expected-failures"
-        :depends-on ("sp-o-ed-output.tests"))
-       (:file "sp-z-ed-output.tests")
-       (:file "sp-z-ed-output.expected-failures"
-        :depends-on ("sp-z-ed-output.tests"))
-       (:file "colon-a-ed-output.tests")
+        :depends-on ("b-ed-output.tests"))))
+     (:module "corpus/gfortran-4.4.1/input"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "b-ed-input-1.tests")
+       (:file "b-ed-input-1.expected-failures"
+        :depends-on ("b-ed-input-1.tests"))
+       (:file "b-ed-input-2.tests")
+       (:file "b-ed-input-2.expected-failures"
+        :depends-on ("b-ed-input-2.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/b")))
+
+(defsystem "f2cl/fortran-format/tests/bn"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "bn-a-ed-output.tests")
+       (:file "bn-a-ed-output.expected-failures"
+        :depends-on ("bn-a-ed-output.tests"))
+       (:file "bn-d-ed-output.tests")
+       (:file "bn-d-ed-output.expected-failures"
+        :depends-on ("bn-d-ed-output.tests"))
+       (:file "bn-l-ed-output.tests")
+       (:file "bn-l-ed-output.expected-failures"
+        :depends-on ("bn-l-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/bn")))
+
+(defsystem "f2cl/fortran-format/tests/bz"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "bz-a-ed-output.tests")
+       (:file "bz-a-ed-output.expected-failures"
+        :depends-on ("bz-a-ed-output.tests"))
+       (:file "bz-d-ed-output.tests")
+       (:file "bz-d-ed-output.expected-failures"
+        :depends-on ("bz-d-ed-output.tests"))
+       (:file "bz-l-ed-output.tests")
+       (:file "bz-l-ed-output.expected-failures"
+        :depends-on ("bz-l-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/bz")))
+
+(defsystem "f2cl/fortran-format/tests/colon"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "colon-a-ed-output.tests")
        (:file "colon-a-ed-output.expected-failures"
         :depends-on ("colon-a-ed-output.tests"))
        (:file "colon-b-ed-output.tests")
@@ -213,62 +252,211 @@
         :depends-on ("colon-o-ed-output.tests"))
        (:file "colon-z-ed-output.tests")
        (:file "colon-z-ed-output.expected-failures"
-        :depends-on ("colon-z-ed-output.tests"))
-       (:file "x-a-ed-output.tests")
-       (:file "x-a-ed-output.expected-failures"
-        :depends-on ("x-a-ed-output.tests"))
-       (:file "x-d-ed-output.tests")
-       (:file "x-d-ed-output.expected-failures"
-        :depends-on ("x-d-ed-output.tests"))
-       (:file "x-l-ed-output.tests")
-       (:file "x-l-ed-output.expected-failures"
-        :depends-on ("x-l-ed-output.tests"))
-       (:file "t-a-ed-output.tests")
-       (:file "t-a-ed-output.expected-failures"
-        :depends-on ("t-a-ed-output.tests"))
-       (:file "t-d-ed-output.tests")
-       (:file "t-d-ed-output.expected-failures"
-        :depends-on ("t-d-ed-output.tests"))
-       (:file "t-l-ed-output.tests")
-       (:file "t-l-ed-output.expected-failures"
-        :depends-on ("t-l-ed-output.tests"))
-       (:file "tr-a-ed-output.tests")
-       (:file "tr-a-ed-output.expected-failures"
-        :depends-on ("tr-a-ed-output.tests"))
-       (:file "tr-d-ed-output.tests")
-       (:file "tr-d-ed-output.expected-failures"
-        :depends-on ("tr-d-ed-output.tests"))
-       (:file "tr-l-ed-output.tests")
-       (:file "tr-l-ed-output.expected-failures"
-        :depends-on ("tr-l-ed-output.tests"))
-       (:file "tl-a-ed-output.tests")
-       (:file "tl-a-ed-output.expected-failures"
-        :depends-on ("tl-a-ed-output.tests"))
-       (:file "tl-d-ed-output.tests")
-       (:file "tl-d-ed-output.expected-failures"
-        :depends-on ("tl-d-ed-output.tests"))
-       (:file "tl-l-ed-output.tests")
-       (:file "tl-l-ed-output.expected-failures"
-        :depends-on ("tl-l-ed-output.tests"))
-       (:file "bn-a-ed-output.tests")
-       (:file "bn-a-ed-output.expected-failures"
-        :depends-on ("bn-a-ed-output.tests"))
-       (:file "bn-d-ed-output.tests")
-       (:file "bn-d-ed-output.expected-failures"
-        :depends-on ("bn-d-ed-output.tests"))
-       (:file "bn-l-ed-output.tests")
-       (:file "bn-l-ed-output.expected-failures"
-        :depends-on ("bn-l-ed-output.tests"))
-       (:file "bz-a-ed-output.tests")
-       (:file "bz-a-ed-output.expected-failures"
-        :depends-on ("bz-a-ed-output.tests"))
-       (:file "bz-d-ed-output.tests")
-       (:file "bz-d-ed-output.expected-failures"
-        :depends-on ("bz-d-ed-output.tests"))
-       (:file "bz-l-ed-output.tests")
-       (:file "bz-l-ed-output.expected-failures"
-        :depends-on ("bz-l-ed-output.tests"))
-       (:file "slash-a-ed-output.tests")
+        :depends-on ("colon-z-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/colon")))
+
+(defsystem "f2cl/fortran-format/tests/d"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "d-ed-output.tests")
+       (:file "d-ed-output.expected-failures"
+        :depends-on ("d-ed-output.tests"))))
+     (:module "corpus/gfortran-4.4.1/input"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "d-ed-input-1.tests")
+       (:file "d-ed-input-1.expected-failures"
+        :depends-on ("d-ed-input-1.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/d")))
+
+(defsystem "f2cl/fortran-format/tests/e"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "e-ed-output.tests")
+       (:file "e-ed-output.expected-failures"
+        :depends-on ("e-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/e")))
+
+(defsystem "f2cl/fortran-format/tests/en"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "en-ed-output.tests")
+       (:file "en-ed-output.expected-failures"
+        :depends-on ("en-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/en")))
+
+(defsystem "f2cl/fortran-format/tests/es"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "es-ed-output.tests")
+       (:file "es-ed-output.expected-failures"
+        :depends-on ("es-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/es")))
+
+(defsystem "f2cl/fortran-format/tests/f"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "f-ed-output.tests")
+       (:file "f-ed-output.expected-failures"
+        :depends-on ("f-ed-output.tests"))))
+     (:module "corpus/gfortran-4.4.1/input"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "f-ed-input-1.tests")
+       (:file "f-ed-input-1.expected-failures"
+        :depends-on ("f-ed-input-1.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/f")))
+
+(defsystem "f2cl/fortran-format/tests/g"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "g-ed-output.tests")
+       (:file "g-ed-output.expected-failures"
+        :depends-on ("g-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/g")))
+
+(defsystem "f2cl/fortran-format/tests/i"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "i-ed-output.tests")
+       (:file "i-ed-output.expected-failures"
+        :depends-on ("i-ed-output.tests"))))
+     (:module "corpus/gfortran-4.4.1/input"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "i-ed-input-1.tests")
+       (:file "i-ed-input-1.expected-failures"
+        :depends-on ("i-ed-input-1.tests"))
+       (:file "i-ed-input-2.tests")
+       (:file "i-ed-input-2.expected-failures"
+        :depends-on ("i-ed-input-2.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/i")))
+
+(defsystem "f2cl/fortran-format/tests/l"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "l-ed-output.tests")
+       (:file "l-ed-output.expected-failures"
+        :depends-on ("l-ed-output.tests"))))
+     (:module "corpus/gfortran-4.4.1/input"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "l-ed-input-1.tests")
+       (:file "l-ed-input-1.expected-failures"
+        :depends-on ("l-ed-input-1.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/l")))
+
+(defsystem "f2cl/fortran-format/tests/o"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "o-ed-output.tests")
+       (:file "o-ed-output.expected-failures"
+        :depends-on ("o-ed-output.tests"))))
+     (:module "corpus/gfortran-4.4.1/input"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "o-ed-input-1.tests")
+       (:file "o-ed-input-1.expected-failures"
+        :depends-on ("o-ed-input-1.tests"))
+       (:file "o-ed-input-2.tests")
+       (:file "o-ed-input-2.expected-failures"
+        :depends-on ("o-ed-input-2.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/o")))
+
+(defsystem "f2cl/fortran-format/tests/slash"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "slash-a-ed-output.tests")
        (:file "slash-a-ed-output.expected-failures"
         :depends-on ("slash-a-ed-output.tests"))
        (:file "slash-b-ed-output.tests")
@@ -303,45 +491,220 @@
         :depends-on ("slash-o-ed-output.tests"))
        (:file "slash-z-ed-output.tests")
        (:file "slash-z-ed-output.expected-failures"
-        :depends-on ("slash-z-ed-output.tests"))))
+        :depends-on ("slash-z-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/slash")))
+
+(defsystem "f2cl/fortran-format/tests/sp"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "sp-a-ed-output.tests")
+       (:file "sp-a-ed-output.expected-failures"
+        :depends-on ("sp-a-ed-output.tests"))
+       (:file "sp-b-ed-output.tests")
+       (:file "sp-b-ed-output.expected-failures"
+        :depends-on ("sp-b-ed-output.tests"))
+       (:file "sp-d-ed-output.tests")
+       (:file "sp-d-ed-output.expected-failures"
+        :depends-on ("sp-d-ed-output.tests"))
+       (:file "sp-e-ed-output.tests")
+       (:file "sp-e-ed-output.expected-failures"
+        :depends-on ("sp-e-ed-output.tests"))
+       (:file "sp-en-ed-output.tests")
+       (:file "sp-en-ed-output.expected-failures"
+        :depends-on ("sp-en-ed-output.tests"))
+       (:file "sp-es-ed-output.tests")
+       (:file "sp-es-ed-output.expected-failures"
+        :depends-on ("sp-es-ed-output.tests"))
+       (:file "sp-f-ed-output.tests")
+       (:file "sp-f-ed-output.expected-failures"
+        :depends-on ("sp-f-ed-output.tests"))
+       (:file "sp-g-ed-output.tests")
+       (:file "sp-g-ed-output.expected-failures"
+        :depends-on ("sp-g-ed-output.tests"))
+       (:file "sp-i-ed-output.tests")
+       (:file "sp-i-ed-output.expected-failures"
+        :depends-on ("sp-i-ed-output.tests"))
+       (:file "sp-l-ed-output.tests")
+       (:file "sp-l-ed-output.expected-failures"
+        :depends-on ("sp-l-ed-output.tests"))
+       (:file "sp-o-ed-output.tests")
+       (:file "sp-o-ed-output.expected-failures"
+        :depends-on ("sp-o-ed-output.tests"))
+       (:file "sp-z-ed-output.tests")
+       (:file "sp-z-ed-output.expected-failures"
+        :depends-on ("sp-z-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/sp")))
+
+(defsystem "f2cl/fortran-format/tests/t"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "t-a-ed-output.tests")
+       (:file "t-a-ed-output.expected-failures"
+        :depends-on ("t-a-ed-output.tests"))
+       (:file "t-d-ed-output.tests")
+       (:file "t-d-ed-output.expected-failures"
+        :depends-on ("t-d-ed-output.tests"))
+       (:file "t-l-ed-output.tests")
+       (:file "t-l-ed-output.expected-failures"
+        :depends-on ("t-l-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/t")))
+
+(defsystem "f2cl/fortran-format/tests/tl"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "tl-a-ed-output.tests")
+       (:file "tl-a-ed-output.expected-failures"
+        :depends-on ("tl-a-ed-output.tests"))
+       (:file "tl-d-ed-output.tests")
+       (:file "tl-d-ed-output.expected-failures"
+        :depends-on ("tl-d-ed-output.tests"))
+       (:file "tl-l-ed-output.tests")
+       (:file "tl-l-ed-output.expected-failures"
+        :depends-on ("tl-l-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/tl")))
+
+(defsystem "f2cl/fortran-format/tests/tr"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "tr-a-ed-output.tests")
+       (:file "tr-a-ed-output.expected-failures"
+        :depends-on ("tr-a-ed-output.tests"))
+       (:file "tr-d-ed-output.tests")
+       (:file "tr-d-ed-output.expected-failures"
+        :depends-on ("tr-d-ed-output.tests"))
+       (:file "tr-l-ed-output.tests")
+       (:file "tr-l-ed-output.expected-failures"
+        :depends-on ("tr-l-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/tr")))
+
+(defsystem "f2cl/fortran-format/tests/x"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "x-a-ed-output.tests")
+       (:file "x-a-ed-output.expected-failures"
+        :depends-on ("x-a-ed-output.tests"))
+       (:file "x-d-ed-output.tests")
+       (:file "x-d-ed-output.expected-failures"
+        :depends-on ("x-d-ed-output.tests"))
+       (:file "x-l-ed-output.tests")
+       (:file "x-l-ed-output.expected-failures"
+        :depends-on ("x-l-ed-output.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/x")))
+
+(defsystem "f2cl/fortran-format/tests/z"
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
+     (:module "corpus/gfortran-4.4.1"
+      :depends-on ("fortran-format-corpus")
+      :components
+      ((:file "z-ed-output.tests")
+       (:file "z-ed-output.expected-failures"
+        :depends-on ("z-ed-output.tests"))))
      (:module "corpus/gfortran-4.4.1/input"
       :depends-on ("fortran-format-corpus")
       :components
-      ((:file "l-ed-input-1.tests")
-       (:file "l-ed-input-1.expected-failures"
-        :depends-on ("l-ed-input-1.tests"))
-       (:file "f-ed-input-1.tests")
-       (:file "f-ed-input-1.expected-failures"
-        :depends-on ("f-ed-input-1.tests"))
-       (:file "d-ed-input-1.tests")
-       (:file "d-ed-input-1.expected-failures"
-        :depends-on ("d-ed-input-1.tests"))
-       (:file "i-ed-input-1.tests")
-       (:file "i-ed-input-1.expected-failures"
-        :depends-on ("i-ed-input-1.tests"))
-       (:file "i-ed-input-2.tests")
-       (:file "i-ed-input-2.expected-failures"
-        :depends-on ("i-ed-input-2.tests"))
-       (:file "b-ed-input-1.tests")
-       (:file "b-ed-input-1.expected-failures"
-        :depends-on ("b-ed-input-1.tests"))
-       (:file "b-ed-input-2.tests")
-       (:file "b-ed-input-2.expected-failures"
-        :depends-on ("b-ed-input-2.tests"))
-       (:file "o-ed-input-1.tests")
-       (:file "o-ed-input-1.expected-failures"
-        :depends-on ("o-ed-input-1.tests"))
-       (:file "o-ed-input-2.tests")
-       (:file "o-ed-input-2.expected-failures"
-        :depends-on ("o-ed-input-2.tests"))
-       (:file "z-ed-input-1.tests")
+      ((:file "z-ed-input-1.tests")
        (:file "z-ed-input-1.expected-failures"
         :depends-on ("z-ed-input-1.tests"))
        (:file "z-ed-input-2.tests")
        (:file "z-ed-input-2.expected-failures"
-        :depends-on ("z-ed-input-2.tests"))))
+        :depends-on ("z-ed-input-2.tests")))))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/z")))
+
+(defsystem "f2cl/fortran-format/tests/smoke"
+  :description "Hand-written fortran-format smoke tests (no corpus)."
+  :depends-on ("f2cl-rt" "f2cl/fortran-format")
+  :components
+  ((:module "src/format"
+    :components
+    ((:file "fortran-format-corpus")
      (:file "fortran-format-tests"
       :depends-on ("fortran-format-corpus")))))
+  :perform (test-op (op c)
+             (declare (ignore op c))
+             (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
+                      "f2cl/fortran-format/tests/smoke")))
+
+(defsystem "f2cl/fortran-format/tests"
+  :description "Umbrella system pulling in every fortran-format test subset."
+  :depends-on ("f2cl-rt"
+               "f2cl/fortran-format"
+               "f2cl/fortran-format/tests/a"
+               "f2cl/fortran-format/tests/b"
+               "f2cl/fortran-format/tests/bn"
+               "f2cl/fortran-format/tests/bz"
+               "f2cl/fortran-format/tests/colon"
+               "f2cl/fortran-format/tests/d"
+               "f2cl/fortran-format/tests/e"
+               "f2cl/fortran-format/tests/en"
+               "f2cl/fortran-format/tests/es"
+               "f2cl/fortran-format/tests/f"
+               "f2cl/fortran-format/tests/g"
+               "f2cl/fortran-format/tests/i"
+               "f2cl/fortran-format/tests/l"
+               "f2cl/fortran-format/tests/o"
+               "f2cl/fortran-format/tests/slash"
+               "f2cl/fortran-format/tests/sp"
+               "f2cl/fortran-format/tests/t"
+               "f2cl/fortran-format/tests/tl"
+               "f2cl/fortran-format/tests/tr"
+               "f2cl/fortran-format/tests/x"
+               "f2cl/fortran-format/tests/z"
+               "f2cl/fortran-format/tests/smoke")
   :perform (test-op (op c)
              (declare (ignore op c))
              (funcall (find-symbol "%F2CL-ASD-RUN-RT-TESTS" :asdf-user)
